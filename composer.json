@@ -1,7 +1,7 @@
 {
     "name" : "makinacorpus/goat-query",
     "type": "library",
-    "description": "Goat SQL query builder and PHP type converter",
+    "description": "Goat SQL query builder built over a PHP to SQL and SQL to PHP type converter",
     "keywords": ["orm", "postgresql", "mysql", "database", "symfony", "pdo"],
     "homepage": "http://github.com/pounard/goat-query",
     "license": "GPL-2",
