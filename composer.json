@@ -1,0 +1,36 @@
+{
+    "name" : "makinacorpus/goat-query",
+    "type": "library",
+    "description": "Goat SQL query builder and PHP type converter",
+    "keywords": ["orm", "postgresql", "mysql", "database", "symfony", "pdo"],
+    "homepage": "http://github.com/pounard/goat-query",
+    "license": "GPL-2",
+    "authors": [
+        {
+            "name" : "Pierre RINEAU",
+            "email" : "pierre.rineau@processus.org"
+        }
+    ],
+    "minimum-stability" : "dev",
+    "prefer-stable" : true,
+    "autoload" : {
+        "psr-4" : {
+            "Goat\\Converter\\" : "src/Converter",
+            "Goat\\Query\\" : "src/Query",
+            "Goat\\Runner\\" : "src/Runner"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Goat\\Converter\\Tests\\": "tests/Converter",
+            "Goat\\Query\\Tests\\": "tests/Query",
+            "Goat\\Runner\\Tests\\": "tests/Runner"
+        }
+    },
+    "require" : {
+        "php" : ">=7.2"
+    },
+    "require-dev" : {
+        "phpunit/phpunit" : "7.*"
+    }
+}

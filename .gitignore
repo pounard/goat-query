@@ -1,0 +1,10 @@
+.buildpath
+.project
+.settings
+cache
+cache/hydrator/*
+!cache/hydrator/README.md
+composer.lock
+coverage
+phpunit.xml
+vendor
