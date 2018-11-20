@@ -86,6 +86,10 @@ abstract class AbstractRunner implements Runner, EscaperInterface
      */
     final public function getHydratorMap(): HydratorMap
     {
+        if (!$this->hydratorMap) {
+            throw new \BadMethodCallException("There is no hydrator configured");
+        }
+
         return $this->hydratorMap;
     }
 
@@ -130,7 +134,7 @@ abstract class AbstractRunner implements Runner, EscaperInterface
         if (isset($options['class'])) {
             // Class can be either an alias or a valid class name, the hydrator
             // will proceed with all runtime checks to ensure that.
-            $result->setHydrator($this->hydratorMap->get($options['class']));
+            $result->setHydrator($this->getHydratorMap()->get($options['class']));
         }
 
         return $result;
