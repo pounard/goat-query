@@ -74,7 +74,6 @@ abstract class AbstractPDORunner extends AbstractRunner
             $statement->execute($args);
 
             $ret = $this->createResultIterator($options, $statement);
-            $ret->setConverter($this->converter);
 
             return $ret;
 
