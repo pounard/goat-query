@@ -222,6 +222,10 @@ final class DefaultConverter implements ConverterInterface
             // Booleans
             case 'bool':
             case 'boolean':
+                // When used with Doctrine, some types are already converted
+                if (\is_bool($value)) {
+                    return $value;
+                }
                 if (!$value || 'f' === $value || 'F' === $value || 'FALSE' === \strtolower($value)) {
                     return false;
                 }
