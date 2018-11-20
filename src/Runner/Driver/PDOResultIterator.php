@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Goat\Runner\Driver;
 
 use Goat\Converter\ConverterInterface;
-use Goat\Error\InvalidDataAccessError;
 use Goat\Runner\AbstractResultIterator;
+use Goat\Runner\InvalidDataAccessError;
 
 class PDOResultIterator extends AbstractResultIterator
 {

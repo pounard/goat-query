@@ -19,6 +19,10 @@ class DriverError extends \RuntimeException
 
         $message = \sprintf("error while querying backend, query is:\n%s", $rawSQL);
 
-        parent::__construct($message, null, $previous);
+        if ($previous) {
+            parent::__construct($message, 0, $previous);
+        } else {
+            parent::__construct($message);
+        }
     }
 }
