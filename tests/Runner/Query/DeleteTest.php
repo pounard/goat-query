@@ -6,9 +6,9 @@ namespace Goat\Runer\Tests\Query;
 
 use Goat\Runner\Runner;
 use Goat\Tests\Driver\Mock\DeleteSomeTableWithUser;
-use Goat\Tests\DriverTestCase;
+use Goat\Runner\Testing\DatabaseAwareQueryTest;
 
-class DeleteTest extends DriverTestCase
+class DeleteTest extends DatabaseAwareQueryTest
 {
     private $idAdmin;
     private $idJean;

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="http://schema.phpunit.de/5.0/phpunit.xsd"
+    backupGlobals="false"
+    colors="true"
+    bootstrap="vendor/autoload.php"
+    convertErrorsToExceptions="false"
+    convertNoticesToExceptions="true"
+    convertWarningsToExceptions="true"
+>
+    <php>
+        <ini name="error_reporting" value="-1" />
+    </php>
+
+    <testsuites>
+        <testsuite name="Goat query builder">
+            <directory>./tests</directory>
+        </testsuite>
+    </testsuites>
+
+    <filter>
+        <whitelist processUncoveredFilesFromWhitelist="true">
+            <directory>./src</directory>
+            <exclude>
+                <directory>./tests</directory>
+                <directory>./vendor</directory>
+            </exclude>
+        </whitelist>
+    </filter>
+
+    <php>
+        <env name="ENABLE_EXT_PGSQL" value="1" />
+        <env name="ENABLE_PDO" value="1" />
+        <env name="ENABLE_SECURITY" value="0" />
+        <env name="MYSQL_HOSTNAME" value="192.168.57.102" />
+        <env name="MYSQL_DATABASE" value="some_db" />
+        <env name="MYSQL_PASSWORD" value="some_password" />
+        <env name="MYSQL_USERNAME" value="some_username" />
+        <env name="PGSQL_HOSTNAME" value="192.168.57.102" />
+        <env name="PGSQL_DATABASE" value="some_db" />
+        <env name="PGSQL_PASSWORD" value="some_password" />
+        <env name="PGSQL_USERNAME" value="some_username" />
+    </php>
+</phpunit>

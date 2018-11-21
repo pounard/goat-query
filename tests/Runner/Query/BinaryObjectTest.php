@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Goat\Runer\Tests\Query;
 
 use Goat\Runner\Runner;
-use Goat\Tests\DriverTestCase;
+use Goat\Runner\Testing\DatabaseAwareQueryTest;
 
-class BinaryObjectTest extends DriverTestCase
+class BinaryObjectTest extends DatabaseAwareQueryTest
 {
     /**
      * {@inheritdoc}
@@ -39,13 +39,14 @@ class BinaryObjectTest extends DriverTestCase
     }
 
     /**
-     * Very simple test
-     *
-     * @dataProvider driverDataSource
+     * @dataProvider getRunners
      */
-    public function testInsertAndSelect($driverName, $class)
+    public function testInsertAndSelect(Runner $runner)
     {
+        $this->prepare($runner);
+
         $runner
+            ->getQueryBuilder()
             ->insertValues('storage')
             ->values([
                 'foo' => "åß∂ƒ©˙∆˚¬…æ"
@@ -54,11 +55,16 @@ class BinaryObjectTest extends DriverTestCase
         ;
 
         $value = $runner
+            ->getQueryBuilder()
             ->select('storage')
             ->column('foo')
             ->execute()
             ->fetchField()
         ;
+
+        if (\is_resource($value)) {
+            $value = \stream_get_contents($value);
+        }
 
         $this->assertSame("åß∂ƒ©˙∆˚¬…æ", $value);
     }

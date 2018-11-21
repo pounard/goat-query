@@ -9,6 +9,11 @@ use Goat\Query\QueryBuilder;
 interface Runner
 {
     /**
+     * Get driver name (eg. mysql, pgsql, ...).
+     */
+    public function getDriverName(): string;
+
+    /**
      * Get the query builder
      *
      * @return QueryBuilder

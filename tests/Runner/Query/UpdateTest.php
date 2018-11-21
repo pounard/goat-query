@@ -8,9 +8,9 @@ use Goat\Query\ExpressionColumn;
 use Goat\Query\ExpressionRaw;
 use Goat\Query\Where;
 use Goat\Runner\Runner;
-use Goat\Tests\DriverTestCase;
+use Goat\Runner\Testing\DatabaseAwareQueryTest;
 
-class UpdateTest extends DriverTestCase
+class UpdateTest extends DatabaseAwareQueryTest
 {
     private $idAdmin;
     private $idJean;

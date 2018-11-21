@@ -6,10 +6,10 @@ namespace Goat\Runer\Tests\Query;
 
 use Goat\Query\Query;
 use Goat\Runner\Runner;
+use Goat\Runner\Testing\DatabaseAwareQueryTest;
 use Goat\Tests\Driver\Mock\InsertAndTheCatSays;
-use Goat\Tests\DriverTestCase;
 
-class InsertTest extends DriverTestCase
+class InsertTest extends DatabaseAwareQueryTest
 {
     /**
      * {@inheritdoc}
