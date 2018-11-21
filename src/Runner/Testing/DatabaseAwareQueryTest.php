@@ -2,7 +2,9 @@
 
 namespace Goat\Runner\Testing;
 
+use Goat\Hydrator\HydratorMap;
 use Goat\Runner\Runner;
+use Goat\Runner\Driver\AbstractRunner;
 use Goat\Runner\Driver\PDOMySQLRunner;
 use Goat\Runner\Driver\PDOPgSQLRunner;
 use PHPUnit\Framework\TestCase;
@@ -62,6 +64,9 @@ abstract class DatabaseAwareQueryTest extends TestCase
      */
     protected function prepare(Runner $runner)
     {
+        if ($runner instanceof AbstractRunner && \class_exists(HydratorMap::class)) {
+            $runner->setHydratorMap(new HydratorMap(\sys_get_temp_dir().'/'.\uniqid('test-')));
+        }
         $this->createTestSchema($runner);
         $this->createTestData($runner);
     }

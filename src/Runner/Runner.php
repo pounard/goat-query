@@ -14,6 +14,11 @@ interface Runner
     public function getDriverName(): string;
 
     /**
+     * Does this driver supports SQL standard RETURNING clause
+     */
+    public function supportsReturning(): bool;
+
+    /**
      * Get the query builder
      *
      * @return QueryBuilder

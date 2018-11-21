@@ -476,7 +476,7 @@ final class SelectQuery extends Query
             ->removeAllColumns()
             ->removeAllOrder()
             ->range(0, 0)
-            ->column(new ExpressionRaw("count(*)"), $countAlias)
+            ->column(ExpressionRaw::create("count(*)"), $countAlias)
         ;
     }
 

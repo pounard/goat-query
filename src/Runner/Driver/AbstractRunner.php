@@ -35,6 +35,16 @@ abstract class AbstractRunner implements Runner, EscaperInterface
 
     /**
      * {@inheritdoc}
+     *
+     * Only MySQL does not support this, so this is a sensible default.
+     */
+    public function supportsReturning(): bool
+    {
+        return true;
+    }
+
+    /**
+     * {@inheritdoc}
      */
     public function getQueryBuilder(): QueryBuilder
     {
