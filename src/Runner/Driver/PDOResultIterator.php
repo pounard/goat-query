@@ -99,7 +99,6 @@ class PDOResultIterator extends AbstractResultIterator
                 return 'float8';
 
             default:
-                \trigger_error(\sprintf("'%s': unknown type", $nativeType));
                 return $nativeType;
         }
     }
