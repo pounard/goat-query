@@ -7,6 +7,14 @@ namespace Goat\Converter;
 interface ValueConverterInterface
 {
     /**
+     * Get handled types
+     *
+     * @return string[]
+     *   Type names
+     */
+    public function getHandledTypes(): array;
+
+    /**
      * Get native PHP type
      *
      * @param string $type

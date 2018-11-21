@@ -86,7 +86,7 @@ final class DefaultConverter implements ConverterInterface
         // Kept interval in here for the sake of example.
         // @todo move it out when there will be a proper documentation
         return [
-            'interval' => [IntervalValueConverter::class, []],
+            [IntervalValueConverter::class, []],
         ];
     }
 
@@ -107,31 +107,27 @@ final class DefaultConverter implements ConverterInterface
     /**
      * Register a converter
      *
-     * @param string $type
      * @param ValueConverterInterface $instance
      * @param string[] $aliases
      *
      * @return $this
      */
-    public function register(string $type, ValueConverterInterface $instance, array $aliases = [], $allowOverride = false)
+    public function register(ValueConverterInterface $instance, array $aliases = [], $allowOverride = false)
     {
-        if (\is_array($type)) {
-            \trigger_error(\sprintf("registering type as array is outdate and will be removed, while registering %s", \implode(', ', $type)), E_USER_DEPRECATED);
+        $types = $instance->getHandledTypes();
 
-            $aliases = $type;
-            $type = \array_shift($aliases);
-        }
-
-        if (!$allowOverride && isset($this->converters[$type])) {
-            $message = \sprintf("type '%s' is already defined, using '%s' converter class", $type, \get_class($this->converters[$type]));
-            if ($this->debug) {
-                throw new \InvalidArgumentException($message);
-            } else {
-                \trigger_error($message, E_USER_WARNING);
+        foreach ($types as $type) {
+            if (!$allowOverride && isset($this->converters[$type])) {
+                $message = \sprintf("type '%s' is already defined, using '%s' converter class", $type, \get_class($this->converters[$type]));
+                if ($this->debug) {
+                    throw new \InvalidArgumentException($message);
+                } else {
+                    \trigger_error($message, E_USER_WARNING);
+                }
             }
-        }
 
-        $this->converters[$type] = $instance;
+            $this->converters[$type] = $instance;
+        }
 
         if ($aliases) {
             foreach ($aliases as $alias) {

@@ -158,7 +158,7 @@ class DefaultConverterTest extends TestCase
     public function testTypeGuessing()
     {
         $converter = new DefaultConverter();
-        $converter->register('interval', new IntervalValueConverter());
+        $converter->register(new IntervalValueConverter());
 
         $this->assertSame('bool', $converter->guessType(true));
         $this->assertSame('interval', $converter->guessType(\DateInterval::createFromDateString('one hour')));
