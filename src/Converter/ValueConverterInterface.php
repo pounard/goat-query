@@ -7,6 +7,15 @@ namespace Goat\Converter;
 interface ValueConverterInterface
 {
     /**
+     * Get native PHP type
+     *
+     * @param string $type
+     *
+     * @return null|string
+     */
+    public function getPhpType(string $type): ?string;
+
+    /**
      * From the given raw SQL string, get the PHP value
      *
      * @param string $type

@@ -180,6 +180,85 @@ final class DefaultConverter implements ConverterInterface
     /**
      * {@inheritdoc}
      */
+    public function getPhpType(string $type): ?string
+    {
+        switch ($type) {
+            case ConverterInterface::TYPE_NULL:
+                return null;
+
+            // Serial (integers)
+            case 'bigserial':
+            case 'serial':
+            case 'serial2':
+            case 'serial4':
+            case 'serial8':
+            case 'smallserial':
+            // Integers
+            case 'bigint':
+            case 'int':
+            case 'int2':
+            case 'int4':
+            case 'int8':
+            case 'integer':
+            case 'smallint':
+                return 'int';
+
+            // Strings
+            case 'char':
+            case 'character':
+            case 'text':
+            case 'varchar':
+                return 'string';
+
+            // Flaoting point numbers and decimals
+            case 'decimal':
+            case 'double':
+            case 'float4':
+            case 'float8':
+            case 'numeric':
+            case 'real':
+                return 'float';
+
+            // Booleans
+            case 'bool':
+            case 'boolean':
+                return 'bool';
+
+            // JSON
+            case 'json':
+            case 'jsonb':
+                return '\\stdClass';
+
+            // UUID
+            case 'uuid':
+                return 'string'; // @todo third party library support ?
+
+            // Timestamp, Date without time and time without date
+            case 'datetime':
+            case 'timestamp':
+            case 'timestampz':
+            case 'date':
+            case 'time':
+            case 'timez':
+                return '\\DateTimeImmutable';
+
+            // Binary objects
+            // @todo handle object stream
+            case 'blob':
+            case 'bytea':
+                return 'string';
+        }
+
+        if ($converter = $this->get($type)) {
+            return $converter->getPhpType($type);
+        }
+
+        return null;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function fromSQL(string $type, $value)
     {
         switch ($type) {

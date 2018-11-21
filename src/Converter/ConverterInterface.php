@@ -13,6 +13,15 @@ interface ConverterInterface
     const TYPE_UNKNOWN = '_';
 
     /**
+     * Get native PHP type
+     *
+     * @param string $type
+     *
+     * @return null|string
+     */
+    public function getPhpType(string $sqlType): ?string;
+
+    /**
      * From the given raw SQL string, get the PHP value
      *
      * @param string $type

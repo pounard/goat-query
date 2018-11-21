@@ -73,6 +73,14 @@ class IntervalValueConverter implements ValueConverterInterface
     /**
      * {@inheritdoc}
      */
+    public function getPhpType(string $type): ?string
+    {
+        return '\\DateInterval';
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function fromSQL(string $type, $value)
     {
         if (empty($value)) {

@@ -30,6 +30,14 @@ class PgSQLConverter implements ConverterInterface
     /**
      * {@inheritdoc}
      */
+    public function getPhpType(string $sqlType): ?string
+    {
+        return $this->default->getPhpType($sqlType);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function fromSQL(string $type, $value)
     {
         return $this->default->fromSQL($type, $value);
