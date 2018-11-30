@@ -23,9 +23,9 @@ class MySQL5Formatter extends DefaultFormatter
         // does not accepts the same datatypes as the one it handles.
         if ('timestamp' === $type) {
             return 'datetime';
-        } else if ('int' === \substr($type, 0, 3)) {
+        } else if ('int' === \mb_substr($type, 0, 3)) {
             return 'signed integer';
-        } else if ('float' === \substr($type, 0, 5) || 'double' === \substr($type, 0, 6)) {
+        } else if ('float' === \mb_substr($type, 0, 5) || 'double' === \mb_substr($type, 0, 6)) {
             return 'decimal';
         }
 

@@ -38,7 +38,7 @@ final class ExpressionValue implements Expression
                     $name = $value;
                 }
 
-                $ret->name = \substr($name, 1);
+                $ret->name = \mb_substr($name, 1);
 
                 // Value cannot exist from this point, really, since we just
                 // gave name and type information; query will need to be send

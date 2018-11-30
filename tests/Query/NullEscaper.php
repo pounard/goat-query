@@ -82,7 +82,7 @@ class NullEscaper implements EscaperInterface
      */
     public function unescapeBlob($resource) : ?string
     {
-        return substr(substr($resource, -1), 1);
+        return \mb_substr(\mb_substr($resource, -1), 1);
     }
 
     /**
