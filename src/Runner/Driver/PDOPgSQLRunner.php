@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Goat\Runner\Driver;
 
 use Goat\Converter\ConverterInterface;
+use Goat\Converter\Driver\PgSQLArrayConverter;
 use Goat\Converter\Driver\PgSQLConverter;
 use Goat\Query\Impl\PgSQLFormatter;
 use Goat\Query\Writer\FormatterInterface;
@@ -24,7 +25,11 @@ class PDOPgSQLRunner extends AbstractPDORunner
      */
     public function setConverter(ConverterInterface $converter): void
     {
-        parent::setConverter(new PgSQLConverter($converter));
+        parent::setConverter(
+            new PgSQLArrayConverter(
+                new PgSQLConverter($converter)
+            )
+        );
     }
 
     /**
