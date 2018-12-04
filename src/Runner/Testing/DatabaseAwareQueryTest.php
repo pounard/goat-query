@@ -32,11 +32,13 @@ abstract class DatabaseAwareQueryTest extends TestCase
             if ($mysqlHost) {
                 $connection = new \PDO(sprintf('mysql:host=%s;dbname=%s', $mysqlHost, $mysqlBase), $mysqlUser, $mysqlPass);
                 $connection->query("SET character_set_client = 'UTF-8'");
+                $connection->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
                 yield [new PDOMySQLRunner($connection), false];
             }
             if ($pgsqlHost) {
                 $connection = new \PDO(sprintf('pgsql:host=%s;dbname=%s', $pgsqlHost, $pgsqlBase), $pgsqlUser, $pgsqlPass);
                 $connection->query("SET character_set_client = 'UTF-8'");
+                $connection->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
                 yield [new PDOPgSQLRunner($connection), false];
             }
         }

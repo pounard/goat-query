@@ -4,19 +4,17 @@ declare(strict_types=1);
 
 namespace Goat\Runner;
 
-use Goat\Converter\ConverterInterface;
-use Goat\Hydrator\HydratorInterface;
 use Goat\Query\QueryError;
 
 /**
  * Wraps a result iterator in order to paginate results
  */
-final class PagerResultIterator implements ResultIterator
+final class PagerResultIterator extends AbstractResultIteratorProxy
 {
-    private $result;
     private $count = 0;
     private $limit = 0;
     private $page = 0;
+    private $result;
 
     /**
      * Default constructor
@@ -34,43 +32,14 @@ final class PagerResultIterator implements ResultIterator
         if ($page < 1) {
             throw new QueryError(\sprintf("page numbering starts with 1, %d given", $page));
         }
+        if ($limit < 0) {
+            throw new QueryError(\sprintf("limit starts with 0, %d given", $page));
+        }
 
         $this->count = $count;
         $this->limit = $limit;
         $this->page = $page;
         $this->result = $result;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function setConverter(ConverterInterface $converter): void
-    {
-        $this->result->setConverter($converter);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function setHydrator(HydratorInterface $hydrator): void
-    {
-        $this->result->setHydrator($hydrator);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function count()
-    {
-        return $this->result->count();
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getIterator()
-    {
-        return $this->result;
     }
 
     /**
@@ -84,21 +53,11 @@ final class PagerResultIterator implements ResultIterator
     }
 
     /**
-     * {@inheritdoc}
-     */
-    public function setKeyColumn(string $name): ResultIterator
-    {
-        $this->result->setKeyColumn($name);
-
-        return $this;
-    }
-
-    /**
      * Get the number of results in this page
      */
     public function getCurrentCount(): int
     {
-        return $this->result->countRows();
+        return $this->getResult()->countRows();
     }
 
     /**
@@ -115,12 +74,9 @@ final class PagerResultIterator implements ResultIterator
     public function getStopOffset(): int
     {
         $stopOffset = $this->getStartOffset() + $this->getCurrentCount();
+        $totalCount = $this->getTotalCount();
 
-        if ($this->count < $stopOffset) {
-            $stopOffset = $this->count;
-        }
-
-        return $stopOffset;
+        return ($totalCount < $stopOffset) ? $totalCount : $stopOffset;
     }
 
     /**
@@ -128,7 +84,7 @@ final class PagerResultIterator implements ResultIterator
      */
     public function getLastPage(): int
     {
-        return (int)\max(1, \ceil($this->count / $this->limit));
+        return $this->limit ? (int)\max(1, \ceil($this->getTotalCount() / $this->limit)) : 1;
     }
 
     /**
@@ -169,77 +125,5 @@ final class PagerResultIterator implements ResultIterator
     public function getLimit(): int
     {
         return $this->limit;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function countColumns(): int
-    {
-        return $this->result->countColumns();
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function countRows(): int
-    {
-        return $this->result->countRows();
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function columnExists(string $name): bool
-    {
-        return $this->result->columnExists($name);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getColumnNames(): array
-    {
-        return $this->result->getColumnNames();
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getColumnType(string $name): string
-    {
-        return $this->result->getColumnType($name);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getColumnName(int $index): string
-    {
-        return $this->result->getColumnName($index);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function fetchField($name = null)
-    {
-        return $this->result->fetchField($name);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function fetchColumn($name = null)
-    {
-        return $this->result->fetchColumn($name);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function fetch()
-    {
-        return $this->result->fetch();
     }
 }
