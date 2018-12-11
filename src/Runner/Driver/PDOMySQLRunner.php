@@ -8,6 +8,7 @@ use Goat\Converter\ConverterInterface;
 use Goat\Converter\Driver\MySQLConverter;
 use Goat\Query\Impl\MySQL5Formatter;
 use Goat\Query\Writer\FormatterInterface;
+use Goat\Runner\Transaction;
 
 class PDOMySQLRunner extends AbstractPDORunner
 {
@@ -23,6 +24,14 @@ class PDOMySQLRunner extends AbstractPDORunner
      * {@inheritdoc}
      */
     public function supportsReturning(): bool
+    {
+        return false;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function supportsDeferingConstraints(): bool
     {
         return false;
     }
@@ -61,5 +70,13 @@ class PDOMySQLRunner extends AbstractPDORunner
     public function escapeIdentifier(string $string): string
     {
         return '`' . \str_replace('`', '``', $string) . '`';
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function doStartTransaction(int $isolationLevel = Transaction::REPEATABLE_READ): Transaction
+    {
+        return new MySQLTransaction($this, $isolationLevel);
     }
 }

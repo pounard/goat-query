@@ -9,6 +9,7 @@ use Goat\Converter\Driver\PgSQLArrayConverter;
 use Goat\Converter\Driver\PgSQLConverter;
 use Goat\Query\Impl\PgSQLFormatter;
 use Goat\Query\Writer\FormatterInterface;
+use Goat\Runner\Transaction;
 
 class PDOPgSQLRunner extends AbstractPDORunner
 {
@@ -18,6 +19,22 @@ class PDOPgSQLRunner extends AbstractPDORunner
     public function getDriverName(): string
     {
         return 'pgsql';
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function supportsReturning(): bool
+    {
+        return true;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function supportsDeferingConstraints(): bool
+    {
+        return true;
     }
 
     /**
@@ -58,5 +75,13 @@ class PDOPgSQLRunner extends AbstractPDORunner
     public function escapeIdentifier(string $string): string
     {
         return '"' . \str_replace('"', '""', $string) . '"';
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function doStartTransaction(int $isolationLevel = Transaction::REPEATABLE_READ): Transaction
+    {
+        return new PgSQLTransaction($this, $isolationLevel);
     }
 }
