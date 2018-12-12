@@ -45,7 +45,7 @@ interface Runner
      *   If set to true, explicitely allow to fetch the currently pending
      *   transaction, else errors will be raised
      *
-     * @throws \Goat\Error\TransactionError
+     * @throws \Goat\Runner\TransactionError
      *   If you asked a new transaction while another one is opened, or if the
      *   transaction fails starting
      *
@@ -71,7 +71,7 @@ interface Runner
      * @return string
      *   Generated unique identifier for the prepared query.
      */
-    public function prepareQuery($query, string $identifier = null): string;
+    public function prepareQuery($query, ?string $identifier = null): string;
 
     /**
      * Prepare query

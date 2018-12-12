@@ -64,7 +64,19 @@ abstract class AbstractRunner implements Runner, EscaperInterface
     }
 
     /**
+     * Get formatter
+     *
+     * @internal For profiling and debugging purpose only
+     */
+    final public function getFormatter(): FormatterInterface
+    {
+        return $this->formatter;
+    }
+
+    /**
      * Get escaper
+     *
+     * @internal For profiling and debugging purpose only
      */
     final protected function getEscaper(): EscaperInterface
     {
