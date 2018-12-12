@@ -18,6 +18,7 @@ use Goat\Query\SelectQuery;
 use Goat\Query\Statement;
 use Goat\Query\UpdateQuery;
 use Goat\Query\Where;
+use Goat\Query\ExpressionLike;
 
 /**
  * Standard SQL query formatter: this implementation conforms as much as it
@@ -933,6 +934,32 @@ class DefaultFormatter extends FormatterBase
     }
 
     /**
+     * Format like expression
+     *
+     * @param ExpressionLike $value
+     *
+     * @return string
+     */
+    protected function formatExpressionLike(ExpressionLike $value) : string
+    {
+        if ($value->hasValue()) {
+            $pattern = $value->getPattern(
+                $this->escaper->escapeLike(
+                    $value->getUnsaveValue()
+                )
+            );
+        } else {
+            $pattern = $value->getPattern();
+        }
+
+        return \sprintf('%s %s %s',
+            $this->format($value->getColumn()),
+            $value->getOperator(),
+            $this->escaper->escapeLiteral($pattern)
+        );
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function format(Statement $query) : string
@@ -945,6 +972,8 @@ class DefaultFormatter extends FormatterBase
             return $this->formatExpressionRelation($query);
         } else if ($query instanceof ExpressionValue) {
             return $this->formatExpressionValue($query);
+        } else if ($query instanceof ExpressionLike) {
+            return $this->formatExpressionLike($query);
         } else if ($query instanceof DeleteQuery) {
             return $this->formatQueryDelete($query);
         } else if ($query instanceof SelectQuery) {
