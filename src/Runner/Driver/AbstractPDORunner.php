@@ -190,7 +190,7 @@ abstract class AbstractPDORunner extends AbstractRunner
      */
     public function escapeLiteral(string $string): string
     {
-        return $this->pdo->quote($string, \PDO::PARAM_STR);
+        return $this->connection->quote($string, \PDO::PARAM_STR);
     }
 
     /**
@@ -206,7 +206,7 @@ abstract class AbstractPDORunner extends AbstractRunner
      */
     public function escapeBlob(string $word): string
     {
-        return $this->pdo->quote($word /*, \PDO::PARAM_LOB */);
+        return $this->connection->quote($word /*, \PDO::PARAM_LOB */);
     }
 
     /**
