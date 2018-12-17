@@ -165,7 +165,7 @@ abstract class AbstractRunner implements Runner, EscaperInterface
     /**
      * {@inheritdoc}
      */
-    public function runTransaction(callable $callback, int $isolationLevel = Transaction::REPEATABLE_READ): void
+    public function runTransaction(callable $callback, int $isolationLevel = Transaction::REPEATABLE_READ)
     {
         $ret = null;
         $transaction = $this->startTransaction($isolationLevel, true);
