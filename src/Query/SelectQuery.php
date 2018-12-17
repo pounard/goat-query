@@ -473,6 +473,7 @@ final class SelectQuery extends Query
         // @todo do not remove necessary fields for group by and other
         //   aggregates functions (SQL standard)
         return (clone $this)
+            ->setOption('class', null)
             ->removeAllColumns()
             ->removeAllOrder()
             ->range(0, 0)
