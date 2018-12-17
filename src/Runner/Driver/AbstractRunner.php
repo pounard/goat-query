@@ -163,6 +163,32 @@ abstract class AbstractRunner implements Runner, EscaperInterface
     }
 
     /**
+     * {@inheritdoc}
+     */
+    public function runTransaction(callable $callback, int $isolationLevel = Transaction::REPEATABLE_READ): void
+    {
+        $ret = null;
+        $transaction = $this->startTransaction($isolationLevel, true);
+
+        try {
+            if (!$transaction->isStarted()) {
+                $transaction->start();
+            }
+            $ret = \call_user_func($callback, $this->getQueryBuilder(), $transaction, $this);
+            $transaction->commit();
+
+        } catch (\Throwable $e) {
+            if ($transaction->isStarted()) {
+                $transaction->rollback();
+            }
+
+            throw $e;
+        }
+
+        return $ret;
+    }
+
+    /**
      * Create a new transaction object
      */
     abstract protected function doStartTransaction(int $isolationLevel = Transaction::REPEATABLE_READ): Transaction;

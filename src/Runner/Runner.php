@@ -58,7 +58,22 @@ interface Runner
      *
      * @return bool
      */
-    public function isTransactionPending() : bool;
+    public function isTransactionPending(): bool;
+
+    /**
+     * Run code in transaction, automatic rollback on fail.
+     *
+     * Exception will be rethrown.
+     *
+     * @param callable $callback
+     *   Any callable whose first three parameters are respectively a
+     *   \Goat\Query\QueryBuilder instance, a \Goat\Runner\Transaction instance
+     *   and finally a \Goat\Runner\Runner instance
+     *
+     * @return mixed
+     *   Anything that the callable returned.
+     */
+    public function runTransaction(callable $callback, int $isolationLevel = Transaction::REPEATABLE_READ);
 
     /**
      * Prepare query

@@ -101,7 +101,7 @@ final class QueryPagerResultIterator extends AbstractResultIteratorProxy
         return $this->result ?? (
             $this->result = $this
                 ->query
-                ->range($this->limit, $this->page)
+                ->range($this->limit, $this->getStartOffset())
                 ->execute($this->queryArguments, $this->queryOptions)
         );
     }
