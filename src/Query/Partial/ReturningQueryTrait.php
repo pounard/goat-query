@@ -47,8 +47,11 @@ trait ReturningQueryTrait
      * @param string $alias
      *   If alias to be different from the column
      */
-    public function returning($expression, ?string $alias = null): self
+    public function returning($expression = null, ?string $alias = null): self
     {
+        if (!$expression) {
+            $expression = '*';
+        }
         if (!$alias) {
             if (!\is_string($expression) && !$expression instanceof Expression) {
                 throw new QueryError("RETURNING values can only be column names or expressions using them from the previous statement");
