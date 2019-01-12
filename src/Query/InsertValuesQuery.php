@@ -89,11 +89,7 @@ final class InsertValuesQuery extends Query
         }
 
         foreach ($values as $value) {
-            if ($value instanceof ExpressionValue) {
-                $this->arguments->add($value->getValue(), null, $value->getType());
-            } else {
-                $this->arguments->add($value);
-            }
+            $this->arguments->add($value);
         }
 
         $this->valueCount++;

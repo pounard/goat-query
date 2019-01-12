@@ -7,7 +7,7 @@ namespace Goat\Query;
 /**
  * Represents a raw value
  */
-final class ExpressionValue implements Expression
+final class ExpressionValue implements Expression, ValueRepresentation
 {
     private $name;
     private $type;

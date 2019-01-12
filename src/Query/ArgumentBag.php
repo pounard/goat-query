@@ -46,6 +46,16 @@ class ArgumentBag
             throw new QueryError(\sprintf("%s argument name is already in use in this query", $name));
         }
 
+        if ($value instanceof ValueRepresentation) {
+            if (!$type) {
+                $type = $value->getType();
+            }
+            if (!$name) {
+                $name = $value->getName();
+            }
+            $value = $value->getValue();
+        }
+
         $index = $this->index++;
 
         $this->data[$index] = $value;
