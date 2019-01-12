@@ -451,7 +451,7 @@ final class DefaultConverter implements ConverterInterface
             // JSON
             case 'json':
             case 'jsonb':
-                return \json_encode($value, true);
+                return \json_encode($value);
 
             // UUID
             case 'uuid':
