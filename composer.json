@@ -32,5 +32,8 @@
     },
     "require-dev" : {
         "phpunit/phpunit" : "7.*"
+    },
+    "suggest": {
+        "ramsey/uuid": "For UUID database column type support"
     }
 }

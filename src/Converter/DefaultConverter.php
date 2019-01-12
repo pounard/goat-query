@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Goat\Converter;
 
 use Goat\Converter\Impl\IntervalValueConverter;
+use Ramsey\Uuid\Uuid;
+use Ramsey\Uuid\UuidInterface;
 
 /**
  * Converter map contains references to all existing converters and is the
@@ -93,6 +95,7 @@ final class DefaultConverter implements ConverterInterface
     private $aliasMap = [];
     private $converters = [];
     private $debug = false;
+    private $uuidSupport;
 
     /**
      * Toggle debug mode
@@ -151,6 +154,14 @@ final class DefaultConverter implements ConverterInterface
         }
 
         return $this;
+    }
+
+    /**
+     * Does it supports UUID
+     */
+    private function supportsUuid(): bool
+    {
+        return $this->uuidSupport ?? ($this->uuidSupport = \class_exists(Uuid::class));
     }
 
     /**
@@ -227,7 +238,10 @@ final class DefaultConverter implements ConverterInterface
 
             // UUID
             case 'uuid':
-                return 'string'; // @todo third party library support ?
+              if ($this->supportsUuid()) {
+                  return UuidInterface::class;
+              }
+              return 'string'; // @todo third party library support ?
 
             // Timestamp, Date without time and time without date
             case 'datetime':
@@ -313,6 +327,9 @@ final class DefaultConverter implements ConverterInterface
 
             // UUID
             case 'uuid':
+                if ($this->supportsUuid()) {
+                    return Uuid::fromString($value);
+                }
                 return (string)$value;
 
             // Timestamp, Date without time and time without date
