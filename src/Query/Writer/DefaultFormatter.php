@@ -930,6 +930,13 @@ class DefaultFormatter extends FormatterBase
      */
     protected function formatExpressionValue(ExpressionValue $value) : string
     {
+        if ($type = $value->getType()) {
+            return \sprintf(
+                '%s::%s',
+                $this->formatPlaceholder($value->getValue()),
+                $type
+            );
+        }
         return $this->formatPlaceholder($value->getValue());
     }
 
