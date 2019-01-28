@@ -64,9 +64,7 @@ abstract class AbstractRunner implements Runner, EscaperInterface
     }
 
     /**
-     * Get formatter
-     *
-     * @internal For profiling and debugging purpose only
+     * {@inheritdoc}
      */
     final public function getFormatter(): FormatterInterface
     {

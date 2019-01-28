@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Goat\Runner;
 
 use Goat\Query\QueryBuilder;
+use Goat\Query\Writer\FormatterInterface;
 
 interface Runner
 {
@@ -29,6 +30,11 @@ interface Runner
      * @return QueryBuilder
      */
     public function getQueryBuilder(): QueryBuilder;
+
+    /**
+     * Get SQL formatter
+     */
+    public function getFormatter(): FormatterInterface;
 
     /**
      * Creates a new transaction
