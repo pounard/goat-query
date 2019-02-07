@@ -26,8 +26,6 @@ interface Runner
 
     /**
      * Get the query builder
-     *
-     * @return QueryBuilder
      */
     public function getQueryBuilder(): QueryBuilder;
 

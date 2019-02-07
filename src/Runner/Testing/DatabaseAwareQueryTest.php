@@ -17,26 +17,26 @@ abstract class DatabaseAwareQueryTest extends TestCase
      */
     public function getRunners(): iterable
     {
-        if ($mysqlHost = getenv('MYSQL_HOSTNAME')) {
-            $mysqlBase = getenv('MYSQL_DATABASE');
-            $mysqlUser = getenv('MYSQL_USERNAME');
-            $mysqlPass = getenv('MYSQL_PASSWORD');
+        if ($mysqlHost = \getenv('MYSQL_HOSTNAME')) {
+            $mysqlBase = \getenv('MYSQL_DATABASE');
+            $mysqlUser = \getenv('MYSQL_USERNAME');
+            $mysqlPass = \getenv('MYSQL_PASSWORD');
         }
-        if ($pgsqlHost = getenv('PGSQL_HOSTNAME')) {
-            $pgsqlBase = getenv('PGSQL_DATABASE');
-            $pgsqlUser = getenv('PGSQL_PASSWORD');
-            $pgsqlPass = getenv('PGSQL_USERNAME');
+        if ($pgsqlHost = \getenv('PGSQL_HOSTNAME')) {
+            $pgsqlBase = \getenv('PGSQL_DATABASE');
+            $pgsqlUser = \getenv('PGSQL_PASSWORD');
+            $pgsqlPass = \getenv('PGSQL_USERNAME');
         }
 
         if (\getenv('ENABLE_PDO')) {
             if ($mysqlHost) {
-                $connection = new \PDO(sprintf('mysql:host=%s;dbname=%s', $mysqlHost, $mysqlBase), $mysqlUser, $mysqlPass);
+                $connection = new \PDO(\sprintf('mysql:host=%s;dbname=%s', $mysqlHost, $mysqlBase), $mysqlUser, $mysqlPass);
                 $connection->query("SET character_set_client = 'UTF-8'");
                 $connection->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
                 yield [new PDOMySQLRunner($connection), false];
             }
             if ($pgsqlHost) {
-                $connection = new \PDO(sprintf('pgsql:host=%s;dbname=%s', $pgsqlHost, $pgsqlBase), $pgsqlUser, $pgsqlPass);
+                $connection = new \PDO(\sprintf('pgsql:host=%s;dbname=%s', $pgsqlHost, $pgsqlBase), $pgsqlUser, $pgsqlPass);
                 $connection->query("SET character_set_client = 'UTF-8'");
                 $connection->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
                 yield [new PDOPgSQLRunner($connection), false];

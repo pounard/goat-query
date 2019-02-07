@@ -169,9 +169,7 @@ final class DefaultConverter implements ConverterInterface
      */
     private function get(string $type) : ?ValueConverterInterface
     {
-        if (isset($this->aliasMap[$type])) {
-            $type = $this->aliasMap[$type];
-        }
+        $type = $this->aliasMap[$type] ?? $type;
 
         if (isset($this->converters[$type])) {
             return $this->converters[$type];
@@ -315,7 +313,7 @@ final class DefaultConverter implements ConverterInterface
                 if (\is_bool($value)) {
                     return $value;
                 }
-                if (!$value || 'f' === $value || 'F' === $value || 'FALSE' === \strtolower($value)) {
+                if (!$value || 'f' === $value || 'F' === $value || 'false' === \strtolower($value)) {
                     return false;
                 }
                 return (bool)$value;
