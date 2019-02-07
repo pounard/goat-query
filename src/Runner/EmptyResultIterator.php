@@ -49,6 +49,14 @@ final class EmptyResultIterator implements ResultIterator
     /**
      * {@inheritdoc}
      */
+    public function setTypeMap (array $map): ResultIterator
+    {
+        return $this;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function getIterator()
     {
         return new \EmptyIterator();

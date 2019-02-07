@@ -42,6 +42,16 @@ abstract class AbstractResultIteratorProxy implements ResultIterator
     /**
      * {@inheritdoc}
      */
+    final public function setTypeMap (array $map): ResultIterator
+    {
+        $this->getResult()->setTypeMap($map);
+
+        return $this;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     final public function count()
     {
         return ($this->count ?? ($this->count = $this->getResult()->countRows()));

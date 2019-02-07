@@ -4,16 +4,12 @@ declare(strict_types=1);
 
 namespace Goat\Runner\Driver;
 
-use Goat\Converter\ConverterInterface;
 use Goat\Runner\AbstractResultIterator;
-use Goat\Runner\InvalidDataAccessError;
 
 class PDOResultIterator extends AbstractResultIterator
 {
     protected $statement;
     protected $columnCount = 0;
-    protected $columnNameMap = [];
-    protected $columnTypeMap = [];
 
     /**
      * Default constructor
@@ -29,11 +25,19 @@ class PDOResultIterator extends AbstractResultIterator
     /**
      * {@inheritdoc}
      */
-    public function setConverter(ConverterInterface $converter): void
+    protected function getColumnInfoFromDriver(int $index): array
     {
-        parent::setConverter($converter);
+        $meta = $this->statement->getColumnMeta($index);
 
-        $this->collectMetaData();
+        return [$meta['name'], $this->parseType($meta['native_type'] ?? 'string')];
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function countColumnsFromDriver(): int
+    {
+        return $this->statement->columnCount();
     }
 
     /**
@@ -104,21 +108,6 @@ class PDOResultIterator extends AbstractResultIterator
     }
 
     /**
-     * Collect data types and other data from current statement
-     */
-    protected function collectMetaData()
-    {
-        $this->columnCount = $this->statement->columnCount();
-
-        for ($i = 0; $i < $this->columnCount; ++$i) {
-            $meta = $this->statement->getColumnMeta($i);
-            $key = $meta['name'];
-            $this->columnNameMap[$key] = $i;
-            $this->columnTypeMap[$key] = $this->parseType($meta['native_type']);
-        }
-    }
-
-    /**
      * {@inheritdoc}
      */
     public function getIterator()
@@ -135,74 +124,9 @@ class PDOResultIterator extends AbstractResultIterator
     /**
      * {@inheritdoc}
      */
-    public function countColumns(): int
-    {
-        return $this->columnCount;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function countRows(): int
+    public function countRows (): int
     {
         return $this->statement->rowCount();
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function columnExists(string $name): bool
-    {
-        return isset($this->columnNameMap[$name]);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getColumnNames(): array
-    {
-        return \array_flip($this->columnNameMap);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getColumnType(string $name): string
-    {
-        if (isset($this->columnTypeMap[$name])) {
-            return $this->columnTypeMap[$name];
-        }
-
-        throw new InvalidDataAccessError(\sprintf("column '%s' does not exist", $name));
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getColumnName(int $index): string
-    {
-        if (!\is_int($index)) {
-            throw new InvalidDataAccessError(\sprintf("'%s' is not an integer.\n", $index));
-        }
-
-        $pos = \array_search($index, $this->columnNameMap);
-        if (false !== $pos) {
-            return (string)$pos;
-        }
-
-        throw new InvalidDataAccessError(\sprintf("column %d is out of bounds", $index));
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    protected function getColumnNumber(string $name): int
-    {
-        if (isset($this->columnNameMap[$name])) {
-            return $this->columnNameMap[$name];
-        }
-
-        throw new InvalidDataAccessError(\sprintf("column '%s' does not exist", $name));
     }
 
     /**

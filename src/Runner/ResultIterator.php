@@ -36,6 +36,14 @@ interface ResultIterator extends \IteratorAggregate, \Countable
     public function setKeyColumn(string $name): self;
 
     /**
+     * Set type map for faster hydration
+     *
+     * @param string[][]
+     *   Keys are aliases from the result, values are types.
+     */
+    public function setTypeMap(array $map): self;
+
+    /**
      * Get the column count
      */
     public function countColumns(): int;

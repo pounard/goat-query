@@ -10,9 +10,30 @@ use Goat\Query\QueryError;
 
 abstract class AbstractResultIterator implements ResultIterator
 {
+    private $columnCount;
+    private $columnNameMap = [];
+    private $columnTypeMap = [];
+    private $everythingCollected = false;
+    private $loadedColumns = [];
+    private $userTypeMap = [];
     protected $columnKey;
     protected $converter;
     protected $hydrator;
+
+    /**
+     * Implementation of both getColumnType() and getColumnName().
+     *
+     * @param int $index
+     *
+     * @return string[]
+     *   First value must be column name, second column type
+     */
+    abstract protected function getColumnInfoFromDriver(int $index): array;
+
+    /**
+     * Real implementation of getColumnName().
+     */
+    abstract protected function countColumnsFromDriver(): int;
 
     /**
      * {@inheritdoc}
@@ -115,6 +136,114 @@ abstract class AbstractResultIterator implements ResultIterator
     }
 
     /**
+     * Collect single column information
+     */
+    private function collectColumnInfo(int $index)
+    {
+        if (!isset($this->loadedColumns[$index])) {
+            list($name, $type) = $this->getColumnInfoFromDriver($index);
+            $this->loadedColumns[$index] = $name;
+            $this->columnNameMap[$name] = $index;
+            $this->columnTypeMap[$name] = $type;
+        }
+    }
+
+    /**
+     * Collect all column names, this to be called only when necessary.
+     *
+     * Using PDO, for example, it will do an extra round trip with the server per column.
+     */
+    private function collectAllColumnInfo()
+    {
+        if (!$this->everythingCollected) {
+            for ($i = 0; $i < $this->countColumns(); ++$i) {
+                if (!isset($this->loadedColumns[$i])) {
+                    $this->collectColumnInfo($i);
+                }
+            }
+            $this->everythingCollected = true;
+        }
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function countColumns(): int
+    {
+        return $this->columnCount ?? ($this->columnCount = $this->countColumnsFromDriver());
+    }
+
+    /**
+     * Get column type
+     */
+    public function getColumnType(string $name): string
+    {
+        if (isset($this->userTypeMap[$name])) {
+            return $this->userTypeMap[$name];
+        }
+
+        $this->collectAllColumnInfo();
+
+        if (isset($this->columnTypeMap[$name])) {
+            return $this->columnTypeMap[$name];
+        }
+
+        throw new QueryError(\sprintf("column '%s' does not exist in result", $name));
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function setTypeMap(array $map): ResultIterator
+    {
+        $this->userTypeMap = $map;
+
+        return $this;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function columnExists(string $name): bool
+    {
+        $this->collectAllColumnInfo();
+
+        return isset($this->columnNameMap[$name]);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getColumnNames(): array
+    {
+        $this->collectAllColumnInfo();
+
+        return \array_flip($this->columnNameMap);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getColumnName(int $index): string
+    {
+        if (!\is_int($index)) {
+            throw new InvalidDataAccessError(\sprintf("'%s' is not an integer.\n", $index));
+        }
+        if ($index < 0) {
+            throw new InvalidDataAccessError(\sprintf("Column count start with 0: %d given.\n", $index));
+        }
+        if (($count = $this->countColumns()) < $index + 1) {
+            throw new InvalidDataAccessError(\sprintf("Column count is %d: %d given.\n", $count, $index));
+        }
+
+        if (!isset($this->loadedColumns[$index])) {
+            $this->collectColumnInfo($index);
+        }
+
+        return $this->loadedColumns[$index];
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function fetchField($name = null)
@@ -122,7 +251,7 @@ abstract class AbstractResultIterator implements ResultIterator
         foreach ($this as $row) {
             if ($name) {
                 if (!\array_key_exists($name, $row)) {
-                    throw new InvalidDataAccessError("invalid column '%s'", $name);
+                    throw new QueryError(\sprintf("column '%s' does not exist in result", $name));
                 }
                 return $row[$name];
             }
