@@ -16,6 +16,14 @@ abstract class AbstractResultIteratorProxy implements ResultIterator
     /**
      * {@inheritdoc}
      */
+    public function setDebug(bool $enable): void
+    {
+        $this->getResult()->setDebug($enable);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     final public function setConverter(ConverterInterface $converter): void
     {
         $this->getResult()->setConverter($converter);

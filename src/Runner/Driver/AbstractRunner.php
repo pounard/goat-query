@@ -19,6 +19,7 @@ use Goat\Runner\TransactionError;
 abstract class AbstractRunner implements Runner, EscaperInterface
 {
     private $currentTransaction;
+    private $debug = false;
     private $hydratorMap;
     private $queryBuilder;
     protected $converter;
@@ -34,6 +35,22 @@ abstract class AbstractRunner implements Runner, EscaperInterface
         $this->formatter = $this->createFormatter();
         $this->formatter->setEscaper($this);
         $this->setConverter(new DefaultConverter());
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    final public function setDebug(bool $value): void
+    {
+        $this->debug = $value;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    final public function isDebugEnabled(): bool
+    {
+        return $this->debug;
     }
 
     /**
@@ -231,6 +248,17 @@ abstract class AbstractRunner implements Runner, EscaperInterface
             // Class can be either an alias or a valid class name, the hydrator
             // will proceed with all runtime checks to ensure that.
             $result->setHydrator($this->getHydratorMap()->get($options['class']));
+        }
+
+        if (!empty($options['types'])) {
+            if (!\is_array($options['types'])) {
+                throw new QueryError(\sprintf("'types' option must be a string array, keys are result column aliases, values are types"));
+            }
+            $result->setTypeMap($options['types']);
+        }
+
+        if ($this->debug || (isset($options['debug']) && $options['debug'])) {
+            $result->setDebug(true);
         }
 
         return $result;

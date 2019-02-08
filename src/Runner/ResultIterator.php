@@ -36,6 +36,11 @@ interface ResultIterator extends \IteratorAggregate, \Countable
     public function setKeyColumn(string $name): self;
 
     /**
+     * Toggle debug mode
+     */
+    public function setDebug(bool $enable): void;
+
+    /**
      * Set type map for faster hydration
      *
      * @param string[][]

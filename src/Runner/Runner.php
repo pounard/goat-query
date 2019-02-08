@@ -25,6 +25,16 @@ interface Runner
     public function supportsDeferingConstraints(): bool;
 
     /**
+     * Toggle debug mode
+     */
+    public function setDebug(bool $value): void;
+
+    /**
+     * Is debug mode enabled
+     */
+    public function isDebugEnabled(): bool;
+
+    /**
      * Get the query builder
      */
     public function getQueryBuilder(): QueryBuilder;

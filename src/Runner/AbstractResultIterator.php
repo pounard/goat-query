@@ -13,6 +13,7 @@ abstract class AbstractResultIterator implements ResultIterator
     private $columnCount;
     private $columnNameMap = [];
     private $columnTypeMap = [];
+    private $debug = false;
     private $everythingCollected = false;
     private $loadedColumns = [];
     private $userTypeMap = [];
@@ -34,6 +35,22 @@ abstract class AbstractResultIterator implements ResultIterator
      * Real implementation of getColumnName().
      */
     abstract protected function countColumnsFromDriver(): int;
+
+    /**
+     * {@inheritdoc}
+     */
+    public function setDebug(bool $enable): void
+    {
+        $this->debug = $enable;
+    }
+
+    /**
+     * Is debug mode enabled.
+     */
+    protected function isDebugEnabled(): bool
+    {
+        return $this->debug;
+    }
 
     /**
      * {@inheritdoc}
@@ -65,7 +82,9 @@ abstract class AbstractResultIterator implements ResultIterator
             return $this->converter->fromSQL($this->getColumnType($name), $value);
         }
 
-        \trigger_error("result iterator has no converter set", E_USER_WARNING);
+        if ($this->debug) {
+            \trigger_error("result iterator has no converter set", E_USER_WARNING);
+        }
 
         return $value;
     }
@@ -81,7 +100,7 @@ abstract class AbstractResultIterator implements ResultIterator
      */
     protected function convertValues(array $row): array
     {
-        if (!$this->converter) {
+        if (!$this->converter && $this->debug) {
             \trigger_error("result iterator has no converter set", E_USER_WARNING);
 
             return $row;
@@ -126,7 +145,8 @@ abstract class AbstractResultIterator implements ResultIterator
      */
     public function setKeyColumn(string $name): ResultIterator
     {
-        if (!$this->columnExists($name)) {
+        // Let it pass until iteration silently when not in debug mode
+        if ($this->debug && !$this->columnExists($name)) {
             throw new QueryError(\sprintf("column '%s' does not exist in result", $name));
         }
 
@@ -188,7 +208,11 @@ abstract class AbstractResultIterator implements ResultIterator
             return $this->columnTypeMap[$name];
         }
 
-        throw new QueryError(\sprintf("column '%s' does not exist in result", $name));
+        if ($this->debug) {
+            throw new QueryError(\sprintf("column '%s' does not exist in result", $name));
+        }
+
+        return 'varchar'; // Stupid but will never fail at conversion time.
     }
 
     /**

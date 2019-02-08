@@ -27,6 +27,13 @@ final class EmptyResultIterator implements ResultIterator
     /**
      * {@inheritdoc}
      */
+    public function setDebug(bool $enable): void
+    {
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function setConverter(ConverterInterface $converter): void
     {
     }
