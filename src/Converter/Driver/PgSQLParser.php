@@ -41,6 +41,33 @@ final class PgSQLParser
     }
 
     /**
+     * Write array
+     */
+    public static function writeArray(array $data, callable $serializeItem): string
+    {
+        $values = [];
+
+        foreach ($data as $value) {
+            if (\is_array($value)) {
+                $values[] = self::writeArray($value, $serializeItem);
+            } else {
+                $values[] = \call_user_func($serializeItem, $value);
+            }
+        }
+
+        return '{'.\implode(',', $values).'}';
+    }
+
+    /**
+     * @internal
+     * @todo I think it is wrong.
+     */
+    private static function escapeString(string $value): string
+    {
+        return "'".\str_replace('\\', '\\\\', $value)."'";
+    }
+
+    /**
      * @internal
      */
     private static function findUnquotedStringEnd(string $string, int $start, int $length): int

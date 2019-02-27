@@ -85,8 +85,25 @@ final class PgSQLArrayConverter implements ConverterInterface
      */
     public function toSQL(string $type, $value): ?string
     {
-        // @todo We do not handle this way conversion for now
-        return $this->converter->toSQL($type, $value);
+        if (ConverterInterface::TYPE_UNKNOWN === $type) {
+            $type = $this->guessType($value);
+        }
+
+        $subType = $this->findSubtype($type);
+
+        if (null === $value || !$subType || !\is_array($value)) {
+            return $this->converter->toSQL($subType ?? $type, $value);
+        }
+        if (empty($value)) {
+            return '{}';
+        }
+
+        return PgSQLParser::writeArray(
+            $value,
+            function ($value) use ($subType) {
+                return $this->converter->toSQL($subType, $value);
+            }
+        );
     }
 
     /**
@@ -106,7 +123,14 @@ final class PgSQLArrayConverter implements ConverterInterface
      */
     public function guessType($value): string
     {
-        // @todo We do not handle this way conversion for now
+        if (\is_array($value)) {
+            if (empty($value)) {
+                return ConverterInterface::TYPE_NULL;
+            }
+
+            return $this->converter->guessType(\reset($value)).'[]';
+        }
+
         return $this->converter->guessType($value);
     }
 }
