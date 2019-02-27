@@ -2,6 +2,7 @@
 
 namespace Goat\Runner\Testing;
 
+use GeneratedHydrator\Configuration;
 use Goat\Hydrator\HydratorMap;
 use Goat\Runner\Runner;
 use Goat\Runner\Driver\AbstractRunner;
@@ -67,7 +68,7 @@ abstract class DatabaseAwareQueryTest extends TestCase
     protected function prepare(Runner $runner)
     {
         if ($runner instanceof AbstractRunner && \class_exists(HydratorMap::class)) {
-            $runner->setHydratorMap(new HydratorMap(\sys_get_temp_dir().'/'.\uniqid('test-')));
+            $runner->setHydratorMap(new Configuration());
         }
         $this->createTestSchema($runner);
         $this->createTestData($runner);
