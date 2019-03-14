@@ -15,6 +15,7 @@ use Goat\Runner\ResultIterator;
 use Goat\Runner\Runner;
 use Goat\Runner\Transaction;
 use Goat\Runner\TransactionError;
+use Goat\Hydrator\HydratorInterface;
 
 abstract class AbstractRunner implements Runner, EscaperInterface
 {
@@ -244,7 +245,18 @@ abstract class AbstractRunner implements Runner, EscaperInterface
             }
         }
 
-        if (isset($options['class'])) {
+        if (isset($options['hydrator'])) {
+            if (isset($options['class']) && $this->isDebugEnabled()) {
+                \trigger_error("'hydrator' option overrides the 'class' option", E_USER_WARNING);
+            }
+            if (!$options['hydrator'] instanceof HydratorInterface) {
+                throw new QueryError(\sprintf(
+                    "'hydrator' option must be an instance of '%s' or a callable, found '%s'",
+                    HydratorInterface::class, \gettype($options['hydrator'])
+                ));
+            }
+            $result->setHydrator($options['hydrator']);
+        } else if (isset($options['class'])) {
             // Class can be either an alias or a valid class name, the hydrator
             // will proceed with all runtime checks to ensure that.
             $result->setHydrator($this->getHydratorMap()->get($options['class']));

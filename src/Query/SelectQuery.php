@@ -474,6 +474,7 @@ final class SelectQuery extends Query
         //   aggregates functions (SQL standard)
         return (clone $this)
             ->setOption('class', null)
+            ->setOption('hydrator', null)
             ->removeAllColumns()
             ->removeAllOrder()
             ->range(0, 0)
