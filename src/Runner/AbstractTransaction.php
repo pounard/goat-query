@@ -16,6 +16,12 @@ abstract class AbstractTransaction implements Transaction
      */
     const SAVEPOINT_PREFIX = 'gsp_';
 
+    private $isolationLevel = self::REPEATABLE_READ;
+    private $savepoint = 0;
+    private $savepoints = [];
+    private $started = false;
+    protected $runner;
+
     /**
      * Get transaction level string
      */
@@ -39,12 +45,6 @@ abstract class AbstractTransaction implements Transaction
                 throw new TransactionError(\sprintf("%s: unknown transaction level", $isolationLevel));
         }
     }
-
-    private $isolationLevel = self::REPEATABLE_READ;
-    private $savepoint = 0;
-    private $savepoints = [];
-    private $started = false;
-    protected $runner;
 
     /**
      * Default constructor
@@ -179,9 +179,10 @@ abstract class AbstractTransaction implements Transaction
      */
     public function start(): Transaction
     {
-        $this->doTransactionStart($this->isolationLevel);
-
-        $this->started = true;
+        if (!$this->started) {
+            $this->doTransactionStart($this->isolationLevel);
+            $this->started = true;
+        }
 
         return $this;
     }
@@ -223,7 +224,7 @@ abstract class AbstractTransaction implements Transaction
     /**
      * {@inheritdoc}
      */
-    public function savepoint(string $name = null): string
+    public function savepoint(string $name = null): TransactionSavepoint
     {
         if (!$this->started) {
             throw new TransactionError(\sprintf("can not commit a non-running transaction"));
@@ -239,9 +240,23 @@ abstract class AbstractTransaction implements Transaction
 
         $this->doCreateSavepoint($name);
 
-        $this->savepoints[$name] = true;
+        return $this->savepoints[$name] = new TransactionSavepoint($name, $this);
+    }
 
-        return $name;
+    /**
+     * {@inheritdoc}
+     */
+    public function isNested(): bool
+    {
+        return false;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getSavepointName(): ?string
+    {
+        return null;
     }
 
     /**
@@ -291,6 +306,9 @@ abstract class AbstractTransaction implements Transaction
         }
         if (!isset($this->savepoints[$name])) {
             throw new TransactionError(\sprintf("%s: savepoint does not exists or is not handled by this object", $name));
+        }
+        if (!$this->savepoints[$name]) {
+            throw new TransactionError(\sprintf("%s: savepoint was already rollbacked", $name));
         }
 
         $this->doRollbackToSavepoint($name);

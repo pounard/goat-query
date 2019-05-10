@@ -20,6 +20,11 @@ interface Runner
     public function supportsReturning(): bool;
 
     /**
+     * Does this driver supports transaction savepoints
+     */
+    public function supportsTransactionSavepoints(): bool;
+
+    /**
      * Does this driver supports deferring constraints
      */
     public function supportsDeferingConstraints(): bool;
@@ -65,7 +70,12 @@ interface Runner
      *
      * @return Transaction
      */
-    public function startTransaction(int $isolationLevel = Transaction::REPEATABLE_READ, bool $allowPending = false): Transaction;
+    public function createTransaction(int $isolationLevel = Transaction::REPEATABLE_READ, bool $allowPending = true): Transaction;
+
+    /**
+     * Alias of createTransaction() but it will force it to start
+     */
+    public function beginTransaction(int $isolationLevel = Transaction::REPEATABLE_READ, bool $allowPending = true): Transaction;
 
     /**
      * Is there a pending transaction

@@ -57,6 +57,16 @@ abstract class AbstractRunner implements Runner, EscaperInterface
     /**
      * {@inheritdoc}
      *
+     * Sensible default since most major RDBMS support savepoints
+     */
+    public function supportsTransactionSavepoints(): bool
+    {
+        return true;
+    }
+
+    /**
+     * {@inheritdoc}
+     *
      * Only MySQL does not support this, so this is a sensible default.
      */
     public function supportsReturning(): bool
@@ -135,39 +145,50 @@ abstract class AbstractRunner implements Runner, EscaperInterface
     }
 
     /**
-     * {@inheritdoc}
+     * Get current transaction if any
      */
-    final public function startTransaction(int $isolationLevel = Transaction::REPEATABLE_READ, bool $allowPending = false): Transaction
+    final private function findCurrentTransaction(): ?Transaction
     {
-        // Fetch transaction from the WeakRef if possible
         if ($this->currentTransaction) {
-            // We need to proceed to additional checks to ensure the pending
-            // transaction still exists and si started, using WeakRef the
-            // object could already have been garbage collected
             if ($this->currentTransaction->isStarted()) {
-                if (!$allowPending) {
-                    throw new TransactionError("a transaction already been started, you cannot nest transactions");
-                }
-
                 return $this->currentTransaction;
-
             } else {
+                // Transparently cleanup leftovers
                 unset($this->currentTransaction);
             }
         }
+        return null;
+    }
 
-        // Acquire a weak reference if possible, this will allow the transaction
-        // to fail upon __destruct() when the user leaves the transaction scope
-        // without closing it properly. Without the ext-weakref extension, the
-        // transaction will fail during PHP shutdown instead, errors will be
-        // less understandable for the developper, and code will fail much later
-        // and possibly run lots of things it should not. Since it's during a
-        // pending transaction it will not cause data consistency bugs, it will
-        // just make it harder to debug.
+    /**
+     * {@inheritdoc}
+     */
+    final public function createTransaction(int $isolationLevel = Transaction::REPEATABLE_READ, bool $allowPending = true): Transaction
+    {
+        $transaction = $this->findCurrentTransaction();
+
+        if ($transaction) {
+            if (!$allowPending) {
+                throw new TransactionError("a transaction already been started, you cannot nest transactions");
+            }
+            if (!$this->supportsTransactionSavepoints()) {
+                throw new TransactionError("Cannot create a nested transaction, driver does not support savepoints");
+            }
+            return $transaction->savepoint();
+        }
+
         $transaction = $this->doStartTransaction($isolationLevel);
         $this->currentTransaction = $transaction;
 
         return $transaction;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    final public function beginTransaction(int $isolationLevel = Transaction::REPEATABLE_READ, bool $allowPending = true): Transaction
+    {
+        return $this->createTransaction($isolationLevel, $allowPending)->start();
     }
 
     /**
@@ -184,7 +205,7 @@ abstract class AbstractRunner implements Runner, EscaperInterface
     public function runTransaction(callable $callback, int $isolationLevel = Transaction::REPEATABLE_READ)
     {
         $ret = null;
-        $transaction = $this->startTransaction($isolationLevel, true);
+        $transaction = $this->beginTransaction($isolationLevel, true);
 
         try {
             if (!$transaction->isStarted()) {

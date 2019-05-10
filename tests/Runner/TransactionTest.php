@@ -9,6 +9,7 @@ use Goat\Runner\Transaction;
 use Goat\Runner\TransactionError;
 use Goat\Runner\TransactionFailedError;
 use Goat\Runner\Testing\DatabaseAwareQueryTest;
+use Goat\Runner\TransactionSavepoint;
 
 class TransactionTest extends DatabaseAwareQueryTest
 {
@@ -77,8 +78,7 @@ class TransactionTest extends DatabaseAwareQueryTest
     {
         $this->prepare($runner);
 
-        $transaction = $runner->startTransaction();
-        $transaction->start();
+        $transaction = $runner->beginTransaction();
 
         $runner
             ->getQueryBuilder()
@@ -105,6 +105,106 @@ class TransactionTest extends DatabaseAwareQueryTest
     }
 
     /**
+     * @dataProvider getRunners
+     */
+    public function testNestedTransactionCreatesSavepoint(Runner $runner)
+    {
+        if (!$runner->supportsTransactionSavepoints()) {
+            $this->markTestSkipped(\sprintf("Driver '%s' does not supports savepoints", $runner->getDriverName()));
+        }
+
+        $this->prepare($runner);
+        $runner->getQueryBuilder()->delete('transaction_test')->execute();
+
+        $transaction = $runner->beginTransaction();
+
+        $runner
+            ->getQueryBuilder()
+            ->insertValues('transaction_test')
+            ->columns(['foo', 'bar'])
+            ->values([789, 'f'])
+            ->execute()
+        ;
+
+        $savepoint = $runner->beginTransaction();
+
+        $this->assertInstanceOf(TransactionSavepoint::class, $savepoint);
+        $this->assertTrue($savepoint->isNested());
+        $this->assertNotNull($savepoint->getSavepointName());
+
+        $runner
+            ->getQueryBuilder()
+            ->insertValues('transaction_test')
+            ->columns(['foo', 'bar'])
+            ->values([456, 'g'])
+            ->execute()
+        ;
+
+        $transaction->commit();
+
+        $result = $runner
+            ->getQueryBuilder()
+            ->select('transaction_test')
+            ->orderBy('foo')
+            ->execute()
+        ;
+
+        $this->assertCount(2, $result);
+        $this->assertSame('g', $result->fetch()['bar']);
+        $this->assertSame('f', $result->fetch()['bar']);
+    }
+
+    /**
+     * @dataProvider getRunners
+     */
+    public function testNestedTransactionRollbackToSavepointTransparently(Runner $runner)
+    {
+        if (!$runner->supportsTransactionSavepoints()) {
+            $this->markTestSkipped(\sprintf("Driver '%s' does not supports savepoints", $runner->getDriverName()));
+        }
+
+        $this->prepare($runner);
+        $runner->getQueryBuilder()->delete('transaction_test')->execute();
+
+        $transaction = $runner->beginTransaction();
+
+        $runner
+            ->getQueryBuilder()
+            ->insertValues('transaction_test')
+            ->columns(['foo', 'bar'])
+            ->values([789, 'f'])
+            ->execute()
+        ;
+
+        $savepoint = $runner->beginTransaction();
+
+        $this->assertInstanceOf(TransactionSavepoint::class, $savepoint);
+        $this->assertTrue($savepoint->isNested());
+        $this->assertNotNull($savepoint->getSavepointName());
+
+        $runner
+            ->getQueryBuilder()
+            ->insertValues('transaction_test')
+            ->columns(['foo', 'bar'])
+            ->values([456, 'g'])
+            ->execute()
+        ;
+
+        $savepoint->rollback();
+        $transaction->commit();
+
+        $result = $runner
+            ->getQueryBuilder()
+            ->select('transaction_test')
+            ->orderBy('foo')
+            ->execute()
+        ;
+
+        $this->assertCount(1, $result);
+        $this->assertSame('f', $result->fetch()['bar']);
+    }
+
+    /**
      * Fail with immediate constraints (not deferred)
      *
      * @dataProvider getRunners
@@ -114,14 +214,12 @@ class TransactionTest extends DatabaseAwareQueryTest
         $this->prepare($runner);
 
         $transaction = $runner
-            ->startTransaction()
-            ->start()
+            ->beginTransaction()
             ->deferred() // Defer all
             ->immediate('transaction_test_bar')
         ;
 
         try {
-
             // This should pass, foo constraint it deferred;
             // if backend does not support defering, this will
             // fail anyway, but the rest of the test is still
@@ -174,8 +272,7 @@ class TransactionTest extends DatabaseAwareQueryTest
         }
 
         $transaction = $runner
-            ->startTransaction()
-            ->start()
+            ->beginTransaction()
             ->immediate() // Immediate all
             ->deferred('transaction_test_foo')
         ;
@@ -231,8 +328,7 @@ class TransactionTest extends DatabaseAwareQueryTest
         }
 
         $transaction = $runner
-            ->startTransaction()
-            ->start()
+            ->beginTransaction()
             ->deferred()
         ;
 
@@ -283,8 +379,7 @@ class TransactionTest extends DatabaseAwareQueryTest
     {
         $this->prepare($runner);
 
-        $transaction = $runner->startTransaction();
-        $transaction->start();
+        $transaction = $runner->beginTransaction();
 
         $runner
             ->getQueryBuilder()
@@ -314,18 +409,17 @@ class TransactionTest extends DatabaseAwareQueryTest
     {
         $this->prepare($runner);
 
-        $transaction = $runner->startTransaction();
-        $transaction->start();
+        $transaction = $runner->beginTransaction();
 
         // Fetch another transaction, it should fail
         try {
-            $runner->startTransaction();
+            $runner->beginTransaction(Transaction::REPEATABLE_READ, false);
             $this->fail();
         } catch (TransactionError $e) {
         }
 
         // Fetch another transaction, it should NOT fail
-        $t3 = $runner->startTransaction(Transaction::REPEATABLE_READ, true);
+        $t3 = $runner->beginTransaction(Transaction::REPEATABLE_READ, true);
         // @todo temporary deactivating this test since that the profiling
         //   transaction makes it harder
         //$this->assertSame($t3, $transaction);
@@ -333,6 +427,11 @@ class TransactionTest extends DatabaseAwareQueryTest
 
         // Force rollback of the second, ensure previous is stopped too
         $t3->rollback();
+        $this->assertFalse($t3->isStarted());
+        // Still true, because we acquired a savepoint
+        $this->assertTrue($transaction->isStarted());
+
+        $transaction->rollback();
         $this->assertFalse($transaction->isStarted());
     }
 
@@ -345,8 +444,7 @@ class TransactionTest extends DatabaseAwareQueryTest
     {
         $this->prepare($runner);
 
-        $transaction = $runner->startTransaction();
-        $transaction->start();
+        $transaction = $runner->beginTransaction();
 
         $runner
             ->getQueryBuilder()

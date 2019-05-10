@@ -69,10 +69,20 @@ interface Transaction
      * @throws TransactionError
      *   If savepoint name already exists
      *
-     * @return string
-     *   The savepoint realname
+     * @return TransactionSavepoint
+     *   The nested transaction
      */
-    public function savepoint(string $name = null): string;
+    public function savepoint(string $name = null): TransactionSavepoint;
+
+    /**
+     * Is transaction nested (ie. is a savepoint)
+     */
+    public function isNested(): bool;
+
+    /**
+     * Get savepoint name, if transaction is a savepoint, null otherwise
+     */
+    public function getSavepointName(): ?string;
 
     /**
      * Explicit transaction commit
