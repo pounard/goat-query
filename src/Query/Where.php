@@ -122,17 +122,17 @@ final class Where implements Statement
      *
      * @param string|ExpressionColumn $column
      *
-     * @return ExpressionColumn
+     * @return Expression|ExpressionColumn
      */
-    private function normalizeColumn($column) : ExpressionColumn
+    private function normalizeColumn($column) : Expression
     {
-        if ($column instanceof ExpressionColumn) {
+        if ($column instanceof Expression) {
             return $column;
         }
         if (\is_string($column)) {
             return new ExpressionColumn($column);
         }
-        throw new QueryError(\sprintf("column reference must be a string or an instance of %s", ExpressionColumn::class));
+        throw new QueryError(\sprintf("column reference must be a string or an instance of %s", Expression::class));
     }
 
     /**
