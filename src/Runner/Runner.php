@@ -60,7 +60,7 @@ interface Runner
      *   Default transaction isolation level, it is advised that you set it
      *   directly at this point, since some drivers don't allow isolation
      *   level changes while transaction is started
-     * @param bool $allowPending = false
+     * @param bool $allowPending = true
      *   If set to true, explicitely allow to fetch the currently pending
      *   transaction, else errors will be raised
      *
