@@ -161,7 +161,7 @@ class DefaultConverterTest extends TestCase
         $converter->register(new IntervalValueConverter());
 
         $this->assertSame('bool', $converter->guessType(true));
-        $this->assertSame('interval', $converter->guessType(\DateInterval::createFromDateString('one hour')));
+        $this->assertSame('interval', $converter->guessType(\DateInterval::createFromDateString('1 hour')));
         $this->assertSame('numeric', $converter->guessType(12.34));
         $this->assertSame('timestamp', $converter->guessType(new \DateTime()));
         $this->assertSame('varchar', $converter->guessType('pouet'));

@@ -16,12 +16,32 @@ use Goat\Query\Statement;
 abstract class FormatterBase implements FormatterInterface
 {
     /**
-     * Escape sequence matching magical regex
+     * Escape sequence matching magical regex.
+     *
+     * Order is important:
+     *
+     *   - ESCAPE will match all driver-specific string escape sequence,
+     *     therefore will prevent any other matches from happening inside,
+     *
+     *   - "?::WORD" will superseed "?"
+     *
+     *   - any "::WORD" sequence, which is a valid SQL cast, will be left
+     *     as-is and required no rewrite, but will superseed ":NAME"
+     *     placeholders.
+     *
+     * I belive that a real parser would be much more efficient, if it was
+     * written in any language other than PHP, but right now, preg will
+     * actually be a lot faster than we will ever be.
+     *
+     * This regex is huge, but contain no backward lookup, does not imply
+     * any recursivity, it should be very fast.
      */
     const PARAMETER_MATCH = '@
         ESCAPE
-        (\?|:[a-zA-Z0-9_]+)         # Matches any placeholder
-        (?:::([\w\."]+(?:\[\])?)|)? # Matches valid ::WORD cast
+        (\?\:\:([\w]+))|    # Matches ?::WORD placeholders
+        (\?)|               # Matches ?
+        (\:\:[\w\."]+)|     # Matches valid ::WORD cast
+        (\:[\w]+)           # Matches :NAME placeholders
         @x';
 
     private $matchParametersRegex;
@@ -157,10 +177,12 @@ abstract class FormatterBase implements FormatterInterface
             $this->matchParametersRegex,
             function ($matches) use (&$parameters, &$index, &$done, $arguments) {
 
-                // Still not implemented the (SKIP*)(F*) variant for the regex
-                // so I do need to exclude patterns we DO NOT want to match from
-                // here, ie. escaped sequences.
-                if ('?' !== ($first = $matches[0][0]) && ':' !== $first) {
+                // Excludes the following:
+                //   - strings that don't start with ? (placeholders),
+                //   - strings that don't start with : (escape sequences)
+                //   - strings that start with : but with a second : (valid pgsql cast)
+                $length = \strlen($matched = $matches[0]);
+                if ('?' !== ($first = $matched[0]) && (2 < $length || (':' !== $first || ':' === $matched[1]))) {
                     return $matches[0];
                 }
 
@@ -172,7 +194,7 @@ abstract class FormatterBase implements FormatterInterface
 
                 // Do not attempt to match unknonwn types from here, just let
                 // them pass outside of the \preg_replace_callback() call.
-                if ($this->converter && ($type = $matches[3] ?? $arguments->getTypeAt($index))) {
+                if ($this->converter && (($type = $matches[3]) || ($type = $arguments->getTypeAt($index)))) {
                     if ($cast = $this->converter->cast($type)) {
                         $placeholder = $this->writeCast($placeholder, $this->getCastType($cast));
                     }
