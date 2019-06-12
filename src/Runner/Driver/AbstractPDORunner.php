@@ -119,19 +119,28 @@ abstract class AbstractPDORunner extends AbstractRunner
      */
     public function prepareQuery($query, string $identifier = null): string
     {
-        $prepared = $this->formatter->prepare($query);
-        $rawSQL = $prepared->getQuery();
+        try {
+            $prepared = $this->formatter->prepare($query);
+            $rawSQL = $prepared->getQuery();
 
-        if (null === $identifier) {
-            $identifier = \md5($rawSQL);
+            if (null === $identifier) {
+                $identifier = \md5($rawSQL);
+            }
+
+            $this->prepared[$identifier] = [
+                $this->connection->prepare($rawSQL, [\PDO::ATTR_CURSOR => \PDO::CURSOR_FWDONLY]),
+                $prepared,
+            ];
+
+            return $identifier;
+
+        } catch (QueryError $e) {
+            throw $e;
+        } catch (\PDOException $e) {
+            throw new DriverError($rawSQL, [], $e);
+        } catch (\Exception $e) {
+            throw new DriverError($rawSQL, [], $e);
         }
-
-        // Default behaviour, because databases such as MySQL don't really
-        // prepare SQL statements, is to emulate it by keeping a copy of the
-        // SQL query in memory and giving to the user a computed identifier.
-        $this->prepared[$identifier] = $rawSQL;
-
-        return $identifier;
     }
 
     /**
@@ -143,7 +152,25 @@ abstract class AbstractPDORunner extends AbstractRunner
             throw new QueryError(\sprintf("'%s': query was not prepared", $identifier));
         }
 
-        return $this->execute($this->prepared[$identifier], $arguments, $options);
+        list($statement, $prepared) = $this->prepared[$identifier];
+
+        try {
+            /** @var \Goat\Query\Writer\FormattedQuery $prepared */
+            $args = $prepared->getArguments($this->converter, $arguments);
+
+            $statement->execute($args);
+
+            $ret = $this->createResultIterator($options, $statement);
+
+            return $ret;
+
+        } catch (QueryError $e) {
+            throw $e;
+        } catch (\PDOException $e) {
+            throw new DriverError($identifier, [], $e);
+        } catch (\Exception $e) {
+            throw new DriverError($identifier, [], $e);
+        }
     }
 
     /**

@@ -168,15 +168,14 @@ abstract class FormatterBase implements FormatterInterface
      */
     final private function rewriteQueryAndParameters(string $formattedSQL, ArgumentBag $arguments): FormattedQuery
     {
-        $done = [];
         $index = 0;
-        $parameters = $arguments->getAll();
+        $typeMap = [];
 
         // See https://stackoverflow.com/a/3735908 for the  starting
         // sequence explaination, the rest should be comprehensible.
         $preparedSQL = \preg_replace_callback(
             $this->matchParametersRegex,
-            function ($matches) use (&$parameters, &$index, &$done, $arguments) {
+            function ($matches) use (&$index, $arguments, &$typeMap) {
 
                 // Excludes the following:
                 //   - strings that don't start with ? (placeholders),
@@ -189,18 +188,13 @@ abstract class FormatterBase implements FormatterInterface
 
                 $placeholder = $this->escaper->writePlaceholder($index);
 
-                if (!\array_key_exists($index, $parameters)) {
-                    throw new QueryError(\sprintf("Invalid parameter number bound"));
-                }
-
                 // Do not attempt to match unknonwn types from here, just let
                 // them pass outside of the \preg_replace_callback() call.
-                if ($this->converter && (($type = $matches[3]) || ($type = $matches[7] ?? null) || ($type = $arguments->getTypeAt($index)))) {
-                    if ($cast = $this->converter->cast($type)) {
+                if ((($type = $matches[3]) || ($type = $matches[7] ?? null) || ($type = $arguments->getTypeAt($index)))) {
+                    if ($this->converter && ($cast = $this->converter->cast($type))) {
                         $placeholder = $this->writeCast($placeholder, $this->getCastType($cast));
                     }
-                    $parameters[$index] = $this->converter->toSQL($type, $parameters[$index]);
-                    $done[$index] = true;
+                    $typeMap[$index] = $type;
                 }
 
                 ++$index;
@@ -210,22 +204,13 @@ abstract class FormatterBase implements FormatterInterface
             $formattedSQL
         );
 
-        // Some parameters might remain untouched, case in which we do need to
-        // automatically convert them to something the SQL backend will
-        // understand; for example a non explicitely casted \DateTime object
-        // into the query will end up as a \DateTime object and the query
-        // will fail.
-        if (\count($done) !== \count($parameters)) {
-            foreach (\array_diff_key($parameters, $done) as $index => $value) {
-                if ($this->converter) {
-                    $type = $arguments->getTypeAt($index);
-                    $value = $this->converter->toSQL($type ?? ConverterInterface::TYPE_UNKNOWN, $value);
-                }
-                $parameters[$index] = $value;
-            }
+        if ($index !== $arguments->count()) {
+            throw new QueryError(\sprintf("Invalid parameter number bound"));
         }
 
-        return new FormattedQuery($preparedSQL, $parameters);
+        return (new FormattedQuery(
+            $preparedSQL, $arguments->withTypes($typeMap)
+        ))->setConverter($this->converter);
     }
 
     /**

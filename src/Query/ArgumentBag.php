@@ -28,6 +28,28 @@ class ArgumentBag
     }
 
     /**
+     * Count items
+     */
+    public function count(): int
+    {
+        return \count($this->data);
+    }
+
+    /**
+     * Get a clone of this argument bag with new types definitions
+     */
+    public function withTypes(array $types): self
+    {
+        $ret = clone $this;
+
+        foreach ($types as $index => $type) {
+            $ret->types[$index] = $type;
+        }
+
+        return $ret;
+    }
+
+    /**
      * Add a parameter
      *
      * @param mixed $value

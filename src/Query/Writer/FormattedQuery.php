@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Goat\Query\Writer;
 
+use Goat\Converter\ConverterInterface;
+use Goat\Query\ArgumentBag;
 use Goat\Query\QueryError;
 
 /**
@@ -11,24 +13,55 @@ use Goat\Query\QueryError;
  */
 final class FormattedQuery
 {
-    private $query;
     private $arguments;
+    private $converter; // @todo remove this dependency
+    private $query;
 
     /**
      * Default constructor
      */
-    public function __construct(string $query, ?array $arguments = null)
+    public function __construct(string $query, ArgumentBag $arguments = null)
     {
+        $this->arguments = $arguments ?? new ArgumentBag();
+        $this->arguments->lock();
         $this->query = $query;
-        $this->arguments = $arguments ?? [];
+    }
 
+    /**
+     * @deprecated
+     *   Remove me, once converter dependency as been removed
+     *   from the FormatterBase
+     */
+    public function setConverter(?ConverterInterface $converter = null): self
+    {
+        $this->converter = $converter;
+
+        return $this;
+    }
+
+    /**
+     * Prepare arguments using given values
+     */
+    public function getArguments(?ConverterInterface $converter = null, array $arguments = null): array
+    {
         if ($arguments) {
-            \array_walk($arguments, function ($value, $key) {
-                if (null !== $value && !\is_scalar($value)) {
-                    throw new QueryError(\sprintf("argument '%s' must be a string, '%s' given", $key, \gettype($value)));
-                }
-            });
+            $bag = $this->arguments->merge($arguments);
+        } else {
+            $bag = $this->arguments;
         }
+        $args = $bag->getAll();
+
+        $converter = $converter ?? $this->converter;
+
+        foreach ($args as $index => $value) {
+            if ($converter) {
+                $args[$index] = $converter->toSQL($bag->getTypeAt($index) ?? ConverterInterface::TYPE_UNKNOWN, $value);
+            } else if (null !== $value && !\is_scalar($value)) {
+                throw new QueryError(\sprintf("argument '%s' must be a string, '%s' given", $index, \gettype($value)));
+            }
+        }
+
+        return $args;
     }
 
     /**
@@ -37,13 +70,5 @@ final class FormattedQuery
     public function getQuery(): string
     {
         return $this->query;
-    }
-
-    /**
-     * Get converted array of arguments
-     */
-    public function getArguments(): array
-    {
-        return $this->arguments;
     }
 }
