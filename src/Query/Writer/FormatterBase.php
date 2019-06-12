@@ -38,10 +38,11 @@ abstract class FormatterBase implements FormatterInterface
      */
     const PARAMETER_MATCH = '@
         ESCAPE
-        (\?\:\:([\w]+))|    # Matches ?::WORD placeholders
-        (\?)|               # Matches ?
-        (\:\:[\w\."]+)|     # Matches valid ::WORD cast
-        (\:[\w]+)           # Matches :NAME placeholders
+        (\?\:\:([\w]+))|        # Matches ?::WORD placeholders
+        (\?)|                   # Matches ?
+        (\:\:[\w\."]+)|         # Matches valid ::WORD cast
+        (\:[\w]+\:\:([\w]+))|   # Matches :NAME::WORD placeholders
+        (\:[\w]+)               # Matches :NAME placeholders
         @x';
 
     private $matchParametersRegex;
@@ -182,7 +183,7 @@ abstract class FormatterBase implements FormatterInterface
                 //   - strings that don't start with : (escape sequences)
                 //   - strings that start with : but with a second : (valid pgsql cast)
                 $length = \strlen($matched = $matches[0]);
-                if ('?' !== ($first = $matched[0]) && (2 < $length || (':' !== $first || ':' === $matched[1]))) {
+                if ('?' !== ($first = $matched[0]) && ($length < 2 || ':' !== $first || ':' === $matched[1])) {
                     return $matches[0];
                 }
 
@@ -194,7 +195,7 @@ abstract class FormatterBase implements FormatterInterface
 
                 // Do not attempt to match unknonwn types from here, just let
                 // them pass outside of the \preg_replace_callback() call.
-                if ($this->converter && (($type = $matches[3]) || ($type = $arguments->getTypeAt($index)))) {
+                if ($this->converter && (($type = $matches[3]) || ($type = $matches[7] ?? null) || ($type = $arguments->getTypeAt($index)))) {
                     if ($cast = $this->converter->cast($type)) {
                         $placeholder = $this->writeCast($placeholder, $this->getCastType($cast));
                     }

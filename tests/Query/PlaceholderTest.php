@@ -4,15 +4,58 @@ declare(strict_types=1);
 
 namespace Goat\Query\Tests;
 
-use PHPUnit\Framework\TestCase;
-use Goat\Query\SelectQuery;
-use Goat\Query\ExpressionRaw;
 use Goat\Converter\DefaultConverter;
 use Goat\Query\ArgumentBag;
+use Goat\Query\SelectQuery;
+use PHPUnit\Framework\TestCase;
 
 class PlaceholderTest extends TestCase
 {
     use BuilderTestTrait;
+
+    public function testArbitraryPgTypeCastAreNotConverted()
+    {
+        $formatter = new FooFormatter(new NullEscaper(true));
+        $formatter->setConverter(new DefaultConverter());
+
+        $formatted = $formatter->prepare(
+            'select * from some_table where foo::date = ?::date',
+            [\DateTimeImmutable::createFromFormat('Y-m-d H:i:s', '1983-03-22 08:25:00')]
+        );
+
+        $this->assertSameSql('select * from some_table where foo::date = cast(#1 as date)', $formatted->getQuery());
+        $this->assertSame(['1983-03-22'], $formatted->getArguments());
+    }
+
+    public function testNamedParametersWithoutTypeAreReplaced()
+    {
+        $formatter = new FooFormatter(new NullEscaper(true));
+        $formatter->setConverter(new DefaultConverter());
+
+        $formatted = $formatter->prepare(
+            'select * from some_table where foo = :date',
+            [\DateTimeImmutable::createFromFormat('Y-m-d H:i:s', '1983-03-22 08:25:00')]
+        );
+
+        // Type is guessed as 'timestamp'
+        $this->assertSameSql('select * from some_table where foo = #1', $formatted->getQuery());
+        $this->assertSame(['1983-03-22 08:25:00'], $formatted->getArguments());
+    }
+
+    public function testNamedParametersWithTypeAreReplacedAndTyped()
+    {
+        $formatter = new FooFormatter(new NullEscaper(true));
+        $formatter->setConverter(new DefaultConverter());
+
+        $formatted = $formatter->prepare(
+            'select * from some_table where foo = :date::date',
+            [\DateTimeImmutable::createFromFormat('Y-m-d H:i:s', '1983-03-22 08:25:00')]
+        );
+
+        // Type is guessed as 'timestamp'
+        $this->assertSameSql('select * from some_table where foo = cast(#1 as date)', $formatted->getQuery());
+        $this->assertSame(['1983-03-22'], $formatted->getArguments());
+    }
 
     public function testCastWithConverterAndTypeInQuery()
     {
