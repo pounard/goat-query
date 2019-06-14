@@ -10,14 +10,10 @@ namespace Goat\Query;
  * Parameters are always an ordered array, they may not be identifier from
  * within the query, but they can be in this bag.
  */
-class ArgumentBag
+class ArgumentBag extends ArgumentList
 {
     private $data = [];
     private $frozen = false;
-    private $index = 0;
-    private $nameMap = [];
-    private $names = [];
-    private $types = [];
 
     /**
      * Lock this instance
@@ -25,28 +21,6 @@ class ArgumentBag
     public function lock(): void
     {
         $this->frozen = true;
-    }
-
-    /**
-     * Count items
-     */
-    public function count(): int
-    {
-        return \count($this->data);
-    }
-
-    /**
-     * Get a clone of this argument bag with new types definitions
-     */
-    public function withTypes(array $types): self
-    {
-        $ret = clone $this;
-
-        foreach ($types as $index => $type) {
-            $ret->types[$index] = $type;
-        }
-
-        return $ret;
     }
 
     /**
@@ -58,14 +32,14 @@ class ArgumentBag
      *   Named identifier, for query alteration to be possible
      * @param string $type
      *   SQL datatype
+     *
+     * @return int
+     *   Added item position
      */
-    public function add($value, ?string $name = null, ?string $type = null): void
+    public function add($value, ?string $name = null, ?string $type = null): int
     {
         if ($this->frozen) {
             throw new QueryError(\sprintf("You cannot call %s::add() object is frozen", self::class));
-        }
-        if ($name && isset($this->nameMap[$name])) {
-            throw new QueryError(\sprintf("%s argument name is already in use in this query", $name));
         }
 
         if ($value instanceof ValueRepresentation) {
@@ -78,15 +52,10 @@ class ArgumentBag
             $value = $value->getValue();
         }
 
-        $index = $this->index++;
-
+        $index = parent::addParameter($type, $name);
         $this->data[$index] = $value;
-        $this->names[$index] = $name;
-        $this->types[$index] = $type;
 
-        if ($name) {
-            $this->nameMap[$name] = $index;
-        }
+        return $index;
     }
 
     /**
@@ -130,14 +99,6 @@ class ArgumentBag
     }
 
     /**
-     * Get datatype for given index
-     */
-    public function getTypeAt(int $index): ?string
-    {
-        return $this->types[$index] ?? null;
-    }
-
-    /**
      * Append given bag vlues to this instance
      */
     public function append(ArgumentBag $bag): void
@@ -164,7 +125,7 @@ class ArgumentBag
             if (\is_int($index)) {
                 $this->add($value);
             } else {
-                $this->add($value, $index);
+                $this->add($value, index);
             }
         }
     }
