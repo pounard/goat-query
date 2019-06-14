@@ -68,7 +68,7 @@ abstract class DatabaseAwareQueryTest extends TestCase
     protected function prepare(Runner $runner)
     {
         if ($runner instanceof AbstractRunner && \class_exists(HydratorMap::class)) {
-            $runner->setHydratorMap(new Configuration());
+            $runner->setHydratorMap(new HydratorMap(new Configuration()));
         }
         $this->createTestSchema($runner);
         $this->createTestData($runner);
