@@ -64,20 +64,4 @@ class MySQLConverter implements ConverterInterface
 
         return $this->default->toSQL($type, $value);
     }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function needsCast(string $type): bool
-    {
-        return $this->default->needsCast($type);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function cast(string $type): ?string
-    {
-        return $this->default->cast($type);
-    }
 }

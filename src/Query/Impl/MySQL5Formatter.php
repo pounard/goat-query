@@ -19,6 +19,8 @@ class MySQL5Formatter extends DefaultFormatter
      */
     protected function getCastType(string $type) : string
     {
+        $type = parent::getCastType($type);
+
         // Specific type conversion for MySQL because its CAST() function
         // does not accepts the same datatypes as the one it handles.
         if ('timestamp' === $type) {
@@ -30,6 +32,15 @@ class MySQL5Formatter extends DefaultFormatter
         }
 
         return $type;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function writeCast(string $placeholder, string $type): string
+    {
+        // This is supposedly SQL-92 standard compliant, but can be overriden
+        return \sprintf("cast(%s as %s)", $placeholder, $type);
     }
 
     /**

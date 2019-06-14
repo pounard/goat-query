@@ -109,18 +109,6 @@ final class PgSQLArrayConverter implements ConverterInterface
     /**
      * {@inheritdoc}
      */
-    public function cast(string $type): ?string
-    {
-        if ($subType = $this->findSubtype($type)) {
-            return \sprintf("%s[]", $subType);
-        }
-
-        return $type;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
     public function guessType($value): string
     {
         if (\is_array($value)) {

@@ -501,33 +501,4 @@ final class DefaultConverter implements ConverterInterface
 
         return (string)$value;
     }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function cast(string $type) : ?string
-    {
-        switch ($type) {
-            // Timestamp
-            case 'datetime':
-            case 'timestamp':
-            case 'timestampz':
-                return 'timestamp';
-
-            // Date without time
-            case 'date':
-                return 'date';
-
-            // Time without date
-            case 'time':
-            case 'timez':
-                return 'time';
-        }
-
-        if ($converter = $this->get($type)) {
-            return $converter->cast($type);
-        }
-
-        return null;
-    }
 }

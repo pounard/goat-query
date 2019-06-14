@@ -113,14 +113,6 @@ class IntervalValueConverter implements ValueConverterInterface
     /**
      * {@inheritdoc}
      */
-    public function cast(string $type) : ?string
-    {
-        return 'interval';
-    }
-
-    /**
-     * {@inheritdoc}
-     */
     public function canProcess($value) : bool
     {
         return $value instanceof \DateInterval;

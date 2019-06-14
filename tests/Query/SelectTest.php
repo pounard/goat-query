@@ -71,7 +71,7 @@ EOT;
         $having->expression('count(n.nid) < ?', 3);
 
         $formatted = $formatter->prepare($query);
-        $this->assertSameSql($reference, $formatted->getQuery());
+        $this->assertSameSql($reference, $formatted->getRawSQL());
         $this->assertSame($referenceArguments, $query->getArguments()->getAll());
 
         $countQuery = $query->getCountQuery();

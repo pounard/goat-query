@@ -92,12 +92,4 @@ class PgSQLConverter implements ConverterInterface
 
         return $this->default->toSQL($type, $value);
     }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function cast(string $type): ?string
-    {
-        return $this->default->cast($type);
-    }
 }

@@ -46,17 +46,6 @@ interface ValueConverterInterface
     public function toSQL(string $type, $value) : ?string;
 
     /**
-     * Get SQL type name to cast to
-     *
-     * @param string $type
-     *
-     * @return null|string
-     *   You may return null if you consider that the given type is valid
-     *   for cast, and let the server handle it as-is
-     */
-    public function cast(string $type) : ?string;
-
-    /**
      * Can this value be processed
      *
      * @param mixed $value

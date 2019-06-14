@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Goat\Query\Writer;
 
-use Goat\Converter\ConverterInterface;
+use Goat\Query\ArgumentBag;
 use Goat\Query\Statement;
 
 /**
@@ -16,11 +16,6 @@ interface FormatterInterface
      * Set escaper
      */
     public function setEscaper(EscaperInterface $escaper): void;
-
-    /**
-     * Set converter
-     */
-    public function setConverter(ConverterInterface $converter): void;
 
     /**
      * Format the query
@@ -35,9 +30,10 @@ interface FormatterInterface
      * Rewrite query by adding type cast information and correct placeholders
      *
      * @param string|\Goat\Query\Statement $query
-     * @param mixed[]|\Goat\Query\ArgumentBag $parameters
+     * @param ?ArgumentBag $arguments
+     *   Holds type information
      *
      * @return FormattedQuery
      */
-    public function prepare($query, array $parameters = null): FormattedQuery;
+    public function prepare($query): FormattedQuery;
 }

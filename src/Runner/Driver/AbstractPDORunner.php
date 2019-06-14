@@ -6,6 +6,7 @@ namespace Goat\Runner\Driver;
 
 use Goat\Query\Query;
 use Goat\Query\QueryError;
+use Goat\Query\Statement;
 use Goat\Runner\EmptyResultIterator;
 use Goat\Runner\ResultIterator;
 
@@ -66,9 +67,15 @@ abstract class AbstractPDORunner extends AbstractRunner
         $rawSQL = '';
 
         try {
-            $prepared = $this->formatter->prepare($query, $arguments);
-            $rawSQL = $prepared->getQuery();
-            $args = $prepared->getArguments();
+            $prepared = $this->formatter->prepare($query);
+            $rawSQL = $prepared->getRawSQL();
+            if (!$arguments && $query instanceof Statement) {
+                $args = $this->prepareArguments($prepared->getArgumentList(), $query->getArguments()); 
+            } else if ($arguments) {
+                $args = $this->prepareArguments($prepared->getArgumentList(), $arguments);
+            } else {
+                $args = [];
+            }
 
             $statement = $this->connection->prepare($rawSQL, [\PDO::ATTR_CURSOR => \PDO::CURSOR_FWDONLY]);
             $statement->execute($args);
@@ -94,9 +101,15 @@ abstract class AbstractPDORunner extends AbstractRunner
         $rawSQL = '';
 
         try {
-            $prepared = $this->formatter->prepare($query, $arguments);
-            $rawSQL = $prepared->getQuery();
-            $args = $prepared->getArguments();
+            $prepared = $this->formatter->prepare($query);
+            $rawSQL = $prepared->getRawSQL();
+            if (!$arguments && $query instanceof Statement) {
+                $args = $this->prepareArguments($prepared->getArgumentList(), $query->getArguments()); 
+            } else if ($arguments) {
+                $args = $this->prepareArguments($prepared->getArgumentList(), $arguments);
+            } else {
+                $args = [];
+            }
 
             // We still use PDO prepare emulation, it's better for security
             // than using exec() but it probably will be a bit less performant.
@@ -119,9 +132,11 @@ abstract class AbstractPDORunner extends AbstractRunner
      */
     public function prepareQuery($query, string $identifier = null): string
     {
+        $rawSQL = '';
+
         try {
             $prepared = $this->formatter->prepare($query);
-            $rawSQL = $prepared->getQuery();
+            $rawSQL = $prepared->getRawSQL();
 
             if (null === $identifier) {
                 $identifier = \md5($rawSQL);
@@ -156,7 +171,11 @@ abstract class AbstractPDORunner extends AbstractRunner
 
         try {
             /** @var \Goat\Query\Writer\FormattedQuery $prepared */
-            $args = $prepared->getArguments($this->converter, $arguments);
+            if ($arguments) {
+                $args = $this->prepareArguments($prepared->getArgumentList(), $arguments);
+            } else {
+                $args = [];
+            }
 
             $statement->execute($args);
 

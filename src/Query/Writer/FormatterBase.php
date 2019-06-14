@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace Goat\Query\Writer;
 
-use Goat\Converter\ConverterInterface;
-use Goat\Query\ArgumentBag;
+use Goat\Query\ArgumentList;
 use Goat\Query\Query;
 use Goat\Query\QueryError;
 use Goat\Query\Statement;
@@ -47,7 +46,6 @@ abstract class FormatterBase implements FormatterInterface
 
     private $matchParametersRegex;
     protected $escaper;
-    protected $converter;
 
     /**
      * Default constructor, it may be override by drivers, but don't forget that
@@ -68,14 +66,6 @@ abstract class FormatterBase implements FormatterInterface
     }
 
     /**
-     * {@inheritdoc}
-     */
-    public function setConverter(ConverterInterface $converter): void
-    {
-        $this->converter = $converter;
-    }
-
-    /**
      * Allows the driver to proceed to different type cast.
      *
      * For example, MySQL as types that are not identified by the same string
@@ -84,14 +74,34 @@ abstract class FormatterBase implements FormatterInterface
      * won't work and MySQL will raise errors. This method exists primarily
      * for the formatter to fix those edge cases.
      *
+     * Default implementation does a few conversions upon primtive types.
+     *
      * @param string $type
      *   The internal type carried by converters
      *
      * @return string
      *   The real type the server will understand
      */
-    protected function getCastType(string $type): string
+    protected function getCastType(string $type) : ?string
     {
+        switch ($type) {
+
+            // Timestamp
+            case 'datetime':
+            case 'timestamp':
+            case 'timestampz':
+                return 'timestamp';
+
+            // Date without time
+            case 'date':
+                return 'date';
+
+            // Time without date
+            case 'time':
+            case 'timez':
+                return 'time';
+        }
+
         return $type;
     }
 
@@ -157,25 +167,21 @@ abstract class FormatterBase implements FormatterInterface
      *
      * @param string $formattedSQL
      *   Raw SQL from user input, or formatted SQL from the formatter
-     * @param ArgumentBag $parameters
-     *   If the original query was from the query builder, this holds the
-     * @param mixed[] $overrides
-     *   Parameters overrides
      *
      * @return array
      *   First value is the query string, second is the reworked array
      *   of parameters, if conversions were needed
      */
-    final private function rewriteQueryAndParameters(string $formattedSQL, ArgumentBag $arguments): FormattedQuery
+    final private function rewriteQueryAndParameters(string $formattedSQL): FormattedQuery
     {
         $index = 0;
-        $typeMap = [];
+        $argumentList = new ArgumentList();
 
         // See https://stackoverflow.com/a/3735908 for the  starting
         // sequence explaination, the rest should be comprehensible.
         $preparedSQL = \preg_replace_callback(
             $this->matchParametersRegex,
-            function ($matches) use (&$index, $arguments, &$typeMap) {
+            function ($matches) use (&$index, $argumentList) {
 
                 // Excludes the following:
                 //   - strings that don't start with ? (placeholders),
@@ -187,15 +193,21 @@ abstract class FormatterBase implements FormatterInterface
                 }
 
                 $placeholder = $this->escaper->writePlaceholder($index);
+                $name = $type = null;
+
+                if (':' === $first) {
+                    time();
+                    $name = null;
+                }
 
                 // Do not attempt to match unknonwn types from here, just let
                 // them pass outside of the \preg_replace_callback() call.
-                if ((($type = $matches[3]) || ($type = $matches[7] ?? null) || ($type = $arguments->getTypeAt($index)))) {
-                    if ($this->converter && ($cast = $this->converter->cast($type))) {
-                        $placeholder = $this->writeCast($placeholder, $this->getCastType($cast));
-                    }
-                    $typeMap[$index] = $type;
+                if (($type = $matches[3]) || ($type = $matches[7] ?? null)) {
+                    // @todo restore this for others than pgsql?
+                    // $placeholder = $this->writeCast($placeholder, $this->getCastType($type));
                 }
+
+                $argumentList->addParameter($type, $name);
 
                 ++$index;
 
@@ -204,39 +216,25 @@ abstract class FormatterBase implements FormatterInterface
             $formattedSQL
         );
 
-        if ($index !== $arguments->count()) {
-            throw new QueryError(\sprintf("Invalid parameter number bound"));
-        }
-
-        return (new FormattedQuery(
-            $preparedSQL, $arguments->withTypes($typeMap)
-        ))->setConverter($this->converter);
+        return new FormattedQuery($preparedSQL, $argumentList);
     }
 
     /**
      * Rewrite query by adding type cast information and correct placeholders
      *
      * @param string|Statement $query
-     * @param mixed[]|ArgumentBag $parameters
      *
      * @return FormattedQuery
      */
-    final public function prepare($query, $parameters = []): FormattedQuery
+    final public function prepare($query): FormattedQuery
     {
         if (!\is_string($query)) {
             if (!$query instanceof Statement) {
                 throw new QueryError(\sprintf("query must be a bare string or an instance of %s", Query::class));
             }
-            $arguments = $query->getArguments()->merge($parameters ?? []);
             $query = $this->format($query);
-        } else if ($parameters instanceof ArgumentBag) {
-            $arguments = $parameters;
-        } else {
-            $arguments = new ArgumentBag();
-            $arguments->appendArray($parameters ?? []);
-            $arguments->lock();
         }
 
-        return $this->rewriteQueryAndParameters($query, $arguments);
+        return $this->rewriteQueryAndParameters($query);
     }
 }
