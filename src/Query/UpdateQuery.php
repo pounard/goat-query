@@ -10,7 +10,7 @@ use Goat\Query\Partial\ReturningQueryTrait;
 /**
  * Represents an UPDATE query
  */
-final class UpdateQuery extends Query
+final class UpdateQuery extends AbstractQuery
 {
     use FromClauseTrait;
     use ReturningQueryTrait;

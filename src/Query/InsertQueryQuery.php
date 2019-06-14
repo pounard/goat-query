@@ -9,7 +9,7 @@ use Goat\Query\Partial\ReturningQueryTrait;
 /**
  * Represents an INSERT INTO table SELECT ... query
  */
-final class InsertQueryQuery extends Query
+final class InsertQueryQuery extends AbstractQuery
 {
     use ReturningQueryTrait;
 

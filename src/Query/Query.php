@@ -4,12 +4,10 @@ declare(strict_types=1);
 
 namespace Goat\Query;
 
-use Goat\Query\Partial\AliasHolderTrait;
-use Goat\Query\Partial\WithClauseTrait;
-use Goat\Runner\Runner;
 use Goat\Runner\ResultIterator;
+use Goat\Runner\Runner;
 
-abstract class Query implements Statement
+interface Query extends Statement
 {
     const JOIN_INNER = 4;
     const JOIN_LEFT = 2;
@@ -23,94 +21,41 @@ abstract class Query implements Statement
     const ORDER_ASC = 1;
     const ORDER_DESC = 2;
 
-    use AliasHolderTrait;
-    use WithClauseTrait;
-
-    private $identifier;
-    private $options = [];
-    private $relation;
-    private $runner;
-
-    /**
-     * Build a new query
-     *
-     * @param null|string|ExpressionRelation $relation
-     *   SQL from statement relation name
-     * @param string $alias
-     *   Alias for from clause relation
-     */
-    public function __construct($relation = null, ?string $alias = null)
-    {
-        if ($relation) {
-            $this->relation = $this->normalizeRelation($relation, $alias);
-        }
-    }
-
     /**
      * Set runner
      *
      * @internal
      */
-    final public function setRunner(Runner $runner): void
-    {
-        $this->runner = $runner;
-    }
+    public function setRunner(Runner $runner): void;
 
     /**
      * Get query identifier
      */
-    final public function getIdentifier(): ?string
-    {
-        return $this->identifier;
-    }
+    public function getIdentifier(): ?string;
 
     /**
      * Set query unique identifier
      */
-    final public function setIdentifier(string $identifier): self
-    {
-        $this->identifier = $identifier;
-
-        return $this;
-    }
+    public function setIdentifier(string $identifier): Query;
 
     /**
      * Get SQL from relation
      */
-    final public function getRelation(): ?ExpressionRelation
-    {
-        return $this->relation;
-    }
+    public function getRelation(): ?ExpressionRelation;
 
     /**
      * Set a single query options
      *
      * null value means reset to default.
      */
-    final public function setOption(string $name, $value): self
-    {
-        if (null === $value) {
-            unset($this->options[$name]);
-        } else {
-            $this->options[$name] = $value;
-        }
-
-        return $this;
-    }
+    public function setOption(string $name, $value): Query;
 
     /**
      * Set all options from
      *
      * null value means reset to default.
      */
-    final public function setOptions(array $options): self
-    {
-        foreach ($options as $name => $value) {
-            $this->setOption($name, $value);
-        }
-
-        return $this;
-    }
+    public function setOptions(array $options): Query;
 
     /**
      * Get normalized options
@@ -119,19 +64,7 @@ abstract class Query implements Statement
      *
      * @return array
      */
-    final public function getOptions($overrides = null): array
-    {
-        if ($overrides) {
-            if (!\is_array($overrides)) {
-                $overrides = ['class' => $overrides];
-            }
-            $options = \array_merge($this->options, $overrides);
-        } else {
-            $options = $this->options;
-        }
-
-        return $options;
-    }
+    public function getOptions($overrides = null): array;
 
     /**
      * Execute query with the given parameters and return the result iterator
@@ -146,14 +79,7 @@ abstract class Query implements Statement
      *
      * @return ResultIterator
      */
-    final public function execute($arguments = null, $options = null): ResultIterator
-    {
-        if (!$this->runner) {
-            throw new QueryError("this query has no reference to query runner, therefore cannot execute");
-        }
-
-        return $this->runner->execute($this, $arguments, $this->getOptions($options));
-    }
+    public function execute($arguments = null, $options = null): ResultIterator;
 
     /**
      * Execute query with the given parameters and return the affected row count
@@ -168,14 +94,7 @@ abstract class Query implements Statement
      *
      * @return int
      */
-    public function perform($arguments = null, $options = null): int
-    {
-        if (!$this->runner) {
-            throw new QueryError("this query has no reference to any query runner, therefore cannot perform");
-        }
-
-        return $this->runner->perform($this, $arguments, $this->getOptions($options));
-    }
+    public function perform($arguments = null, $options = null): int;
 
     /**
      * Should this query return something
@@ -191,5 +110,5 @@ abstract class Query implements Statement
      *
      * @return bool
      */
-    public abstract function willReturnRows(): bool;
+    public function willReturnRows(): bool;
 }
