@@ -124,7 +124,7 @@ class PDOResultIterator extends AbstractResultIterator
     /**
      * {@inheritdoc}
      */
-    public function countRows (): int
+    public function countRows(): int
     {
         return $this->statement->rowCount();
     }

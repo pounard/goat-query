@@ -6,7 +6,6 @@ namespace Goat\Runner\Driver;
 
 use Goat\Query\Query;
 use Goat\Query\QueryError;
-use Goat\Query\Statement;
 use Goat\Runner\EmptyResultIterator;
 use Goat\Runner\ResultIterator;
 
@@ -52,37 +51,22 @@ abstract class AbstractPDORunner extends AbstractRunner
     }
 
     /**
-     * {@inheritdoc}
+     * Prepare, merge arguments, and execute query
      */
-    public function execute($query, $arguments = null, $options = null): ResultIterator
+    protected function executeQuery($query, $arguments = null, $options = null): \PDOStatement
     {
-        if ($query instanceof Query) {
-            if (!$query->willReturnRows()) {
-                $affectedRowCount = $this->perform($query, $arguments, $options);
-
-                return new EmptyResultIterator($affectedRowCount);
-            }
-        }
-
+        $args = [];
         $rawSQL = '';
 
         try {
             $prepared = $this->formatter->prepare($query);
             $rawSQL = $prepared->getRawSQL();
-            if (!$arguments && $query instanceof Statement) {
-                $args = $this->prepareArguments($prepared->getArgumentList(), $query->getArguments()); 
-            } else if ($arguments) {
-                $args = $this->prepareArguments($prepared->getArgumentList(), $arguments);
-            } else {
-                $args = [];
-            }
+            $args = $prepared->prepareArgumentsWith($this->converter, $query, $arguments);
 
             $statement = $this->connection->prepare($rawSQL, [\PDO::ATTR_CURSOR => \PDO::CURSOR_FWDONLY]);
             $statement->execute($args);
 
-            $ret = $this->createResultIterator($options, $statement);
-
-            return $ret;
+            return $statement;
 
         } catch (QueryError $e) {
             throw $e;
@@ -96,35 +80,25 @@ abstract class AbstractPDORunner extends AbstractRunner
     /**
      * {@inheritdoc}
      */
+    public function execute($query, $arguments = null, $options = null): ResultIterator
+    {
+        if ($query instanceof Query) {
+            if (!$query->willReturnRows()) {
+                $affectedRowCount = $this->perform($query, $arguments, $options);
+
+                return new EmptyResultIterator($affectedRowCount);
+            }
+        }
+
+        return $this->createResultIterator($options, $this->executeQuery($query, $arguments, $options));
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function perform($query, $arguments = null, $options = null) : int
     {
-        $rawSQL = '';
-
-        try {
-            $prepared = $this->formatter->prepare($query);
-            $rawSQL = $prepared->getRawSQL();
-            if (!$arguments && $query instanceof Statement) {
-                $args = $this->prepareArguments($prepared->getArgumentList(), $query->getArguments()); 
-            } else if ($arguments) {
-                $args = $this->prepareArguments($prepared->getArgumentList(), $arguments);
-            } else {
-                $args = [];
-            }
-
-            // We still use PDO prepare emulation, it's better for security
-            // than using exec() but it probably will be a bit less performant.
-            $statement = $this->connection->prepare($rawSQL, [\PDO::ATTR_CURSOR => \PDO::CURSOR_FWDONLY]);
-            $statement->execute($args);
-
-            return $statement->rowCount();
-
-        } catch (QueryError $e) {
-            throw $e;
-        } catch (\PDOException $e) {
-            throw new DriverError($rawSQL, [], $e);
-        } catch (\Exception $e) {
-            throw new DriverError($rawSQL, [], $e);
-        }
+        return $this->executeQuery($query, $arguments, $options)->rowCount();
     }
 
     /**
@@ -141,6 +115,7 @@ abstract class AbstractPDORunner extends AbstractRunner
             if (null === $identifier) {
                 $identifier = \md5($rawSQL);
             }
+            // @merge argument types from query
 
             $this->prepared[$identifier] = [
                 $this->connection->prepare($rawSQL, [\PDO::ATTR_CURSOR => \PDO::CURSOR_FWDONLY]),
@@ -171,17 +146,10 @@ abstract class AbstractPDORunner extends AbstractRunner
 
         try {
             /** @var \Goat\Query\Writer\FormattedQuery $prepared */
-            if ($arguments) {
-                $args = $this->prepareArguments($prepared->getArgumentList(), $arguments);
-            } else {
-                $args = [];
-            }
-
+            $args = $prepared->prepareArgumentsWith($this->converter, '', $arguments);
             $statement->execute($args);
 
-            $ret = $this->createResultIterator($options, $statement);
-
-            return $ret;
+            return $this->createResultIterator($options, $statement);
 
         } catch (QueryError $e) {
             throw $e;

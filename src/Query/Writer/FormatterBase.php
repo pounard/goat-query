@@ -28,12 +28,14 @@ abstract class FormatterBase implements FormatterInterface
      *     as-is and required no rewrite, but will superseed ":NAME"
      *     placeholders.
      *
-     * I belive that a real parser would be much more efficient, if it was
+     * After some thoughts, this needs serious optimisation.
+     *
+     * I believe that a real parser would be much more efficient, if it was
      * written in any language other than PHP, but right now, preg will
      * actually be a lot faster than we will ever be.
      *
      * This regex is huge, but contain no backward lookup, does not imply
-     * any recursivity, it should be very fast.
+     * any recursivity, it should be fast enough.
      */
     const PARAMETER_MATCH = '@
         ESCAPE
@@ -136,7 +138,7 @@ abstract class FormatterBase implements FormatterInterface
 
         foreach ($this->escaper->getEscapeSequences() as $sequence) {
             $sequence = \preg_quote($sequence);
-            $patterns[] = \sprintf("%s.+%s", $sequence, $sequence);
+            $patterns[] = \sprintf("%s.+?%s", $sequence, $sequence);
         }
 
         if ($patterns) {

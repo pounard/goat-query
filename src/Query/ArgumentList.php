@@ -27,7 +27,7 @@ class ArgumentList
      * @return int
      *   Added item position
      */
-    public function addParameter(?string $type = null, ?string $name = null): int
+    final public function addParameter(?string $type = null, ?string $name = null): int
     {
         if ($name && isset($this->nameMap[$name])) {
             throw new QueryError(\sprintf("%s argument name is already in use in this query", $name));
@@ -49,9 +49,32 @@ class ArgumentList
     /**
      * Count items
      */
-    public function count(): int
+    final public function count(): int
     {
         return \count($this->types);
+    }
+
+    /**
+     * Merge type information of the given argument list
+     */
+    final public function withTypesOf(ArgumentList $other): ArgumentList
+    {
+        if ($this->index !== $other->index) {
+            throw new QueryError(\sprintf(
+                "Length mismatch, awaiting %d arguments, got %d",
+                $this->index, $other->index
+            ));
+        }
+
+        $ret = clone $this;
+
+        foreach ($other->types as $index => $type) {
+            if (null !== $type && ConverterInterface::TYPE_UNKNOWN !== $type) {
+                $this->types[$index] = $type;
+            }
+        }
+
+        return $ret;
     }
 
     /**
@@ -60,25 +83,15 @@ class ArgumentList
      * @return string[]
      *   Values are indexed positions (not names)
      */
-    public function getTypeMap(?ArgumentList $other = null): array
+    final public function getTypeMap(): array
     {
-        $ret = $this->types;
-
-        if ($other) {
-            foreach ($other->types as $index => $type) {
-                if (null !== $type && ConverterInterface::TYPE_UNKNOWN !== $type) {
-                    $ret[$index] = $type;
-                }
-            } 
-        }
-
-        return $ret;
+        return $this->types;
     }
 
     /**
      * Get datatype for given index
      */
-    public function getTypeAt(int $index): ?string
+    final public function getTypeAt(int $index): ?string
     {
         return $this->types[$index] ?? null;
     }
@@ -94,7 +107,7 @@ class ArgumentList
     /**
      * Get name index
      */
-    public function getNameIndex(string $name): int
+    final public function getNameIndex(string $name): int
     {
         return $this->nameMap[$name] ?? $this->nameDoesNotExist($name);
     }

@@ -8,8 +8,6 @@ use Goat\Converter\ConverterInterface;
 use Goat\Converter\DefaultConverter;
 use Goat\Hydrator\HydratorInterface;
 use Goat\Hydrator\HydratorMap;
-use Goat\Query\ArgumentBag;
-use Goat\Query\ArgumentList;
 use Goat\Query\QueryBuilder;
 use Goat\Query\QueryError;
 use Goat\Query\Writer\EscaperInterface;
@@ -242,58 +240,6 @@ abstract class AbstractRunner implements Runner, EscaperInterface
      *   Driver specific parameters
      */
     abstract protected function doCreateResultIterator(...$constructorArgs) : ResultIterator;
-
-    /**
-     * Prepare arguments.
-     *
-     * ArgumentList comes from the SQL formatter, and gives us information
-     * about the number of argument and their types if found. Based upon this
-     * information, it will:
-     *
-     *   - either just convert given arguments if it's a bare array,
-     *   - merge type information then convert if it's an ArgumentBag.
-     *
-     * In all cases, it will reconcile the awaited parameter count and raise
-     * errors if the number doesn't match.
-     */
-    final protected function prepareArguments(ArgumentList $argumentList, $arguments): array
-    {
-        $ret = [];
-
-        // J'aime pas ça, ce n'est pas très élégant.
-        if ($arguments instanceof ArgumentBag) {
-            $input = $arguments->getAll();
-            $types = $argumentList->getTypeMap($arguments);
-        } else if (\is_array($arguments)) {
-            // Convert names to positions.
-            $input = [];
-            foreach ($arguments as $index => $value) {
-                if (\is_int($index)) {
-                    $input[$index] = $value;
-                } else {
-                    $input[$argumentList->getNameIndex($index)] = $value;
-                }
-            }
-            $types = $argumentList->getTypeMap();
-        } else {
-            throw new QueryError(\sprintf(
-                "\$arguments must be a %s instance or an array, %s given",
-                ArgumentBag::class, \gettype($arguments)
-            ));
-        }
-
-        $count = $argumentList->count();
-
-        if (\count($input) !== $count) {
-            throw new QueryError(\sprintf("Invalid parameter number bound"));
-        }
-
-        for ($i = 0; $i < $count; ++$i) {
-            $ret[$i] = $this->converter->toSQL($types[$i] ?? ConverterInterface::TYPE_UNKNOWN, $input[$i]);
-        }
-
-        return $ret;
-    }
 
     /**
      * Create the result iterator instance

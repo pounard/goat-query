@@ -149,6 +149,10 @@ interface Runner
     /**
      * Execute query with the given parameters and return the affected row count
      *
+     * Usefull for all other than SELECT queries for which you are not using
+     * a RETURNING clause, depending on the driver implementation, it might boost
+     * performances by not fetching any data from the server except the row count.
+     *
      * @param string|\Goat\Query\Query $query
      *   Arbitrary query to execute
      * @param mixed[]|\Goat\Query\ArgumentBag $arguments
