@@ -69,8 +69,8 @@ class ArgumentList
         $ret = clone $this;
 
         foreach ($other->types as $index => $type) {
-            if (null !== $type && ConverterInterface::TYPE_UNKNOWN !== $type) {
-                $this->types[$index] = $type;
+            if ($type && ConverterInterface::TYPE_UNKNOWN !== $type) {
+                $ret->types[$index] = $type;
             }
         }
 
