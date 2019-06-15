@@ -54,38 +54,6 @@ class ArgumentBag extends ArgumentList
     }
 
     /**
-     * Merge with given values and return a new instance
-     *
-     * @param mixed[]|self
-     */
-    public function merge($arguments): self
-    {
-        if ($arguments instanceof self) {
-            $arguments = $arguments->data;
-        } else if (!\is_array($arguments)) {
-            throw new QueryError(\sprintf("%s::merge() parameter can only be an instance of %s or an array", self::class, self::class));
-        }
-
-        /** @var \Goat\Query\ArgumentBag $ret */
-        $ret = clone $this;
-
-        if ($arguments) {
-            foreach ($arguments as $name => $value) {
-                if (\is_int($name)) {
-                    $index = $name;
-                } else if (!isset($ret->nameMap[$name])) {
-                    throw new QueryError(\sprintf("named argument %s does not exist in the current query", $name));
-                } else {
-                    $index = $this->nameMap[$name];
-                }
-                $ret->data[$index] = $value;
-            }
-        }
-
-        return $ret;
-    }
-
-    /**
      * Append given bag vlues to this instance
      */
     public function append(ArgumentBag $bag): void
