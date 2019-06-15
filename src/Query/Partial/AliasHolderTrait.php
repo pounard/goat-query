@@ -58,14 +58,10 @@ trait AliasHolderTrait
     {
         if ($userAlias) {
             if (isset($this->relationIndex[$userAlias])) {
-                throw new QueryError(
-                    \sprintf(
-                        "cannot use alias %s for relation %s, already in use for table %s",
-                        $userAlias,
-                        $relationName,
-                        $this->relationIndex[$userAlias]
-                    )
-                );
+                throw new QueryError(\sprintf(
+                    "cannot use alias %s for relation %s, already in use for table %s",
+                    $userAlias, $relationName, $this->relationIndex[$userAlias]
+                ));
             } else {
                 $this->relationIndex[$userAlias] = $relationName;
 
