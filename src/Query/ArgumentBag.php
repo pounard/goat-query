@@ -13,15 +13,6 @@ namespace Goat\Query;
 class ArgumentBag extends ArgumentList
 {
     private $data = [];
-    private $frozen = false;
-
-    /**
-     * Lock this instance
-     */
-    public function lock(): void
-    {
-        $this->frozen = true;
-    }
 
     /**
      * Add a parameter
@@ -38,10 +29,6 @@ class ArgumentBag extends ArgumentList
      */
     public function add($value, ?string $name = null, ?string $type = null): int
     {
-        if ($this->frozen) {
-            throw new QueryError(\sprintf("You cannot call %s::add() object is frozen", self::class));
-        }
-
         if ($value instanceof ValueRepresentation) {
             if (!$type) {
                 $type = $value->getType();
@@ -103,10 +90,6 @@ class ArgumentBag extends ArgumentList
      */
     public function append(ArgumentBag $bag): void
     {
-        if ($this->frozen) {
-            throw new QueryError(\sprintf("You cannot call %s::append() object is frozen", self::class));
-        }
-
         foreach ($bag->data as $index => $value) {
             $this->add($value, $bag->names[$index], $bag->types[$index]);
         }
@@ -117,10 +100,6 @@ class ArgumentBag extends ArgumentList
      */
     public function appendArray(array $array): void
     {
-        if ($this->frozen) {
-            throw new QueryError(\sprintf("You cannot call %s::appendArray() object is frozen", self::class));
-        }
-
         foreach ($array as $index => $value) {
             if (\is_int($index)) {
                 $this->add($value);
