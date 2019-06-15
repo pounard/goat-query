@@ -858,23 +858,20 @@ class DefaultFormatter extends FormatterBase
      */
     protected function formatExpressionColumn(ExpressionColumn $column) : string
     {
-        $relation = $column->getRelationAlias();
-
-        $target = $column->getName();
         // Allow selection such as "table".*
-        if ('*' !== $target) {
+        if ('*' !== ($target = $column->getName())) {
             $target = $this->escaper->escapeIdentifier($target);
         }
 
-        if ($relation) {
+        if ($relation = $column->getRelationAlias()) {
             return \sprintf(
                 "%s.%s",
                 $this->escaper->escapeIdentifier($relation),
                 $target
             );
-        } else {
-            return $target;
         }
+
+        return $target;
     }
 
     /**
