@@ -7,6 +7,28 @@ namespace Goat\Query;
 interface QueryBuilder
 {
     /**
+     * Creates and prepare a query
+     *
+     * Using this method, calling the same query more than once will only
+     * format it once.
+     *
+     * Please note that re-executing the given query will imply that you give
+     * the exact same number of arguments when executing it, which means that
+     * you cannot use dynamic sized arrays are parameters.
+     *
+     * @param callable $callback
+     *   This callback will receive the query builder as parameter, and must
+     *   return any Query instance.
+     * @param string $identifier
+     *   In case the driver supports it, this will be propagated as the
+     *   prepared query identifier.
+     *
+     * @return Query
+     *   Returned object is immutable and cannot be altered anymore.
+     */
+    public function prepare(callable $callback, ?string $identifier = null): Query;
+
+    /**
      * Create a select query builder
      *
      * @param null|string|ExpressionRelation $relation

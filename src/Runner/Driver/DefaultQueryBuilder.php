@@ -10,7 +10,6 @@ use Goat\Query\InsertValuesQuery;
 use Goat\Query\PreparedQuery;
 use Goat\Query\Query;
 use Goat\Query\QueryBuilder;
-use Goat\Query\QueryError;
 use Goat\Query\SelectQuery;
 use Goat\Query\UpdateQuery;
 use Goat\Runner\Runner;
@@ -30,6 +29,20 @@ class DefaultQueryBuilder implements QueryBuilder
             $query->setRunner($this->runner);
         }
         return $query;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function prepare(callable $callback, ?string $identifier = null): Query
+    {
+        return new PreparedQuery(
+            $this->runner,
+            function () use ($callback) {
+                return \call_user_func($callback, $this);
+            },
+            $identifier
+        );
     }
 
     /**
