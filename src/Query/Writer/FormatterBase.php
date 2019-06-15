@@ -37,12 +37,25 @@ abstract class FormatterBase implements FormatterInterface
      * This regex is huge, but contain no backward lookup, does not imply
      * any recursivity, it should be fast enough.
      */
+
+    /*
+     * Working, but slow one.
+     *
     const PARAMETER_MATCH = '@
         ESCAPE
         (\?\:\:([\w]+))|        # Matches ?::WORD placeholders
         (\?)|                   # Matches ?
         (\:\:[\w\."]+)|         # Matches valid ::WORD cast
         (\:[\w]+\:\:([\w]+))|   # Matches :NAME::WORD placeholders
+        (\:[\w]+)               # Matches :NAME placeholders
+        @x';
+     */
+
+    const PARAMETER_MATCH = '@
+        ESCAPE
+        (\?((\:\:([\w]+))|))|   # Matches ?[::WORD] placeholders
+        (\:\:[\w\."]+)|         # Matches valid ::WORD cast
+        (\:([\w]+)\:\:([\w]+))| # Matches :NAME::WORD placeholders
         (\:[\w]+)               # Matches :NAME placeholders
         @x';
 
@@ -184,36 +197,28 @@ abstract class FormatterBase implements FormatterInterface
         $preparedSQL = \preg_replace_callback(
             $this->matchParametersRegex,
             function ($matches) use (&$index, $argumentList) {
+                $match  = $matches[0];
+                $isNamed = '?' !== ($first = $match[0]);
 
-                // Excludes the following:
-                //   - strings that don't start with ? (placeholders),
-                //   - strings that don't start with : (escape sequences)
-                //   - strings that start with : but with a second : (valid pgsql cast)
-                $length = \strlen($matched = $matches[0]);
-                if ('?' !== ($first = $matched[0]) && ($length < 2 || ':' !== $first || ':' === $matched[1])) {
-                    return $matches[0];
-                }
-
-                $placeholder = $this->escaper->writePlaceholder($index);
-                $name = $type = null;
-
-                if (':' === $first) {
-                    time();
+                if ($isNamed) {
+                    // Excludes the following:
+                    //   - strings that don't start with : (escape sequences)
+                    //   - strings that start with : but with a second : (valid pgsql cast)
+                    if (\strlen($match) < 2 || ':' !== $first || ':' === $match[1]) {
+                        return $match;
+                    }
+                    // $matches[8] is for ":NAME::TYPE" match
+                    // \substr($match, 1) if for ":NAME" only match
+                    $name = empty($matches[8]) ? \substr($match, 1) : $matches[8];
+                    $type = empty($matches[9]) ? null : $matches[9];
+                } else {
                     $name = null;
-                }
-
-                // Do not attempt to match unknonwn types from here, just let
-                // them pass outside of the \preg_replace_callback() call.
-                if (($type = $matches[3]) || ($type = $matches[7] ?? null)) {
-                    // @todo restore this for others than pgsql?
-                    // $placeholder = $this->writeCast($placeholder, $this->getCastType($type));
+                    $type = empty($matches[5]) ? null : $matches[5];
                 }
 
                 $argumentList->addParameter($type, $name);
 
-                ++$index;
-
-                return $placeholder;
+                return $this->escaper->writePlaceholder($index++);
             },
             $formattedSQL
         );
