@@ -41,6 +41,9 @@ final class PreparedQuery implements Query
 
             $query = \call_user_func($initializer);
 
+            if (!$query) {
+                throw new QueryError(\sprintf("Initializer callback did not return a %s instance", Query::class));
+            }
             if ($query instanceof PreparedQuery) {
                 throw new QueryError(\sprintf("%s cannot nest %s instances", __CLASS__, __CLASS__));
             }
@@ -56,7 +59,7 @@ final class PreparedQuery implements Query
         }
 
         if (!$this->sqlIdentifier) {
-            throw new QueryError("Prepared query is not fully intialized, initializer callback has propably raised exceptions.");
+            throw new QueryError("Prepared query is not fully initialized, initializer callback has propably raised exceptions.");
         }
 
         return $this->sqlIdentifier;
