@@ -14,3 +14,7 @@ Sorry, this needs some more documentation.
 ## History
 
 Originating and extracted from https://github.com/pounard/goat
+
+## Testing with APCU
+
+Please set the "apc.enable_cli" variable to 1 in CLI.

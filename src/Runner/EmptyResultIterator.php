@@ -6,6 +6,7 @@ namespace Goat\Runner;
 
 use Goat\Converter\ConverterInterface;
 use Goat\Hydrator\HydratorInterface;
+use Goat\Runner\Metadata\ResultMetadata;
 
 /**
  * Empty iterator for some edge cases results
@@ -56,7 +57,7 @@ final class EmptyResultIterator implements ResultIterator
     /**
      * {@inheritdoc}
      */
-    public function setTypeMap (array $map): ResultIterator
+    public function setMetadata(array $userTypes, ?ResultMetadata $metadata = null): ResultIterator
     {
         return $this;
     }
@@ -105,6 +106,14 @@ final class EmptyResultIterator implements ResultIterator
      * {@inheritdoc}
      */
     public function getColumnNames(): array
+    {
+        return [];
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getColumnTypes(): array
     {
         return [];
     }

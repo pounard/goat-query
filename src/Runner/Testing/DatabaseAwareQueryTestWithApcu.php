@@ -9,9 +9,9 @@ use Goat\Runner\Driver\AbstractRunner;
 use Goat\Runner\Driver\PDOMySQLRunner;
 use Goat\Runner\Driver\PDOPgSQLRunner;
 use Goat\Runner\Metadata\ApcuResultMetadataCache;
-use PHPUnit\Framework\TestCase;
+use Goat\Runner\Metadata\ApcuResultMetadataCache as TestCase;
 
-abstract class DatabaseAwareQueryTest extends TestCase
+abstract class DatabaseAwareQueryTestWithApcu extends TestCase
 {
     /**
      * Data provider for most functions, first parameter is a Runner object,
@@ -39,18 +39,11 @@ abstract class DatabaseAwareQueryTest extends TestCase
                 $connection->query("SET character_set_client = 'UTF-8'");
                 $connection->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
                 $runner = new PDOMySQLRunner($connection);
-                yield [$runner, false];
-
                 if ($useApcu) {
-                    $connection = new \PDO(\sprintf('mysql:host=%s;dbname=%s', $mysqlHost, $mysqlBase), $mysqlUser, $mysqlPass);
-                    $connection->query("SET character_set_client = 'UTF-8'");
-                    $connection->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
-                    $runner = new PDOMySQLRunner($connection);
                     $runner->setResultMetadataCache(new ApcuResultMetadataCache());
-                    yield [$runner, false];
                 }
+                yield [$runner, false];
             }
-
             if ($pgsqlHost) {
                 $connection = new \PDO(\sprintf('pgsql:host=%s;dbname=%s', $pgsqlHost, $pgsqlBase), $pgsqlUser, $pgsqlPass);
                 $connection->query("SET character_set_client = 'UTF-8'");
@@ -60,15 +53,6 @@ abstract class DatabaseAwareQueryTest extends TestCase
                     $runner->setResultMetadataCache(new ApcuResultMetadataCache());
                 }
                 yield [$runner, false];
-
-                if ($useApcu) {
-                    $connection = new \PDO(\sprintf('pgsql:host=%s;dbname=%s', $pgsqlHost, $pgsqlBase), $pgsqlUser, $pgsqlPass);
-                    $connection->query("SET character_set_client = 'UTF-8'");
-                    $connection->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
-                    $runner = new PDOPgSQLRunner($connection);
-                    $runner->setResultMetadataCache(new ApcuResultMetadataCache());
-                    yield [$runner, false];
-                }
             }
         }
 

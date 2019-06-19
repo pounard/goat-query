@@ -30,11 +30,33 @@ interface Query extends Statement
 
     /**
      * Get query identifier
+     *
+     * @see Query::setIdentifier()
      */
     public function getIdentifier(): ?string;
 
     /**
      * Set query unique identifier
+     *
+     * This identifier will serve two different purpose:
+     *
+     *   - if prepared, it will be the server side identifier of the prepared
+     *     query, which allows you to call it more than once,
+     *
+     *   - if your backend is slow to fetch metadata, and marked as such, it
+     *     will also serve the purpose of storing SQL query metadata, such as
+     *     return types and column names and index mapping.
+     *
+     * In real life, each time you ask for a column type, no matter the database
+     * driver in use under, fetching metadata will implicitely do SQL queries to
+     * the server to ask for each column type.
+     *
+     * ext-pgsql driver has the courtesy of storing those in cache, which makes
+     * it very efficient, skipping most of the round trips, but PDO will do as
+     * much SQL query as the number of SQL query you'll run multiplied by the
+     * number of returned columns.
+     *
+     * If your built queries are not dynamic, please always set an identifier.
      */
     public function setIdentifier(string $identifier): Query;
 

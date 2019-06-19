@@ -6,6 +6,7 @@ namespace Goat\Runner;
 
 use Goat\Query\QueryBuilder;
 use Goat\Query\Writer\FormatterInterface;
+use Goat\Runner\Metadata\ResultMetadataCache;
 
 interface Runner
 {
@@ -38,6 +39,21 @@ interface Runner
      * Is debug mode enabled
      */
     public function isDebugEnabled(): bool;
+
+    /**
+     * Set this to true and result metadata will be cached.
+     *
+     * It's mostly true for PDO, and not others.
+     *
+     * @see \Goat\Runner\Metadata\ResultMetadataCache
+     *   This interface documents why this cache exists in details.
+     */
+    public function isResultMetadataSlow(): bool;
+
+    /**
+     * Inject the result metadata cache implementation?
+     */
+    public function setResultMetadataCache(ResultMetadataCache $metadataCache): void;
 
     /**
      * Get the query builder

@@ -16,6 +16,8 @@ use Goat\Runner\ResultIterator;
 use Goat\Runner\Runner;
 use Goat\Runner\Transaction;
 use Goat\Runner\TransactionError;
+use Goat\Runner\Metadata\ArrayResultMetadataCache;
+use Goat\Runner\Metadata\ResultMetadataCache;
 
 abstract class AbstractRunner implements Runner, EscaperInterface
 {
@@ -23,6 +25,7 @@ abstract class AbstractRunner implements Runner, EscaperInterface
     private $debug = false;
     private $hydratorMap;
     private $queryBuilder;
+    private $metadataCache;
     protected $converter;
     protected $dsn;
     protected $escaper;
@@ -36,6 +39,11 @@ abstract class AbstractRunner implements Runner, EscaperInterface
         $this->formatter = $this->createFormatter();
         $this->formatter->setEscaper($this);
         $this->setConverter(new DefaultConverter());
+
+        // @todo Inject it properly
+        if ($this->isResultMetadataSlow()) {
+            $this->metadataCache = new ArrayResultMetadataCache();
+        }
     }
 
     /**
@@ -52,6 +60,22 @@ abstract class AbstractRunner implements Runner, EscaperInterface
     final public function isDebugEnabled(): bool
     {
         return $this->debug;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function isResultMetadataSlow(): bool
+    {
+        return false;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    final public function setResultMetadataCache(ResultMetadataCache $metadataCache): void
+    {
+        $this->metadataCache = $metadataCache;
     }
 
     /**
@@ -244,6 +268,11 @@ abstract class AbstractRunner implements Runner, EscaperInterface
     /**
      * Create the result iterator instance
      *
+     * @todo THIS BECOMING A GOD METHOD! PLEASE STOP THIS!
+     *   - Yes, I'm talking to myself.
+     *
+     * @param string $identifier
+     *   Query identifier
      * @param string[] $options
      *   Query options
      * @param mixed[] $constructorArgs
@@ -251,11 +280,12 @@ abstract class AbstractRunner implements Runner, EscaperInterface
      *
      * @return ResultIterator
      */
-    final protected function createResultIterator($options = null, ...$constructorArgs): ResultIterator
+    final protected function createResultIterator(string $identifier, $options = null, ...$constructorArgs): ResultIterator
     {
         $result = $this->doCreateResultIterator(...$constructorArgs);
         $result->setConverter($this->converter);
 
+        // Normalize options, it might be a string only.
         if ($options) {
             if (\is_string($options)) {
                 $options = ['class' => $options];
@@ -281,15 +311,34 @@ abstract class AbstractRunner implements Runner, EscaperInterface
             $result->setHydrator($this->getHydratorMap()->get($options['class']));
         }
 
+        $userTypes = [];
         if (!empty($options['types'])) {
             if (!\is_array($options['types'])) {
                 throw new QueryError(\sprintf("'types' option must be a string array, keys are result column aliases, values are types"));
             }
-            $result->setTypeMap($options['types']);
+            $userTypes = $options['types'];
         }
 
         if ($this->debug || (isset($options['debug']) && $options['debug'])) {
             $result->setDebug(true);
+        }
+
+        // Handle metadata cache.
+        if ($this->metadataCache && $this->isResultMetadataSlow()) {
+            // Force result iterator to fetch all column information, it does
+            // really mater to impose this since hydration process will do
+            // it in the end. User types feature was originally created as a
+            // way to suppress this performance penalty, but it is not anymore
+            // and serves the only purpose of allow the user to tweak object
+            // hydration.
+            if ($metadata = $this->metadataCache->fetch($identifier)) {
+                $result->setMetadata($userTypes, $metadata);
+            } else {
+                $result->setMetadata($userTypes);
+                $this->metadataCache->store($identifier, $result->getColumnNames(), $result->getColumnTypes());
+            }
+        } else {
+            $result->setMetadata($userTypes);
         }
 
         return $result;

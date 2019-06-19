@@ -35,6 +35,14 @@ abstract class AbstractPDORunner extends AbstractRunner
     }
 
     /**
+     * {@inheritdoc}
+     */
+    public function isResultMetadataSlow(): bool
+    {
+        return true;
+    }
+
+    /**
      * Get PDO instance, connect if not connected
      */
     final protected function getPdo(): \PDO
@@ -51,10 +59,18 @@ abstract class AbstractPDORunner extends AbstractRunner
     }
 
     /**
-     * Prepare, merge arguments, and execute query
+     * {@inheritdoc}
      */
-    protected function executeQuery($query, $arguments = null, $options = null): \PDOStatement
+    public function execute($query, $arguments = null, $options = null): ResultIterator
     {
+        if ($query instanceof Query) {
+            if (!$query->willReturnRows()) {
+                $affectedRowCount = $this->perform($query, $arguments, $options);
+
+                return new EmptyResultIterator($affectedRowCount);
+            }
+        }
+
         $args = [];
         $rawSQL = '';
 
@@ -66,7 +82,7 @@ abstract class AbstractPDORunner extends AbstractRunner
             $statement = $this->connection->prepare($rawSQL, [\PDO::ATTR_CURSOR => \PDO::CURSOR_FWDONLY]);
             $statement->execute($args);
 
-            return $statement;
+            return $this->createResultIterator($prepared->getIdentifier(), $options, $statement);
 
         } catch (QueryError $e) {
             throw $e;
@@ -80,25 +96,28 @@ abstract class AbstractPDORunner extends AbstractRunner
     /**
      * {@inheritdoc}
      */
-    public function execute($query, $arguments = null, $options = null): ResultIterator
-    {
-        if ($query instanceof Query) {
-            if (!$query->willReturnRows()) {
-                $affectedRowCount = $this->perform($query, $arguments, $options);
-
-                return new EmptyResultIterator($affectedRowCount);
-            }
-        }
-
-        return $this->createResultIterator($options, $this->executeQuery($query, $arguments, $options));
-    }
-
-    /**
-     * {@inheritdoc}
-     */
     public function perform($query, $arguments = null, $options = null) : int
     {
-        return $this->executeQuery($query, $arguments, $options)->rowCount();
+        $args = [];
+        $rawSQL = '';
+
+        try {
+            $prepared = $this->formatter->prepare($query);
+            $rawSQL = $prepared->getRawSQL();
+            $args = $prepared->prepareArgumentsWith($this->converter, $query, $arguments);
+
+            $statement = $this->connection->prepare($rawSQL, [\PDO::ATTR_CURSOR => \PDO::CURSOR_FWDONLY]);
+            $statement->execute($args);
+
+            return $statement->rowCount();
+
+        } catch (QueryError $e) {
+            throw $e;
+        } catch (\PDOException $e) {
+            throw new DriverError($rawSQL, $arguments, $e);
+        } catch (\Exception $e) {
+            throw new DriverError($rawSQL, $arguments, $e);
+        }
     }
 
     /**
@@ -149,7 +168,7 @@ abstract class AbstractPDORunner extends AbstractRunner
             $args = $prepared->prepareArgumentsWith($this->converter, '', $arguments);
             $statement->execute($args);
 
-            return $this->createResultIterator($options, $statement);
+            return $this->createResultIterator($identifier, $options, $statement);
 
         } catch (QueryError $e) {
             throw $e;

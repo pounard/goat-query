@@ -7,15 +7,14 @@ namespace Goat\Runner;
 use Goat\Converter\ConverterInterface;
 use Goat\Hydrator\HydratorInterface;
 use Goat\Query\QueryError;
+use Goat\Runner\Metadata\DefaultResultMetadata;
+use Goat\Runner\Metadata\ResultMetadata;
 
 abstract class AbstractResultIterator implements ResultIterator
 {
     private $columnCount;
-    private $columnNameMap = [];
-    private $columnTypeMap = [];
     private $debug = false;
-    private $everythingCollected = false;
-    private $loadedColumns = [];
+    private $metadata;
     private $userTypeMap = [];
     protected $columnKey;
     protected $converter;
@@ -35,6 +34,23 @@ abstract class AbstractResultIterator implements ResultIterator
      * Real implementation of getColumnName().
      */
     abstract protected function countColumnsFromDriver(): int;
+
+    /**
+     * Collect all column names, this to be called only when necessary.
+     *
+     * Using PDO, for example, it will do an extra round trip with the server per column.
+     */
+    private function collectAllColumnInfo()
+    {
+        if (!$this->metadata) {
+            $this->metadata = new DefaultResultMetadata([], []);
+            $count = $this->countColumns();
+            for ($i = 0; $i < $count; ++$i) {
+                list($name, $type) = $this->getColumnInfoFromDriver($i);
+                $this->metadata->setColumnInformation($i, $name, $type);
+            }
+        }
+    }
 
     /**
      * {@inheritdoc}
@@ -143,6 +159,14 @@ abstract class AbstractResultIterator implements ResultIterator
     /**
      * {@inheritdoc}
      */
+    public function countColumns(): int
+    {
+        return $this->columnCount ?? ($this->columnCount = $this->countColumnsFromDriver());
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function setKeyColumn(string $name): ResultIterator
     {
         // Let it pass until iteration silently when not in debug mode
@@ -156,71 +180,42 @@ abstract class AbstractResultIterator implements ResultIterator
     }
 
     /**
-     * Collect single column information
-     */
-    private function collectColumnInfo(int $index)
-    {
-        if (!isset($this->loadedColumns[$index])) {
-            list($name, $type) = $this->getColumnInfoFromDriver($index);
-            $this->loadedColumns[$index] = $name;
-            $this->columnNameMap[$name] = $index;
-            $this->columnTypeMap[$name] = $type;
-        }
-    }
-
-    /**
-     * Collect all column names, this to be called only when necessary.
-     *
-     * Using PDO, for example, it will do an extra round trip with the server per column.
-     */
-    private function collectAllColumnInfo()
-    {
-        if (!$this->everythingCollected) {
-            for ($i = 0; $i < $this->countColumns(); ++$i) {
-                if (!isset($this->loadedColumns[$i])) {
-                    $this->collectColumnInfo($i);
-                }
-            }
-            $this->everythingCollected = true;
-        }
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function countColumns(): int
-    {
-        return $this->columnCount ?? ($this->columnCount = $this->countColumnsFromDriver());
-    }
-
-    /**
      * Get column type
      */
-    public function getColumnType(string $name): string
+    public function getColumnType(string $name): ?string
     {
         if (isset($this->userTypeMap[$name])) {
             return $this->userTypeMap[$name];
         }
 
-        $this->collectAllColumnInfo();
-
-        if (isset($this->columnTypeMap[$name])) {
-            return $this->columnTypeMap[$name];
+        if (!$this->metadata) {
+            $this->collectAllColumnInfo();
         }
 
-        if ($this->debug) {
+        $type = $this->metadata->getColumnType($name);
+
+        if (null === $type && $this->debug) {
             throw new QueryError(\sprintf("column '%s' does not exist in result", $name));
         }
 
-        return 'varchar'; // Stupid but will never fail at conversion time.
+        return $type ?? 'varchar'; // Stupid but will never fail at conversion time.
     }
 
     /**
      * {@inheritdoc}
      */
-    public function setTypeMap(array $map): ResultIterator
+    public function setMetadata(array $userTypes, ?ResultMetadata $metadata = null): ResultIterator
     {
-        $this->userTypeMap = $map;
+        if ($this->metadata) {
+            if ($this->debug) {
+                throw new InvalidDataAccessError("Result iterator metadata has already set");
+            }
+
+            return $this;
+        }
+
+        $this->metadata = $metadata;
+        $this->userTypeMap = $userTypes;
 
         return $this;
     }
@@ -230,9 +225,16 @@ abstract class AbstractResultIterator implements ResultIterator
      */
     public function columnExists(string $name): bool
     {
-        $this->collectAllColumnInfo();
+        // Avoid metadata collection at all cost.
+        if (isset($this->userTypeMap[$name])) {
+            return true;
+        }
 
-        return isset($this->columnNameMap[$name]);
+        if (!$this->metadata) {
+            $this->collectAllColumnInfo();
+        }
+
+        return $this->metadata->columnExists($name);
     }
 
     /**
@@ -240,9 +242,23 @@ abstract class AbstractResultIterator implements ResultIterator
      */
     public function getColumnNames(): array
     {
-        $this->collectAllColumnInfo();
+        if (!$this->metadata) {
+            $this->collectAllColumnInfo();
+        }
 
-        return \array_flip($this->columnNameMap);
+        return $this->metadata->getColumnNames();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getColumnTypes(): array
+    {
+        if (!$this->metadata) {
+            $this->collectAllColumnInfo();
+        }
+
+        return $this->metadata->getColumnTypes();
     }
 
     /**
@@ -250,21 +266,11 @@ abstract class AbstractResultIterator implements ResultIterator
      */
     public function getColumnName(int $index): string
     {
-        if (!\is_int($index)) {
-            throw new InvalidDataAccessError(\sprintf("'%s' is not an integer.\n", $index));
-        }
-        if ($index < 0) {
-            throw new InvalidDataAccessError(\sprintf("Column count start with 0: %d given.\n", $index));
-        }
-        if (($count = $this->countColumns()) < $index + 1) {
-            throw new InvalidDataAccessError(\sprintf("Column count is %d: %d given.\n", $count, $index));
+        if (!$this->metadata) {
+            $this->collectAllColumnInfo();
         }
 
-        if (!isset($this->loadedColumns[$index])) {
-            $this->collectColumnInfo($index);
-        }
-
-        return $this->loadedColumns[$index];
+        return $this->metadata->getColumnName($index);
     }
 
     /**

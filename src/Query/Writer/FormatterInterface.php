@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Goat\Query\Writer;
 
-use Goat\Query\ArgumentBag;
 use Goat\Query\Statement;
 
 /**

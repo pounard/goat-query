@@ -14,15 +14,17 @@ use Goat\Query\Statement;
  */
 final class FormattedQuery
 {
-    private $rawSQL;
     private $argumentList;
+    private $identifier;
+    private $rawSQL;
 
     /**
      * Default constructor
      */
-    public function __construct(string $rawSQL, ArgumentList $argumentList)
+    public function __construct(string $rawSQL, ArgumentList $argumentList, ?string $identifier = null)
     {
         $this->argumentList = $argumentList;
+        $this->identifier = $identifier;
         $this->rawSQL = $rawSQL;
     }
 
@@ -40,6 +42,14 @@ final class FormattedQuery
     public function getRawSQL(): string
     {
         return $this->rawSQL;
+    }
+
+    /**
+     * Get query identifier
+     */
+    public function getIdentifier(): string
+    {
+        return $this->identifier ?? ($this->identifier = 'gqi_'.\md5($this->rawSQL));
     }
 
     /**

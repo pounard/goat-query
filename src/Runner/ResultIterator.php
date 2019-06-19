@@ -6,11 +6,12 @@ namespace Goat\Runner;
 
 use Goat\Converter\ConverterInterface;
 use Goat\Hydrator\HydratorInterface;
+use Goat\Runner\Metadata\ResultMetadata;
 
 /**
  * When in use using the iterator, default behavior is to return associative arrays
  */
-interface ResultIterator extends \IteratorAggregate, \Countable
+interface ResultIterator extends ResultMetadata, \IteratorAggregate, \Countable
 {
     /**
      * Set converter
@@ -43,42 +44,15 @@ interface ResultIterator extends \IteratorAggregate, \Countable
     /**
      * Set type map for faster hydration
      *
-     * @param string[][]
+     * @param string[][] $userTypes
      *   Keys are aliases from the result, values are types.
      */
-    public function setTypeMap(array $map): self;
-
-    /**
-     * Get the column count
-     */
-    public function countColumns(): int;
+    public function setMetadata(array $userTypes, ?ResultMetadata $metadata = null): self;
 
     /**
      * Get the total row count
      */
     public function countRows(): int;
-
-    /**
-     * Does this column exists
-     */
-    public function columnExists(string $name): bool;
-
-    /**
-     * Get all column names, in select order
-     *
-     * @return string[]
-     */
-    public function getColumnNames(): array;
-
-    /**
-     * Get column type
-     */
-    public function getColumnType(string $name): string;
-
-    /**
-     * Get column name
-     */
-    public function getColumnName(int $index): string;
 
     /**
      * Fetch given column in the first or current row

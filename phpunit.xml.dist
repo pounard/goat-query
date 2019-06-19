@@ -44,6 +44,7 @@
         <env name="DRUPAL8_PGSQL_DSN" value="mysql://192.168.57.102/some_database" />
         <env name="DRUPAL8_PGSQL_PATH" value="/var/www/my-drupal-site/webroot" />
          -->
+        <env name="ENABLE_APCU" value="1" />
         <env name="ENABLE_EXT_PGSQL" value="1" />
         <env name="ENABLE_PDO" value="1" />
         <env name="ENABLE_SECURITY" value="0" />

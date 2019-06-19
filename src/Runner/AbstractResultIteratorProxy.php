@@ -6,6 +6,7 @@ namespace Goat\Runner;
 
 use Goat\Converter\ConverterInterface;
 use Goat\Hydrator\HydratorInterface;
+use Goat\Runner\Metadata\ResultMetadata;
 
 abstract class AbstractResultIteratorProxy implements ResultIterator
 {
@@ -50,9 +51,9 @@ abstract class AbstractResultIteratorProxy implements ResultIterator
     /**
      * {@inheritdoc}
      */
-    final public function setTypeMap (array $map): ResultIterator
+    final public function setMetadata(array $userTypes, ?ResultMetadata $metadata = null): ResultIterator
     {
-        $this->getResult()->setTypeMap($map);
+        $this->getResult()->setMetadata($userTypes, $metadata);
 
         return $this;
     }
@@ -103,6 +104,14 @@ abstract class AbstractResultIteratorProxy implements ResultIterator
     final public function getColumnNames(): array
     {
         return $this->getResult()->getColumnNames();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    final public function getColumnTypes(): array
+    {
+        return $this->getResult()->getColumnTypes();
     }
 
     /**

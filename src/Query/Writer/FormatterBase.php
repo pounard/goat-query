@@ -187,7 +187,7 @@ abstract class FormatterBase implements FormatterInterface
      *   First value is the query string, second is the reworked array
      *   of parameters, if conversions were needed
      */
-    final private function rewriteQueryAndParameters(string $formattedSQL): FormattedQuery
+    final private function rewriteQueryAndParameters(string $formattedSQL, ?string $identifier = null): FormattedQuery
     {
         $index = 0;
         $argumentList = new ArgumentList();
@@ -223,7 +223,7 @@ abstract class FormatterBase implements FormatterInterface
             $formattedSQL
         );
 
-        return new FormattedQuery($preparedSQL, $argumentList);
+        return new FormattedQuery($preparedSQL, $argumentList, $identifier);
     }
 
     /**
@@ -235,13 +235,17 @@ abstract class FormatterBase implements FormatterInterface
      */
     final public function prepare($query): FormattedQuery
     {
+        $identifier = null;
+
         if (!\is_string($query)) {
-            if (!$query instanceof Statement) {
+            if ($query instanceof Query) {
+                $identifier = $query->getIdentifier();
+            } else if (!$query instanceof Statement) {
                 throw new QueryError(\sprintf("query must be a bare string or an instance of %s", Query::class));
             }
             $query = $this->format($query);
         }
 
-        return $this->rewriteQueryAndParameters($query);
+        return $this->rewriteQueryAndParameters($query, $identifier);
     }
 }
