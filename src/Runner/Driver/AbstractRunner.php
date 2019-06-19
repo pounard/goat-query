@@ -117,6 +117,14 @@ abstract class AbstractRunner implements Runner, EscaperInterface
     /**
      * {@inheritdoc}
      */
+    final public function getConverter(): ConverterInterface
+    {
+        return $this->converter;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     final public function getFormatter(): FormatterInterface
     {
         return $this->formatter;

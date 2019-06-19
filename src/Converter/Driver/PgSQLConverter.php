@@ -3,6 +3,7 @@
 namespace Goat\Converter\Driver;
 
 use Goat\Converter\ConverterInterface;
+use Goat\Converter\DefaultConverter;
 use Goat\Converter\TypeConversionError;
 
 /**
@@ -24,6 +25,15 @@ class PgSQLConverter implements ConverterInterface
      */
     public function __construct(ConverterInterface $default)
     {
+        if (!$default instanceof DefaultConverter) {
+            throw new TypeConversionError(\sprintf(
+                "Converter must be an instance of '%s'",
+                DefaultConverter::class
+            ));
+        }
+
+        $default->register(new PgSQLArrayConverter());
+
         $this->default = $default;
     }
 

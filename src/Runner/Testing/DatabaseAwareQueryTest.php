@@ -3,12 +3,14 @@
 namespace Goat\Runner\Testing;
 
 use GeneratedHydrator\Configuration;
+use Goat\Converter\DefaultConverter;
 use Goat\Hydrator\HydratorMap;
 use Goat\Runner\Runner;
 use Goat\Runner\Driver\AbstractRunner;
 use Goat\Runner\Driver\PDOMySQLRunner;
 use Goat\Runner\Driver\PDOPgSQLRunner;
 use Goat\Runner\Metadata\ApcuResultMetadataCache;
+use Goat\Runner\Metadata\ArrayResultMetadataCache;
 use PHPUnit\Framework\TestCase;
 
 abstract class DatabaseAwareQueryTest extends TestCase
@@ -33,12 +35,17 @@ abstract class DatabaseAwareQueryTest extends TestCase
             $pgsqlPass = \getenv('PGSQL_USERNAME');
         }
 
+        $defaultConverter = new DefaultConverter();
+        $this->prepareConverter($defaultConverter);
+
         if (\getenv('ENABLE_PDO')) {
             if ($mysqlHost) {
                 $connection = new \PDO(\sprintf('mysql:host=%s;dbname=%s', $mysqlHost, $mysqlBase), $mysqlUser, $mysqlPass);
                 $connection->query("SET character_set_client = 'UTF-8'");
                 $connection->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
                 $runner = new PDOMySQLRunner($connection);
+                $runner->setConverter($defaultConverter);
+                $runner->setResultMetadataCache(new ArrayResultMetadataCache());
                 yield [$runner, false];
 
                 if ($useApcu) {
@@ -46,6 +53,7 @@ abstract class DatabaseAwareQueryTest extends TestCase
                     $connection->query("SET character_set_client = 'UTF-8'");
                     $connection->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
                     $runner = new PDOMySQLRunner($connection);
+                    $runner->setConverter($defaultConverter);
                     $runner->setResultMetadataCache(new ApcuResultMetadataCache());
                     yield [$runner, false];
                 }
@@ -56,9 +64,8 @@ abstract class DatabaseAwareQueryTest extends TestCase
                 $connection->query("SET character_set_client = 'UTF-8'");
                 $connection->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
                 $runner = new PDOPgSQLRunner($connection);
-                if ($useApcu) {
-                    $runner->setResultMetadataCache(new ApcuResultMetadataCache());
-                }
+                $runner->setConverter($defaultConverter);
+                $runner->setResultMetadataCache(new ArrayResultMetadataCache());
                 yield [$runner, false];
 
                 if ($useApcu) {
@@ -66,6 +73,7 @@ abstract class DatabaseAwareQueryTest extends TestCase
                     $connection->query("SET character_set_client = 'UTF-8'");
                     $connection->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
                     $runner = new PDOPgSQLRunner($connection);
+                    $runner->setConverter($defaultConverter);
                     $runner->setResultMetadataCache(new ApcuResultMetadataCache());
                     yield [$runner, false];
                 }
@@ -88,6 +96,14 @@ abstract class DatabaseAwareQueryTest extends TestCase
     public function driverDataSource()
     {
         return [];
+    }
+
+    /**
+     * Prepare converter
+     */
+    protected function prepareConverter(DefaultConverter $converter)
+    {
+        // Register your custom converters if needed
     }
 
     /**

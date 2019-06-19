@@ -25,10 +25,6 @@ final class DefaultConverter implements ConverterInterface
     /**
      * Get default converter map
      *
-     * Please note that definition order is significant, some converters
-     * canProcess() method may short-circuit some others, the current
-     * definition order is kept during converters registration.
-     *
      * @return array
      *   Keys are type identifiers, values are arrays containing:
      *     - first value is the converter class name
@@ -92,8 +88,8 @@ final class DefaultConverter implements ConverterInterface
         ];
     }
 
-    private $aliasMap = [];
     private $converters = [];
+    private $convertersTypeMap = [];
     private $debug = false;
     private $uuidSupport;
 
@@ -102,7 +98,7 @@ final class DefaultConverter implements ConverterInterface
      *
      * @param bool $debug
      */
-    public function setDebug(bool $debug = true)
+    public function setDebug(bool $debug = true): void
     {
         $this->debug = $debug;
     }
@@ -115,45 +111,9 @@ final class DefaultConverter implements ConverterInterface
      *
      * @return $this
      */
-    public function register(ValueConverterInterface $instance, array $aliases = [], $allowOverride = false)
+    public function register(ValueConverterInterface $instance): void
     {
-        $types = $instance->getHandledTypes();
-
-        foreach ($types as $type) {
-            if (!$allowOverride && isset($this->converters[$type])) {
-                $message = \sprintf("type '%s' is already defined, using '%s' converter class", $type, \get_class($this->converters[$type]));
-                if ($this->debug) {
-                    throw new \InvalidArgumentException($message);
-                } else {
-                    \trigger_error($message, E_USER_WARNING);
-                }
-            }
-
-            $this->converters[$type] = $instance;
-        }
-
-        if ($aliases) {
-            foreach ($aliases as $alias) {
-
-                $message = null;
-                if (isset($this->converters[$alias])) {
-                    $message = \sprintf("alias '%s' for type '%s' is already defined as a type, using '%s' converter class", $alias, $type, \get_class($this->converters[$type]));
-                } else if (!$allowOverride && isset($this->aliasMap[$alias])) {
-                    $message = \sprintf("alias '%s' for type '%s' is already defined, for type '%s'", $alias, $type, \get_class($this->aliasMap[$type]));
-                }
-                if ($message) {
-                    if ($this->debug) {
-                        throw new \InvalidArgumentException($message);
-                    } else {
-                        \trigger_error($message, E_USER_WARNING);
-                    }
-                }
-
-                $this->aliasMap[$alias] = $type;
-            }
-        }
-
-        return $this;
+        $this->converters[] = $instance;
     }
 
     /**
@@ -165,15 +125,39 @@ final class DefaultConverter implements ConverterInterface
     }
 
     /**
+     * Lookup in value converters to find one that can handle this type
+     */
+    private function findValueConverter(string $type): ?ValueConverterInterface
+    {
+        /** @var \Goat\Converter\ValueConverterInterface $valueConverter */
+        foreach ($this->converters as $valueConverter) {
+            if ($valueConverter->isTypeSupported($type, $this)) {
+                return $valueConverter;
+            }
+        }
+        return null;
+    }
+
+    /**
      * Get converter for type
      */
-    private function get(string $type) : ?ValueConverterInterface
+    private function getValueConverter(string $type): ?ValueConverterInterface
     {
-        $type = $this->aliasMap[$type] ?? $type;
+        if (isset($this->convertersTypeMap[$type])) {
+            $valueConverter = $this->convertersTypeMap[$type];
 
-        if (isset($this->converters[$type])) {
-            return $this->converters[$type];
+            if (false === $valueConverter) {
+                return null;
+            }
+
+            return $valueConverter;
         }
+
+        if ($valueConverter = $this->findValueConverter($type)) {
+            return $this->convertersTypeMap[$type] = $valueConverter;
+        }
+
+        $this->convertersTypeMap[$type] = false;
 
         if ($this->debug) {
             throw new \InvalidArgumentException(\sprintf("no converter registered for type '%s'", $type));
@@ -248,7 +232,7 @@ final class DefaultConverter implements ConverterInterface
             case 'date':
             case 'time':
             case 'timez':
-                return '\\DateTimeImmutable';
+                return \DateTimeImmutable::class;
 
             // Binary objects
             // @todo handle object stream
@@ -357,8 +341,8 @@ final class DefaultConverter implements ConverterInterface
                 return $value;
         }
 
-        if ($converter = $this->get($type)) {
-            return $converter->fromSQL($type, $value);
+        if ($converter = $this->getValueConverter($type)) {
+            return $converter->fromSQL($type, $value, $this);
         }
 
         return (string)$value;
@@ -385,8 +369,9 @@ final class DefaultConverter implements ConverterInterface
             return 'timestamp';
         }
 
-        foreach ($this->converters as $type => $converter) {
-            if ($converter->canProcess($value)) {
+        /** @var \Goat\Converter\ValueConverterInterface $valueConverter */
+        foreach ($this->converters as $valueConverter) {
+            if ($type = $valueConverter->guessType($value, $this)) {
                 return $type;
             }
         }
@@ -496,7 +481,7 @@ final class DefaultConverter implements ConverterInterface
         }
 
         if ($converter = $this->get($type)) {
-            return $converter->toSQL($type, $value);
+            return $converter->toSQL($type, $value, $this);
         }
 
         return (string)$value;

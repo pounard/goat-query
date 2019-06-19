@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Goat\Converter\Impl;
 
+use Goat\Converter\ConverterInterface;
 use Goat\Converter\TypeConversionError;
 use Goat\Converter\ValueConverterInterface;
 
@@ -73,23 +74,15 @@ class IntervalValueConverter implements ValueConverterInterface
     /**
      * {@inheritdoc}
      */
-    public function getHandledTypes(): array
+    public function getPhpType(string $type, ConverterInterface $converter): ?string
     {
-        return ['interval'];
+        return \DateInterval::class;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function getPhpType(string $type): ?string
-    {
-        return '\\DateInterval';
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function fromSQL(string $type, $value)
+    public function fromSQL(string $type, $value, ConverterInterface $converter)
     {
         if (empty($value)) {
             return null;
@@ -101,7 +94,7 @@ class IntervalValueConverter implements ValueConverterInterface
     /**
      * {@inheritdoc}
      */
-    public function toSQL(string $type, $value) : ?string
+    public function toSQL(string $type, $value, ConverterInterface $converter): ?string
     {
         if (!$value instanceof \DateInterval) {
             throw new TypeConversionError(\sprintf("cannot process type value of type '%s'", \gettype($value)));
@@ -113,8 +106,16 @@ class IntervalValueConverter implements ValueConverterInterface
     /**
      * {@inheritdoc}
      */
-    public function canProcess($value) : bool
+    public function isTypeSupported(string $type, ConverterInterface $converter): bool
     {
-        return $value instanceof \DateInterval;
+        return 'interval' === $type;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function guessType($value, ConverterInterface $converter): ?string
+    {
+        return ($value instanceof \DateInterval) ? 'interval' : null;
     }
 }

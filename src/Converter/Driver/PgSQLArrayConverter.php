@@ -5,35 +5,23 @@ declare(strict_types=1);
 namespace Goat\Converter\Driver;
 
 use Goat\Converter\ConverterInterface;
+use Goat\Converter\ValueConverterInterface;
 
 /**
- * In PgSQL, array are types, you can't have an array with different types within.
- *
- * For now, there are important considerations you should be aware of:
- *   - it won't convert bothways, only from SQL to PHP.
+ * PostgreSQL array converter.
  */
-final class PgSQLArrayConverter implements ConverterInterface
+final class PgSQLArrayConverter implements ValueConverterInterface
 {
-    private $converter;
-
-    /**
-     * We are going to work recursively, we need a converter here
-     */
-    public function __construct(ConverterInterface $converter)
-    {
-        $this->converter = $converter;
-    }
-
     /**
      * Find subtype
      */
     private function findSubtype(string $type): ?string
     {
         if ('_' === $type[0]) {
-            return \mb_substr($type, 1);
+            return \substr($type, 1);
         }
-        if ('[]' === \mb_substr($type, -2)) {
-            return \mb_substr($type, 0, -2);
+        if ('[]' === \substr($type, -2)) {
+            return \substr($type, 0, -2);
         }
         return null;
     }
@@ -41,14 +29,14 @@ final class PgSQLArrayConverter implements ConverterInterface
     /**
      * Recursive convertion
      */
-    private function recursiveFromSQL(string $type, array $values): array
+    private function recursiveFromSQL(string $type, array $values, ConverterInterface $converter): array
     {
         return \array_map(
-            function ($value) use ($type) {
+            function ($value) use ($type, $converter) {
                 if (\is_array($value)) {
-                    return $this->recursiveFromSQL($type, $value);
+                    return $this->recursiveFromSQL($type, $value, $converter);
                 }
-                return $this->converter->fromSQL($type, $value);
+                return $converter->fromSQL($type, $value);
             },
             $values
         );
@@ -57,7 +45,7 @@ final class PgSQLArrayConverter implements ConverterInterface
     /**
      * {@inheritdoc}
      */
-    public function getPhpType(string $sqlType): ?string
+    public function getPhpType(string $sqlType, ConverterInterface $converter): ?string
     {
         if ($this->findSubtype($sqlType)) {
             return 'array';
@@ -69,30 +57,30 @@ final class PgSQLArrayConverter implements ConverterInterface
     /**
      * {@inheritdoc}
      */
-    public function fromSQL(string $type, $value)
+    public function fromSQL(string $type, $value, ConverterInterface $converter)
     {
         // First detect type, using anything we can.
         // PDO will always match _TYPE, sometime we also may have TYPE[].
         if ($subType = $this->findSubtype($type)) {
-            return $this->recursiveFromSQL($subType, PgSQLParser::parseArray($value));
+            return $this->recursiveFromSQL($subType, PgSQLParser::parseArray($value), $converter);
         }
 
-        return $this->converter->fromSQL($type, $value);
+        return $converter->fromSQL($type, $value);
     }
 
     /**
      * {@inheritdoc}
      */
-    public function toSQL(string $type, $value): ?string
+    public function toSQL(string $type, $value, ConverterInterface $converter): ?string
     {
         if (ConverterInterface::TYPE_UNKNOWN === $type) {
-            $type = $this->guessType($value);
+            $type = $this->guessType($value, $converter);
         }
 
         $subType = $this->findSubtype($type);
 
         if (null === $value || !$subType || !\is_array($value)) {
-            return $this->converter->toSQL($subType ?? $type, $value);
+            return $converter->toSQL($subType ?? $type, $value);
         }
         if (empty($value)) {
             return '{}';
@@ -100,8 +88,8 @@ final class PgSQLArrayConverter implements ConverterInterface
 
         return PgSQLParser::writeArray(
             $value,
-            function ($value) use ($subType) {
-                return $this->converter->toSQL($subType, $value);
+            static function ($value) use ($subType, $converter) {
+                return $converter->toSQL($subType, $value);
             }
         );
     }
@@ -109,16 +97,22 @@ final class PgSQLArrayConverter implements ConverterInterface
     /**
      * {@inheritdoc}
      */
-    public function guessType($value): string
+    public function isTypeSupported(string $type, ConverterInterface $converter): bool
+    {
+        return '_' === $type[0] || '[]' === \substr($type, -2);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function guessType($value, ConverterInterface $converter): ?string
     {
         if (\is_array($value)) {
             if (empty($value)) {
                 return ConverterInterface::TYPE_NULL;
             }
-
-            return $this->converter->guessType(\reset($value)).'[]';
+            return $converter->guessType(\reset($value)).'[]';
         }
-
-        return $this->converter->guessType($value);
+        return $converter->guessType($value);
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Goat\Runner;
 
+use Goat\Converter\ConverterInterface;
 use Goat\Query\QueryBuilder;
 use Goat\Query\Writer\FormatterInterface;
 use Goat\Runner\Metadata\ResultMetadataCache;
@@ -64,6 +65,11 @@ interface Runner
      * Get SQL formatter
      */
     public function getFormatter(): FormatterInterface;
+
+    /**
+     * Get converter
+     */
+    public function getConverter(): ConverterInterface;
 
     /**
      * Creates a new transaction
