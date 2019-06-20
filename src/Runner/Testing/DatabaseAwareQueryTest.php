@@ -2,13 +2,13 @@
 
 namespace Goat\Runner\Testing;
 
-use GeneratedHydrator\Configuration;
+use GeneratedHydrator\Configuration as GeneratedHydratorConfiguration;
 use Goat\Converter\DefaultConverter;
+use Goat\Driver\Configuration;
+use Goat\Driver\PDODriver;
 use Goat\Hydrator\HydratorMap;
 use Goat\Runner\Runner;
 use Goat\Runner\Driver\AbstractRunner;
-use Goat\Runner\Driver\PDOMySQLRunner;
-use Goat\Runner\Driver\PDOPgSQLRunner;
 use Goat\Runner\Metadata\ApcuResultMetadataCache;
 use Goat\Runner\Metadata\ArrayResultMetadataCache;
 use PHPUnit\Framework\TestCase;
@@ -40,19 +40,29 @@ abstract class DatabaseAwareQueryTest extends TestCase
 
         if (\getenv('ENABLE_PDO')) {
             if ($mysqlHost) {
-                $connection = new \PDO(\sprintf('mysql:host=%s;dbname=%s', $mysqlHost, $mysqlBase), $mysqlUser, $mysqlPass);
-                $connection->query("SET character_set_client = 'UTF-8'");
-                $connection->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
-                $runner = new PDOMySQLRunner($connection);
+                $driver = new PDODriver();
+                $driver->setConfiguration(new Configuration([
+                    'database' => $mysqlBase,
+                    'driver' => 'mysql',
+                    'host' => $mysqlHost,
+                    'password' => $mysqlPass,
+                    'username' => $mysqlUser,
+                ]));
+                $runner = $driver->getRunner();
                 $runner->setConverter($defaultConverter);
                 $runner->setResultMetadataCache(new ArrayResultMetadataCache());
                 yield [$runner, false];
 
                 if ($useApcu) {
-                    $connection = new \PDO(\sprintf('mysql:host=%s;dbname=%s', $mysqlHost, $mysqlBase), $mysqlUser, $mysqlPass);
-                    $connection->query("SET character_set_client = 'UTF-8'");
-                    $connection->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
-                    $runner = new PDOMySQLRunner($connection);
+                    $driver = new PDODriver();
+                    $driver->setConfiguration(new Configuration([
+                        'database' => $mysqlBase,
+                        'driver' => 'mysql',
+                        'host' => $mysqlHost,
+                        'password' => $mysqlPass,
+                        'username' => $mysqlUser,
+                    ]));
+                    $runner = $driver->getRunner();
                     $runner->setConverter($defaultConverter);
                     $runner->setResultMetadataCache(new ApcuResultMetadataCache());
                     yield [$runner, false];
@@ -60,19 +70,29 @@ abstract class DatabaseAwareQueryTest extends TestCase
             }
 
             if ($pgsqlHost) {
-                $connection = new \PDO(\sprintf('pgsql:host=%s;dbname=%s', $pgsqlHost, $pgsqlBase), $pgsqlUser, $pgsqlPass);
-                $connection->query("SET character_set_client = 'UTF-8'");
-                $connection->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
-                $runner = new PDOPgSQLRunner($connection);
+                $driver = new PDODriver();
+                $driver->setConfiguration(new Configuration([
+                    'database' => $pgsqlBase,
+                    'driver' => 'pgsql',
+                    'host' => $pgsqlHost,
+                    'password' => $pgsqlPass,
+                    'username' => $pgsqlUser,
+                ]));
+                $runner = $driver->getRunner();
                 $runner->setConverter($defaultConverter);
                 $runner->setResultMetadataCache(new ArrayResultMetadataCache());
                 yield [$runner, false];
 
                 if ($useApcu) {
-                    $connection = new \PDO(\sprintf('pgsql:host=%s;dbname=%s', $pgsqlHost, $pgsqlBase), $pgsqlUser, $pgsqlPass);
-                    $connection->query("SET character_set_client = 'UTF-8'");
-                    $connection->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
-                    $runner = new PDOPgSQLRunner($connection);
+                    $driver = new PDODriver();
+                    $driver->setConfiguration(new Configuration([
+                        'database' => $pgsqlBase,
+                        'driver' => 'pgsql',
+                        'host' => $pgsqlHost,
+                        'password' => $pgsqlPass,
+                        'username' => $pgsqlUser,
+                    ]));
+                    $runner = $driver->getRunner();
                     $runner->setConverter($defaultConverter);
                     $runner->setResultMetadataCache(new ApcuResultMetadataCache());
                     yield [$runner, false];
@@ -112,7 +132,7 @@ abstract class DatabaseAwareQueryTest extends TestCase
     protected function prepare(Runner $runner)
     {
         if ($runner instanceof AbstractRunner && \class_exists(HydratorMap::class)) {
-            $runner->setHydratorMap(new HydratorMap(new Configuration()));
+            $runner->setHydratorMap(new HydratorMap(new GeneratedHydratorConfiguration()));
         }
         $this->createTestSchema($runner);
         $this->createTestData($runner);
