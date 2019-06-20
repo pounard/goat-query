@@ -39,7 +39,7 @@ final class PreparedQuery implements Query
             $initializer = $this->initializer;
             $this->initializer = null;
 
-            $query = \call_user_func($initializer);
+            $query = \call_user_func($initializer, $this->runner->getQueryBuilder());
 
             if (!$query) {
                 throw new QueryError(\sprintf("Initializer callback did not return a %s instance", Query::class));
