@@ -113,6 +113,6 @@ final class PgSQLArrayConverter implements ValueConverterInterface
             }
             return $converter->guessType(\reset($value)).'[]';
         }
-        return $converter->guessType($value);
+        return null;
     }
 }

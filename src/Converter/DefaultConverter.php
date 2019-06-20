@@ -480,7 +480,7 @@ final class DefaultConverter implements ConverterInterface
                 return (string)$value;
         }
 
-        if ($converter = $this->get($type)) {
+        if ($converter = $this->getValueConverter($type)) {
             return $converter->toSQL($type, $value, $this);
         }
 
