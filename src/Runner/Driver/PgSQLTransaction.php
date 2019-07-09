@@ -63,7 +63,7 @@ class PgSQLTransaction extends AbstractTransaction
                 )
             );
         } catch (DriverError $e) {
-            throw new TransactionError(\sprintf("%s: create savepoint failed", $name), null, $e);
+            throw new TransactionError(\sprintf("%s: create savepoint failed", $name), $e->getCode(), $e);
         }
     }
 
@@ -80,7 +80,7 @@ class PgSQLTransaction extends AbstractTransaction
                 )
             );
         } catch (DriverError $e) {
-            throw new TransactionError(\sprintf("%s: rollback to savepoint failed", $name), null, $e);
+            throw new TransactionError(\sprintf("%s: rollback to savepoint failed", $name), $e->getCode(), $e);
         }
     }
 
