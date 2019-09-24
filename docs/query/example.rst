@@ -103,7 +103,7 @@ One way to build this query would be:
 
    use Goat\Query\Query;
 
-   /** @var \Goat\Runner\RunnerInterface $value */
+   /** @var \Goat\Runner\Runner $value */
    $runner = get_database();
 
    $query = runner->select('task')
@@ -118,7 +118,7 @@ One way to build this query would be:
        ->range(7, 42)
        ->condition('task.user_id', 12)
        ->expression('task.deadline < now()')
-       ->havingExpression('count(task_note.nid) < $*', 3)
+       ->havingExpression('count(task_note.nid) < ?', 3)
    ;
 
 .. note::

@@ -1,5 +1,5 @@
-Basics
-======
+Concepts
+========
 
 Query creation
 ^^^^^^^^^^^^^^
@@ -64,7 +64,7 @@ an arbitrary raw expression to the where clause:
    <?php
 
    // WHERE COUNT(comment) > 5
-   $select->expression('COUNT(comment) > $*', [5]);
+   $select->expression('COUNT(comment) > ?', [5]);
 
 Parameter placeholders will be gracefully merged to the others in their
 rightful respective order at execute time.
@@ -95,27 +95,27 @@ Parameters placeholders
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 Independently from the final database driver, all parameters within arbitrary SQL
-must be ``$*`` (notation borrowed from PostgreSQL):
+must be ``?``:
 
 .. code-block:: php
 
    <?php
 
    $result = $runner->execute(
-       "SELECT * FROM user WHERE mail = $*",
+       "SELECT * FROM user WHERE mail = ?",
        ['john.smith@example.com'],
        \App\Entity\User::class
    );
 
 Additionnaly in order to ensure correct value conversion and achieve best performances
-during SQL query formatting, you can specify the data type using ``$*::TYPE``:
+during SQL query formatting, you can specify the data type using ``?::TYPE``:
 
 .. code-block:: php
 
    <?php
 
    $result = $runner->execute(
-       "SELECT * FROM user WHERE last_login > $*::timestamp",
+       "SELECT * FROM user WHERE last_login > ?::timestamp",
        [new \DateTime("today 00:00:01")],
        \App\Entity\User::class
    );
@@ -130,7 +130,7 @@ array must be ordered:
    <?php
 
    $result = $runner->execute(
-       "SELECT * FROM user WHERE last_login > $*::timestamp AND mail = $*",
+       "SELECT * FROM user WHERE last_login > ?::timestamp AND mail = ?",
        [
            new \DateTime("today 00:00:01"),
            'john.smith@example.com'

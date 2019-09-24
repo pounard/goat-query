@@ -8,8 +8,8 @@ For all queries that supports it (``SELECT``, ``UPDATE`` and ``DELETE``) you can
 the builder to express advanced and complex predicates.
 
 
-WHERE = condition
------------------
+WHERE .. = ..
+-------------
 
 The ``condition($column, $value, $operator)`` method allows you to arbitrarily filter the
 SELECT query with any values:
@@ -62,8 +62,44 @@ Is equivalent to:
    wisely: never allow user arbitrary values to reach this, it is opened to SQL
    injection.
 
-WHERE IN condition
-------------------
+Additionnaly, you can use a callback to set the conditions, simply provide any
+callable that takes a ``Where`` instance as its first argument, and set your
+conditions there:
+
+.. code-block:: php
+
+   <?php
+
+   $select = $runner
+       ->getQueryBuilder()
+       ->select('some_table', 't')
+       ->condition(function (\Goat\Query\Where $where) {
+           $where
+               ->isEqual('some_table.id', 12)
+               ->isGreaterOrEqual('some_table.birthdate', new \DateTimeImmutable('2019-09-24'))
+               // ...
+           ;
+       })
+   ;
+
+Which is equivalent to:
+
+.. code-block:: sql
+
+   SELECT *
+   FROM some_table t
+   WHERE
+       some_table.id = 12
+       AND some_table.birthdate >= '2019-09-24'
+       -- ...
+
+.. note::
+
+   Calling ``condition()`` with a single callable argument is strictly equivalent
+   to calling ``expression()`` with a single callable argument.
+
+WHERE .. [NOT] IN (..)
+----------------------
 
 ``WHERE .. IN (..)`` condition can be written using the ``condition()`` method:
 
@@ -128,8 +164,8 @@ Are both equivalent equivalent to:
    with ``Where::NOT_EQUAL``, the query builder will dynamically attempt to fix
    it depending on the value type.
 
-WHERE IN (SELECT ..)
---------------------
+WHERE .. [NOT] IN (SELECT ..)
+-----------------------------
 
 ``WHERE .. IN (SELECT ..)`` condition can be written using the ``condition()`` method:
 
@@ -198,14 +234,20 @@ Are both equivalent to:
 
    SELECT a
    FROM some_table
-   WHERE b IN (
+   WHERE b NOT IN (
       SELECT foo
       FROM other_table
       WHERE type = 'bar'
    )
 
-Arbitrary expression
---------------------
+
+WHERE .. [NOT] IN (<TABLE EXPRESSION>)
+--------------------------------------
+
+This will come later once table expression will be implemented.
+
+WHERE <ARBITRARY EXPRESSION>
+----------------------------
 
 Using the ``expression($statement, $arguments = [])`` you can pass any SQL expresion
 in the ``WHERE`` clause:
@@ -222,6 +264,60 @@ in the ``WHERE`` clause:
    ;
 
 Is equivalent to:
+
+.. code-block:: sql
+
+   SELECT a FROM some_table WHERE 1
+
+Additionnaly, you can use a callback to set the expression, callback must return
+the expression:
+
+.. code-block:: php
+
+   <?php
+
+   $select = $runner
+       ->getQueryBuilder()
+       ->select('some_table')
+       ->column('a')
+       ->expression(function () {
+           return '1';
+       })
+   ;
+
+You may as well return any ``Expression`` instance, including ``ExpressionColumn``,
+``ExpressionValue`` and so on:
+
+.. code-block:: php
+
+   <?php
+
+   $select = $runner
+       ->getQueryBuilder()
+       ->select('some_table')
+       ->column('a')
+       ->expression(function () {
+           return ExpressionRaw::create('1');
+       })
+   ;
+
+You can also use the ``Where`` instance given as the first callback argument,
+which is the main query where, in this case, you don't need to return a value:
+
+.. code-block:: php
+
+   <?php
+
+   $select = $runner
+       ->getQueryBuilder()
+       ->select('some_table')
+       ->column('a')
+       ->expression(function (\Goat\Query\Where $where) {
+           $where->expression('1');
+       })
+   ;
+
+Are all equivalent to:
 
 .. code-block:: sql
 
@@ -260,10 +356,10 @@ Let's consider the following PHP code:
    $select->getWhere()
        ->open(\Goat\Query\Where::OR)
            ->condition('theWorld', 'enough', 'IS NOT')
-           ->expression('count(theWorld) = $*::int4', [1])
+           ->expression('count(theWorld) = ?::int4', [1])
            ->open()
-               ->expression('1 = $*', 0)
-               ->expression('2 * 2 = $*', 5)
+               ->expression('1 = ?', 0)
+               ->expression('2 * 2 = ?', 5)
            ->close()
        ->close()
        ->and()

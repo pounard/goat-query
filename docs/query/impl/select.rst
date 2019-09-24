@@ -479,7 +479,7 @@ As a brief example:
        ->condition('a', 1)
        ->groupBy('c')
        ->having('b', 2)
-       ->havingExpression('COUNT(a) = $*', 3)
+       ->havingExpression('COUNT(a) = ?', 3)
    ;
 
 Is equivalent to:

@@ -6,5 +6,6 @@ cache/hydrator/*
 !cache/hydrator/README.md
 composer.lock
 coverage
+docs/_build
 phpunit.xml
 vendor
