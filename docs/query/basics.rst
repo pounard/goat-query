@@ -40,9 +40,9 @@ Identifiers and arbitrary expressions
 Relation and column references are not validated during query building: you can always
 write arbitrary identifiers, they will be left untouched within the generated SQL.
 
-Each identifier, value, predicate, relation, ... any parameter methods allows you to
-pass can be replaced by ``\Goat\Query\ExpressionRaw`` instances: those objects will be
-considered as raw SQL and place as-is without any escaping within the SQL queries.
+**Each identifier, value, predicate, relation, ... any method parameter can be replaced**
+**by ``\Goat\Query\Expression`` instances: those objects will be considered as raw SQL**
+**and place as-is without any escaping within the SQL queries.**
 
 This explicitely allow you to go beyond the query builder capabilities and write
 custom or specific arbitrary SQL.
@@ -54,7 +54,7 @@ custom or specific arbitrary SQL.
 
    **Keep them for edge cases the builder can't do**.
 
-The ExpressionRaw object allows you to pass arbitrary parameters that must
+The ``ExpressionRaw`` object allows you to pass arbitrary parameters that must
 refer to :ref:`parameters placehoders <query-parameter-placeholder>` within
 the expression arbitrary SQL string, example usage on a select query adding
 an arbitrary raw expression to the where clause:
@@ -68,6 +68,227 @@ an arbitrary raw expression to the where clause:
 
 Parameter placeholders will be gracefully merged to the others in their
 rightful respective order at execute time.
+
+Available expressions
+^^^^^^^^^^^^^^^^^^^^^
+
+ExpressionRaw
+#############
+
+This expression allows to write arbitrary unvalidated SQL.
+
+.. code-block:: php
+
+   <?php
+
+   // Create a raw expression
+   \Goat\Query\ExpressionRaw::create('count(*)');
+
+   // Create a raw expression with arguments
+   \Goat\Query\ExpressionRaw::create('sum(foo.column1) = ?', [12]);
+
+ExpressionColumn
+################
+
+This expression allows you to identify a column, which will be properly escaped
+in the generated SQL.
+
+**Simple example**:
+
+.. code-block:: php
+
+   <?php
+
+   \Goat\Query\ExpressionColumn::create('some_column');
+
+Will be formatted as:
+
+.. code-block:: sql
+
+   "some_column"
+
+**With a table alias (implicit)**:
+
+.. code-block:: php
+
+   <?php
+
+   \Goat\Query\ExpressionColumn::create('some_column.some_table');
+
+Will be formatted as:
+
+.. code-block:: sql
+
+   "some_table"."some_column"
+
+**With a table alias (explicit)**:
+
+.. code-block:: php
+
+   <?php
+
+   \Goat\Query\ExpressionColumn::create('some_column', 'some_table');
+
+Will be formatted as:
+
+.. code-block:: sql
+
+   "some_table"."some_column"
+
+**If you need to escape dot**:
+
+.. code-block:: php
+
+   <?php
+
+   \Goat\Query\ExpressionColumn::escape('some.column', 'some.table');
+
+Will be formatted as:
+
+.. code-block:: sql
+
+   "some.table"."some.column"
+
+ExpressionRelation
+##################
+
+This expression allows you to identify a table, relation, constant table with
+alias, WITH statement.
+
+**Simple example**:
+
+.. code-block:: php
+
+   <?php
+
+   \Goat\Query\ExpressionRelation::create('some_table');
+
+Will be formatted as:
+
+.. code-block:: sql
+
+   "some.table"
+
+**With a table alias**:
+
+.. code-block:: php
+
+   <?php
+
+   \Goat\Query\ExpressionRelation::create('some_table', 'foo');
+
+Will be formatted as:
+
+.. code-block:: sql
+
+   "some.table" as "foo"
+
+**With a schema (implicit)**:
+
+.. code-block:: php
+
+   <?php
+
+   \Goat\Query\ExpressionRelation::create('my_schema.some_table', 'foo');
+
+Will be formatted as:
+
+.. code-block:: sql
+
+   "my_schema"."some_table" as "foo"
+
+**With a schema (explicit)**:
+
+.. code-block:: php
+
+   <?php
+
+   \Goat\Query\ExpressionRelation::create('some_table', 'foo', 'my_schema');
+
+Will be formatted as:
+
+.. code-block:: sql
+
+   "my_schema"."some_table" as "foo"
+
+**If you need to escape dot**:
+
+.. code-block:: php
+
+   <?php
+
+   \Goat\Query\ExpressionRelation::escape('some.table', 'some.alias', 'my.schema');
+
+Will be formatted as:
+
+.. code-block:: sql
+
+   "my.schema"."some.table" as "foo"
+
+ExpressionValue
+###############
+
+Represents a raw value. **You will need this when the converter is unable**
+**to find the appropriate type to convert to**, for example when you need
+to store ``json`` or ``jsonb`` or a PostgreSQL array.
+
+It will pass the type cast whenever necessary in queries, allowing the
+converter to deambiguate values types.
+
+**Simple exemple**:
+
+.. code-block:: php
+
+   <?php
+
+   \Goat\Query\ExpressionValue::create(12);
+
+Will be formatted as:
+
+.. code-block:: sql
+
+   ?
+
+**With a type**:
+
+.. code-block:: php
+
+   <?php
+
+   \Goat\Query\ExpressionValue::create(12, 'int');
+
+.. code-block:: sql
+
+   ?::int
+
+**JSON**:
+
+.. code-block:: php
+
+   <?php
+
+   \Goat\Query\ExpressionValue::create(['foo' => 'bar', 'baz' => [1, 2, 3]], 'json');
+
+.. code-block:: sql
+
+   ?::json
+
+**PostgreSQL array**:
+
+.. code-block:: php
+
+   <?php
+
+   \Goat\Query\ExpressionValue::create([1, 2, 3], 'int[]');
+
+.. code-block:: sql
+
+   ?::int[]
+
+.. note::
+
+   Examples here do not show how the value will be converted, refer to the
+   converter documentation for this.
 
 Execution modes
 ^^^^^^^^^^^^^^^
@@ -141,8 +362,10 @@ array must be ordered:
 Execute options
 ^^^^^^^^^^^^^^^
 
-Both ``execute`` and ``perform`` have the same signature:
-``execute(array $parameters = [], $options = null) : ResultIteratorInterface``
+Both ``execute`` and ``perform`` have the same input signature:
+
+ - on runner instances: ``execute(string|Statement $query, array $parameters = [], null|string|array $options = null)``
+ - on query instances: ``execute(array $parameters = [], null|string|array $options = null)``
 
 ``$parameters`` is an ordered array of values to pass along the query. Using the
 query builder you will not need it in most cases: arbitrary parameters values should
