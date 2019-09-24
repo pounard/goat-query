@@ -9,10 +9,6 @@
     convertNoticesToExceptions="true"
     convertWarningsToExceptions="true"
 >
-    <php>
-        <ini name="error_reporting" value="-1" />
-    </php>
-
     <testsuites>
         <testsuite name="Goat query builder">
             <directory>./tests</directory>
@@ -30,6 +26,8 @@
     </filter>
 
     <php>
+        <ini name="error_reporting" value="-1" />
+
         <env name="ENABLE_EXT_PGSQL" value="1" />
         <env name="ENABLE_PDO" value="1" />
         <env name="ENABLE_SECURITY" value="0" />

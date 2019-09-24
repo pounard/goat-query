@@ -9,10 +9,6 @@
     convertNoticesToExceptions="true"
     convertWarningsToExceptions="true"
 >
-    <php>
-        <ini name="error_reporting" value="-1" />
-    </php>
-
     <testsuites>
         <testsuite name="Goat query builder">
             <directory>./tests</directory>
@@ -30,6 +26,8 @@
     </filter>
 
     <php>
+        <ini name="error_reporting" value="-1" />
+
         <!--
         <env name="DRUPAL7_MYSQL_DSN" value="pgsql://192.168.57.102/some_database" />
         <env name="DRUPAL7_MYSQL_PATH" value="/var/www/my-drupal-site/webroot" />
