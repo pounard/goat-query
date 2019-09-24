@@ -12,12 +12,25 @@ use Goat\Runner\Metadata\ResultMetadata;
 
 abstract class AbstractResultIterator implements ResultIterator
 {
+    /** @var ?int */
     private $columnCount;
+
+    /** @var bool */
     private $debug = false;
+
+    /** @var ResultMetadata */
     private $metadata;
+
+    /** @var string[] */
     private $userTypeMap = [];
+
+    /** @var ?string */
     protected $columnKey;
+
+    /** @var ?ConverterInterface */
     protected $converter;
+
+    /** @var ?HydratorInterface */
     protected $hydrator;
 
     /**
@@ -235,6 +248,18 @@ abstract class AbstractResultIterator implements ResultIterator
         }
 
         return $this->metadata->columnExists($name);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getColumnNumber(string $name): int
+    {
+        if (!$this->metadata) {
+            $this->collectAllColumnInfo();
+        }
+
+        return $this->metadata->getColumnNumber($name);
     }
 
     /**

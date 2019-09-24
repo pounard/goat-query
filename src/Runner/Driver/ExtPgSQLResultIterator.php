@@ -11,7 +11,11 @@ class ExtPgSQLResultIterator extends AbstractResultIterator
 {
     use ExtPgSQLErrorTrait;
 
-    protected $resource;
+    /** @var ?string[] */
+    private $columnNameMap;
+
+    /** @var resource */
+    private $resource;
 
     /**
      * Default constructor
@@ -83,19 +87,6 @@ class ExtPgSQLResultIterator extends AbstractResultIterator
         }
 
         return $ret;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    protected function getColumnNumber(string $name) : int
-    {
-        // 
-        if (isset($this->columnNameMap[$name])) {
-            return $this->columnNameMap[$name];
-        }
-
-        throw new QueryError(\sprintf("column '%s' does not exist", $name));
     }
 
     /**

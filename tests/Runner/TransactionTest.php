@@ -8,10 +8,10 @@ use Goat\Runner\Runner;
 use Goat\Runner\Transaction;
 use Goat\Runner\TransactionError;
 use Goat\Runner\TransactionFailedError;
-use Goat\Runner\Testing\DatabaseAwareQueryTest;
 use Goat\Runner\TransactionSavepoint;
+use Goat\Runner\Testing\DatabaseAwareQueryTest;
 
-class TransactionTest extends DatabaseAwareQueryTest
+final class TransactionTest extends DatabaseAwareQueryTest
 {
     /**
      * {@inheritdoc}

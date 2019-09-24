@@ -137,6 +137,14 @@ final class EmptyResultIterator implements ResultIterator
     /**
      * {@inheritdoc}
      */
+    public function getColumnNumber(string $name): int
+    {
+        throw new InvalidDataAccessError("empty result cannot yield columns");
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function fetchField($name = null)
     {
         throw new InvalidDataAccessError("empty result cannot yield columns");

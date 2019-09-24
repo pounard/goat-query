@@ -6,6 +6,7 @@ namespace Goat\Runer\Tests\Query;
 
 use Goat\Runner\Runner;
 use Goat\Runner\Testing\DatabaseAwareQueryTest;
+use Goat\Query\Writer\EscaperInterface;
 
 class BinaryObjectTest extends DatabaseAwareQueryTest
 {
@@ -66,6 +67,10 @@ class BinaryObjectTest extends DatabaseAwareQueryTest
             $value = \stream_get_contents($value);
         }
 
-        $this->assertSame("åß∂ƒ©˙∆˚¬…æ", $value);
+        if ($runner instanceof EscaperInterface) {
+            $this->assertSame("åß∂ƒ©˙∆˚¬…æ", $runner->unescapeBlob($value));
+        } else {
+            $this->assertSame("åß∂ƒ©˙∆˚¬…æ", $value);
+        }
     }
 }

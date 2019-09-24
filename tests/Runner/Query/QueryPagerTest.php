@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Goat\Runer\Tests\Query;
 
-use Goat\Query\QueryError;
-use Goat\Runner\EmptyResultIterator;
 use Goat\Runner\QueryPagerResultIterator;
 use Goat\Runner\Runner;
 use Goat\Runner\Testing\DatabaseAwareQueryTest;

@@ -98,6 +98,20 @@ final class DefaultResultMetadata implements ResultMetadata
     /**
      * {@inheritdoc}
      */
+    public function getColumnNumber(string $name): int
+    {
+        $position = \array_search($name, $this->names);
+
+        if (false === $position) {
+            throw new InvalidDataAccessError(\sprintf("Column '%s' does not exist", $name));
+        }
+
+        return $position;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function getColumnName(int $index): string
     {
         $this->checkIndex($index);

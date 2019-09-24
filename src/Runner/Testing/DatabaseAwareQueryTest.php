@@ -5,6 +5,7 @@ namespace Goat\Runner\Testing;
 use GeneratedHydrator\Configuration as GeneratedHydratorConfiguration;
 use Goat\Converter\DefaultConverter;
 use Goat\Driver\Configuration;
+use Goat\Driver\ExtPgSQLDriver;
 use Goat\Driver\PDODriver;
 use Goat\Hydrator\HydratorMap;
 use Goat\Runner\Runner;
@@ -100,13 +101,19 @@ abstract class DatabaseAwareQueryTest extends TestCase
             }
         }
 
-        /*
-        if ($pgsqlHost && getenv('ENABLE_EXT_PGSQL')) {
-            $dsn = \sprintf("host=%s port=%s dbname=%s user=%s password=%s", $pgsqlHost, 5432, $pgsqlBase, $pgsqlUser, $pgsqlPass);
-            $resource = \pg_connect($dsn, PGSQL_CONNECT_FORCE_NEW);
-            yield new Extpg
+        if ($pgsqlHost && \getenv('ENABLE_EXT_PGSQL')) {
+            $driver = new ExtPgSQLDriver();
+            $driver->setConfiguration(new Configuration([
+                'database' => $pgsqlBase,
+                'driver' => 'pgsql',
+                'host' => $pgsqlHost,
+                'password' => $pgsqlPass,
+                'username' => $pgsqlUser,
+            ]));
+            $runner = $driver->getRunner();
+            $runner->setConverter($defaultConverter);
+            yield [$runner, false];
         }
-         */
     }
 
     /**

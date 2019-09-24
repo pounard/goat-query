@@ -40,6 +40,11 @@ interface ResultMetadata
     public function getColumnType(string $name): ?string;
 
     /**
+     * Get column number from type
+     */
+    public function getColumnNumber(string $name): int;
+
+    /**
      * Get column name
      */
     public function getColumnName(int $index): string;

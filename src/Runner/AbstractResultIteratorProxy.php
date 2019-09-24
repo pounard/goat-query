@@ -133,6 +133,14 @@ abstract class AbstractResultIteratorProxy implements ResultIterator
     /**
      * {@inheritdoc}
      */
+    final public function getColumnNumber(string $name): int
+    {
+        return $this->getResult()->getColumnNumber($name);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     final public function fetchField($name = null)
     {
         return $this->getResult()->fetchField($name);

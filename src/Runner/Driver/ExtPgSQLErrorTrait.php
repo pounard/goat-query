@@ -41,12 +41,12 @@ trait ExtPgSQLErrorTrait
             if ($rawSQL) {
                 $errorString .= ', query was: ' .$rawSQL;
             }
-            throw new QueryError($errorString);
+            throw new DriverError($errorString);
         } else {
             if ($rawSQL) {
                 $errorString .= ', query was: ' .$rawSQL;
             }
-            throw new QueryError($errorString, (int)\pg_connection_status($resource));
+            throw new DriverError($errorString, (int)\pg_connection_status($resource));
         }
     }
 }
