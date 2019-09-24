@@ -11,7 +11,7 @@ use Goat\Query\SelectQuery;
 use Goat\Query\Writer\DefaultFormatter;
 use PHPUnit\Framework\TestCase;
 
-class SelectTest extends TestCase
+final class SelectFunctionalTest extends TestCase
 {
     use BuilderTestTrait;
 

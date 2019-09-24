@@ -13,7 +13,7 @@ use Goat\Query\Partial\FromClauseTrait;
  *   - support a SelectQuery as FROM relation
  *   - implement __clone() once this done
  */
-final class SelectQuery extends AbstractQuery
+final class SelectQuery extends AbstractQuery implements Expression
 {
     use FromClauseTrait;
 
@@ -113,11 +113,7 @@ final class SelectQuery extends AbstractQuery
      */
     public function column($expression, ?string $alias = null): self
     {
-        if (!$expression instanceof Expression) {
-            $expression = new ExpressionColumn($expression);
-        }
-
-        $this->columns[] = [$expression, $alias];
+        $this->columns[] = [ExpressionFactory::column($expression), $alias];
 
         return $this;
     }
@@ -139,10 +135,10 @@ final class SelectQuery extends AbstractQuery
                 throw new QueryError(\sprintf("you cannot call %s::columnExpression() and pass arguments if the given expression is not a string", __CLASS__));
             }
         } else {
-            if (!\is_array($arguments)) {
+            if ($arguments && !\is_array($arguments)) {
                 $arguments = [$arguments];
             }
-            $expression = new ExpressionRaw($expression, $arguments);
+            $expression = ExpressionFactory::raw($expression, $arguments ?? []);
         }
 
         $this->columns[] = [$expression, $alias];
@@ -239,7 +235,7 @@ final class SelectQuery extends AbstractQuery
      * @param mixed $value
      * @param string $operator
      */
-    public function condition($column, $value, string $operator = Where::EQUAL): self
+    public function condition($column, $value = null, string $operator = Where::EQUAL): self
     {
         $this->where->condition($column, $value, $operator);
 
@@ -262,13 +258,29 @@ final class SelectQuery extends AbstractQuery
     }
 
     /**
+     * Alias of ::having()
+     *
+     * @codeCoverageIgnore
+     * @deprecated
+     *   Use self::having() instead
+     */
+    public function havingCondition($column, $value, string $operator = Where::EQUAL): self
+    {
+        \trigger_error(\sprintf("%s::%s is deprecated, use %s::having() instead", __CLASS__, __METHOD__, __CLASS__), E_USER_DEPRECATED);
+
+        $this->having->condition($column, $value, $operator);
+
+        return $this;
+    }
+
+    /**
      * Add a condition in the having clause
      *
      * @param string|ExpressionColumn $column
      * @param mixed $value
      * @param string $operator
      */
-    public function havingCondition($column, $value, string $operator = Where::EQUAL): self
+    public function having($column, $value, string $operator = Where::EQUAL): self
     {
         $this->having->condition($column, $value, $operator);
 
@@ -359,15 +371,7 @@ final class SelectQuery extends AbstractQuery
      */
     public function groupBy($column): self
     {
-        if (!\is_string($column) && !$column instanceof ExpressionColumn) {
-            throw new QueryError("grouping by something else than a column name is not supported");
-        }
-
-        if (\is_string($column)) {
-            $column = new ExpressionColumn($column);
-        }
-
-        $this->groups[] = $column;
+        $this->groups[] = ExpressionFactory::column($column);
 
         return $this;
     }

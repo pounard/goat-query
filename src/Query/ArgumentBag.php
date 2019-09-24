@@ -33,9 +33,6 @@ class ArgumentBag extends ArgumentList
             if (!$type) {
                 $type = $value->getType();
             }
-            if (!$name) {
-                $name = $value->getName();
-            }
             $value = $value->getValue();
         }
 
@@ -72,7 +69,7 @@ class ArgumentBag extends ArgumentList
             if (\is_int($index)) {
                 $this->add($value);
             } else {
-                $this->add($value, index);
+                $this->add($value, $index);
             }
         }
     }

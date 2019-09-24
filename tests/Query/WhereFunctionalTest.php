@@ -9,7 +9,7 @@ use Goat\Query\SelectQuery;
 use Goat\Query\Where;
 use PHPUnit\Framework\TestCase;
 
-class WhereTest extends TestCase
+class WhereFunctionalTest extends TestCase
 {
     use BuilderTestTrait;
 

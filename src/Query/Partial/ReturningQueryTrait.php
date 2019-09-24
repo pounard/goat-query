@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Goat\Query\Partial;
 
-use Goat\Query\Expression;
 use Goat\Query\ExpressionColumn;
 use Goat\Query\QueryError;
 
@@ -53,7 +52,7 @@ trait ReturningQueryTrait
             $expression = '*';
         }
         if (!$alias) {
-            if (!\is_string($expression) && !$expression instanceof Expression) {
+            if (!\is_string($expression) && !$expression instanceof ExpressionColumn) {
                 throw new QueryError("RETURNING values can only be column names or expressions using them from the previous statement");
             }
             if (\is_string($expression)) {

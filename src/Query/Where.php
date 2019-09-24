@@ -102,51 +102,21 @@ final class Where implements Statement
     }
 
     /**
-     * Normalize value
-     *
-     * @param mixed $value
-     *
-     * @return Statement
-     */
-    private function normalizeValue($value) : Statement
-    {
-        if (!$value instanceof Statement) {
-            return ExpressionValue::create($value);
-        }
-
-        return $value;
-    }
-
-    /**
-     * Normalize column reference
-     *
-     * @param string|ExpressionColumn $column
-     *
-     * @return Expression|ExpressionColumn
-     */
-    private function normalizeColumn($column) : Expression
-    {
-        if ($column instanceof Expression) {
-            return $column;
-        }
-        if (\is_string($column)) {
-            return new ExpressionColumn($column);
-        }
-        throw new QueryError(\sprintf("column reference must be a string or an instance of %s", Expression::class));
-    }
-
-    /**
      * Add a condition
      *
      * @param string|ExpressionColumn $column
-     * @param Statement $value
+     * @param mixed|callable|Statement $value
      * @param string $operator
      *
      * @return $this
      */
-    public function condition($column, $value, string $operator = self::EQUAL)
+    public function condition($column, $value = null, string $operator = self::EQUAL)
     {
-        $column = $this->normalizeColumn($column);
+        if (null === $value && \is_callable($column)) {
+            return $this->expression($column);
+        }
+
+        $column = ExpressionFactory::column($column);
 
         if (!$this->operatorNeedsValue($operator)) {
             if ($value) {
@@ -154,9 +124,11 @@ final class Where implements Statement
             }
             $value = null;
         } else if (\is_array($value)) {
-            $value = \array_map([$this, 'normalizeValue'], $value);
+            foreach ($value as $index => $current) {
+                $value[$index] = ExpressionFactory::value($current);
+            }
         } else {
-            $value = $this->normalizeValue($value);
+            $value = ExpressionFactory::value($value);
         }
 
         if (self::EQUAL === $operator) {
@@ -195,11 +167,17 @@ final class Where implements Statement
             if ($arguments) {
                 throw new QueryError(\sprintf("you cannot call %s::expression() and pass arguments if the given expression is not a string", __CLASS__));
             }
-        } else {
+        } else if (null !== $arguments) {
             if (!\is_array($arguments)) {
                 $arguments = [$arguments];
             }
-            $expression = new ExpressionRaw($expression, $arguments);
+            if (null === ($expression = ExpressionFactory::raw($expression, $arguments, $this))) {
+                return; // Callback took control.
+            }
+        } else {
+            if (null === ($expression = ExpressionFactory::raw($expression, $arguments, $this))) {
+                return; // Callback took control.
+            }
         }
 
         $this->conditions[] = [null, $expression, null];

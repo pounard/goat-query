@@ -9,7 +9,7 @@ namespace Goat\Query;
  */
 final class ExpressionValue implements Expression, ValueRepresentation
 {
-    private $name;
+    private $bag;
     private $type;
     private $value;
 
@@ -26,27 +26,6 @@ final class ExpressionValue implements Expression, ValueRepresentation
     public static function create($value, ?string $type = null): self
     {
         $ret = new self;
-
-        // Empty values such as '' are considered as null
-        if (!$type) {
-            if (\is_string($value) && $value &&  ':' === $value[0]) {
-
-                // Attempt to find type by convention
-                if (false !== \strpos($value, '::')) {
-                    list($name, $type) = \explode('::', $value, 2);
-                } else {
-                    $name = $value;
-                }
-
-                $ret->name = \mb_substr($name, 1);
-
-                // Value cannot exist from this point, really, since we just
-                // gave name and type information; query will need to be send
-                // with parameters along
-                $value = null;
-            }
-        }
-
         $ret->value = $value;
         $ret->type = $type;
 
@@ -70,20 +49,12 @@ final class ExpressionValue implements Expression, ValueRepresentation
     }
 
     /**
-     * Get value name, if any
-     */
-    public function getName(): ?string
-    {
-        return $this->name;
-    }
-
-    /**
      * {@inheritdoc}
      */
     public function getArguments(): ArgumentBag
     {
         $ret = new ArgumentBag();
-        $ret->add($this->value, $this->name, $this->type);
+        $ret->add($this->value, null, $this->type);
 
         return $ret;
     }

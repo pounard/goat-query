@@ -506,7 +506,9 @@ class DefaultFormatter extends FormatterBase
                 $columnString = $this->format($column);
             }
 
-            if ($value instanceof Expression) {
+            if ($value instanceof Query) {
+                $valueString = \sprintf('(%s)', $this->format($value));
+            } else if ($value instanceof Expression) {
                 $valueString = $this->format($value);
             } else if ($value instanceof Statement) {
                 $valueString = \sprintf('(%s)', $this->format($value));
@@ -832,6 +834,10 @@ class DefaultFormatter extends FormatterBase
         $having = $query->getHaving();
         if (!$having->isEmpty()) {
             $output[] = \sprintf('having %s', $this->formatWhere($having));
+        }
+
+        if ($query->isForUpdate()) {
+            $output[] = "for update";
         }
 
         return \implode("\n", \array_filter($output));

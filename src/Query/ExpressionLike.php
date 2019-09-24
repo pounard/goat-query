@@ -25,24 +25,6 @@ final class ExpressionLike implements Expression
     }
 
     /**
-     * Normalize column reference
-     *
-     * @param string|ExpressionColumn $column
-     *
-     * @return ExpressionColumn
-     */
-    private static function normalizeColumn($column) : Expression
-    {
-        if ($column instanceof Expression) {
-            return $column;
-        }
-        if (\is_string($column)) {
-            return new ExpressionColumn($column);
-        }
-        throw new QueryError(\sprintf("column reference must be a string or an instance of %s", ExpressionColumn::class));
-    }
-
-    /**
      * Create instance
      *
      * @param string|Expression $column
@@ -56,7 +38,7 @@ final class ExpressionLike implements Expression
      */
     public static function like($column, string $pattern, ?string $value = null, ?string $wildcard = null): self
     {
-        $column = self::normalizeColumn($column);
+        $column = ExpressionFactory::column($column);
         $wildcard = $wildcard ?? self::DEFAULT_WIDCARD;
 
         if ($value && false === \strpos($pattern, $wildcard)) {

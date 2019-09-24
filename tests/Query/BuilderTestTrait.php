@@ -8,7 +8,7 @@ use Goat\Query\Writer\DefaultFormatter;
 
 trait BuilderTestTrait
 {
-    private function normalize($string)
+    private static function normalize($string)
     {
         $string = \preg_replace('@\s*(\(|\))\s*@ms', '$1', $string);
         $string = \preg_replace('@\s*,\s*@ms', ',', $string);
@@ -19,15 +19,22 @@ trait BuilderTestTrait
         return $string;
     }
 
-    protected function assertSameSql($expected, $actual)
+    protected static function assertSameSql($expected, $actual, $message = null)
     {
-        return $this->assertSame(
-            $this->normalize($expected),
-            $this->normalize($actual)
+        if ($message) {
+            return self::assertSame(
+                self::normalize($expected),
+                self::normalize($actual),
+                $message
+            );
+        }
+        return self::assertSame(
+            self::normalize($expected),
+            self::normalize($actual)
         );
     }
 
-    protected function createStandardFormatter()
+    protected static function createStandardFormatter()
     {
         return new DefaultFormatter(new NullEscaper());
     }

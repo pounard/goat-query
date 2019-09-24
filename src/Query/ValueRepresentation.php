@@ -20,9 +20,4 @@ interface ValueRepresentation
      * Get value type
      */
     public function getType(): ?string;
-
-    /**
-     * Get value name, if any
-     */
-    public function getName(): ?string;
 }

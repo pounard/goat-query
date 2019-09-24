@@ -9,24 +9,6 @@ namespace Goat\Query;
  */
 final class ExpressionColumn implements Expression
 {
-    /**
-     * Creates an instance without automatic split using '.' notation
-     *
-     * @param string $relationName
-     * @param string $alias
-     * @param string $schema
-     *
-     * @return ExpressionRelation
-     */
-    public static function escape(string $columnName, string $relationAlias = null) : ExpressionColumn
-    {
-        $instance = new ExpressionColumn('');
-        $instance->columnName = $columnName;
-        $instance->relationAlias = $relationAlias;
-
-        return $instance;
-    }
-
     private $columnName;
     private $relationAlias;
 
@@ -46,6 +28,24 @@ final class ExpressionColumn implements Expression
 
         $this->columnName = $columnName;
         $this->relationAlias = $relationAlias;
+    }
+
+    /**
+     * Creates an instance without automatic split using '.' notation
+     *
+     * @param string $relationName
+     * @param string $alias
+     * @param string $schema
+     *
+     * @return ExpressionRelation
+     */
+    public static function escape(string $columnName, string $relationAlias = null) : ExpressionColumn
+    {
+        $instance = new ExpressionColumn('');
+        $instance->columnName = $columnName;
+        $instance->relationAlias = $relationAlias;
+
+        return $instance;
     }
 
     /**

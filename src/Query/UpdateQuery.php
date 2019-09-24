@@ -54,11 +54,7 @@ final class UpdateQuery extends AbstractQuery
             throw new QueryError("column names in the set part of an update query can only be a column name, without table prefix");
         }
 
-        if (!$expression instanceof Expression && !$expression instanceof SelectQuery) {
-            $expression = ExpressionValue::create($expression);
-        }
-
-        $this->columns[$columnName] = $expression;
+        $this->columns[$columnName] = ExpressionFactory::value($expression);
 
         return $this;
     }

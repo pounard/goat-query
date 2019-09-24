@@ -23,7 +23,7 @@ final class ExpressionRelation implements Expression
     /**
      * Creates an instance without automatic split using '.' notation
      */
-    public static function escape(string $name, ?string $alias = null, ?string $schema = null) : self
+    public static function escape(string $name, ?string $alias = null, ?string $schema = null): self
     {
         $ret = new self;
         $ret->alias = $alias;
