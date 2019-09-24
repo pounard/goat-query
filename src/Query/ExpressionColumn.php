@@ -17,6 +17,9 @@ final class ExpressionColumn implements Expression
      *
      * @param string $columnName
      * @param string $relationAlias
+     *
+     * @deprecated
+     *   Use static create() method instead.
      */
     public function __construct(string $columnName, string $relationAlias = null)
     {
@@ -31,6 +34,14 @@ final class ExpressionColumn implements Expression
     }
 
     /**
+     * Create instance from name and alias
+     */
+    public static function create(string $columnName, string $relationAlias = null): self
+    {
+        return new self($columnName, $relationAlias);
+    }
+
+    /**
      * Creates an instance without automatic split using '.' notation
      *
      * @param string $relationName
@@ -41,7 +52,7 @@ final class ExpressionColumn implements Expression
      */
     public static function escape(string $columnName, string $relationAlias = null) : ExpressionColumn
     {
-        $instance = new ExpressionColumn('');
+        $instance = self::create('');
         $instance->columnName = $columnName;
         $instance->relationAlias = $relationAlias;
 
