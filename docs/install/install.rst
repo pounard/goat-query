@@ -15,15 +15,17 @@ Standalone setup
 
     * **MySQL** / **PDO**: ``\Goat\Driver\PDODriver``
     * **PostgreSQL** / **PDO**: ``\Goat\Driver\PDODriver``
-    * **PostgreSQL** / **ext_pgsql**: ``\Goat\Driver\ExtPgSQLDriver``
+    * **PostgreSQL** / **ext-pgsql**: ``\Goat\Driver\ExtPgSQLDriver``
 
    .. note::
 
-      If you use **PostgreSQL** we **highly recommend** using the ``ext_pgsql``
+      If you use **PostgreSQL** we **highly recommend** using the ``ext-pgsql``
       driver which uses PHP core's ``pgsql`` extension: it's **much faster**
       than all the others.
 
 2. instanciate it:
+
+   With PDO, via a TCP connection:
 
    .. code-block:: php
 
@@ -40,11 +42,53 @@ Standalone setup
           'host' => 'database.example.com',
           'password' => 'this is a secret',
           'port' => 5432,
+          'username' => 'my_username',
+      ], [
+          'arbitrary_driver_option' => 42,
+      ]));
+
+   With PDO via a unix socket:
+
+   .. code-block:: php
+
+      <?php
+
+      use Goat\Driver\Configuration;
+      use Goat\Driver\PDODriver;
+
+      $runner = new PDODriver();
+      $runner->setConfiguration(new Configuration([
+          'charset' => 'UTF8',
+          'database' => 'my_database',
+          'driver' => 'pqsql', // 'mysql' is supported as well
+          'password' => 'this is a secret',
           'socket' => null,
           'username' => 'my_username',
       ], [
           'arbitrary_driver_option' => 42,
       ]));
+
+   Or with ext-pgsql driver:
+
+   .. code-block:: php
+
+      <?php
+
+      use Goat\Driver\Configuration;
+      use Goat\Driver\ExtPgSQLDriver;
+
+      $runner = new ExtPgSQLDriver();
+      $runner->setConfiguration(new Configuration([
+          'charset' => 'UTF8',
+          'database' => 'my_database',
+          'host' => 'database.example.com',
+          'password' => 'this is a secret',
+          'port' => 5432,
+          'username' => 'my_username',
+      ], [
+          'arbitrary_driver_option' => 42,
+      ]));
+
 
 3. initialize the data converter and object hydrator:
 

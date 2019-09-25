@@ -36,6 +36,9 @@ But it also a value object that carries some metadata, such as:
  * column types,
  * row count.
 
+Every value the SQL server will send back to you will be automatically converted
+to PHP native types using the converter. See the :ref:`data types matrix <data-typing>`.
+
 Fetching data
 ^^^^^^^^^^^^^
 
@@ -185,3 +188,10 @@ Will give you:
 +-----+-----------+
 | 3   | ``'baz'`` |
 +-----+-----------+
+
+.. _result-iterator-cast:
+
+Result type casting
+^^^^^^^^^^^^^^^^^^^
+
+@todo
