@@ -90,15 +90,17 @@ abstract class AbstractResultIterator implements ResultIterator
     /**
      * {@inheritdoc}
      */
-    public function setConverter(ConverterInterface $converter): void
+    public function setConverter(ConverterInterface $converter): ResultIterator
     {
         $this->converter = $converter;
+
+        return $this;
     }
 
     /**
      * {@inheritdoc}
      */
-    final public function setHydrator($hydrator): void
+    final public function setHydrator($hydrator): ResultIterator
     {
         if ($this->iterationStarted) {
             throw new QueryError(\sprintf("You cannot change the hydrator once iteration has started."));
@@ -114,6 +116,8 @@ abstract class AbstractResultIterator implements ResultIterator
         } else {
             throw new QueryError(\sprintf("Result hydrator must be a callable or an instance of %s", HydratorInterface::class));
         }
+
+        return $this;
     }
 
     /**

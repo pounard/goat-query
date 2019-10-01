@@ -191,6 +191,73 @@ Will give you:
 
 .. _result-iterator-cast:
 
+Hydrating rows
+^^^^^^^^^^^^^^
+
+Using a custom hydrator
+#######################
+
+@todo
+
+Using a callback
+################
+
+Instead of using an ``HydratorInterface`` instance, you may arbitrarily use any
+callable for hydrating rows, callable signature must be:
+
+.. code-block:: php
+
+   <?php
+
+   function (array $row): void;
+
+Where ``$row`` is raw row fetched from database whose values have been converted
+using the ``Converter`` component.
+
+You can specify the hydrator within the ``$options`` array:
+
+.. code-block:: php
+
+   <?php
+
+   $result = $runner->execute("SELECT ...", [], [
+       'hydrator' => function (array $row) {
+           return new SomeObject($row);
+       },
+   ]);
+
+Which is equivalent to:
+
+.. code-block:: php
+
+   <?php
+
+   $result = $runner
+       ->getQueryBuilder()
+       ->select('some_table')
+       // ... build your query
+       ->setOption('hydrator', function (array $row) {
+           return new SomeObject($row);
+       })
+       ->execute()
+   ;
+
+But you also may directly call ``ResultIteratorInterface::setHydrator()`` this way:
+
+.. code-block:: php
+
+   <?php
+
+   $result = $runner
+       ->getQueryBuilder()
+       ->select('some_table')
+       // ... build your query
+       ->execute()
+       ->setHydrator(function (array $row) {
+           return new SomeObject($row);
+       })
+   ;
+
 Result type casting
 ^^^^^^^^^^^^^^^^^^^
 

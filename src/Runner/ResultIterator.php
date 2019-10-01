@@ -15,13 +15,17 @@ interface ResultIterator extends ResultMetadata, \IteratorAggregate, \Countable
 {
     /**
      * Set converter
+     *
+     * @return $this
      */
-    public function setConverter(ConverterInterface $converter): void;
+    public function setConverter(ConverterInterface $converter): ResultIterator;
 
     /**
      * Set hydrator
+     *
+     * @return $this
      */
-    public function setHydrator(HydratorInterface $hydrator): void;
+    public function setHydrator(HydratorInterface $hydrator): ResultIterator;
 
     /**
      * Set column to use as iterator key

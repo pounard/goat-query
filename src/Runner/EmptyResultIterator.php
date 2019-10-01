@@ -35,15 +35,17 @@ final class EmptyResultIterator implements ResultIterator
     /**
      * {@inheritdoc}
      */
-    public function setConverter(ConverterInterface $converter): void
+    public function setConverter(ConverterInterface $converter): ResultIterator
     {
+        return $this;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function setHydrator(HydratorInterface $hydrator): void
+    public function setHydrator(HydratorInterface $hydrator): ResultIterator
     {
+        return $this;
     }
 
     /**

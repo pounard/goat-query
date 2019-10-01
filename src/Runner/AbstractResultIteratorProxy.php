@@ -25,17 +25,21 @@ abstract class AbstractResultIteratorProxy implements ResultIterator
     /**
      * {@inheritdoc}
      */
-    final public function setConverter(ConverterInterface $converter): void
+    final public function setConverter(ConverterInterface $converter): ResultIterator
     {
         $this->getResult()->setConverter($converter);
+
+        return $this;
     }
 
     /**
      * {@inheritdoc}
      */
-    final public function setHydrator(HydratorInterface $hydrator): void
+    final public function setHydrator(HydratorInterface $hydrator): ResultIterator
     {
         $this->getResult()->setHydrator($hydrator);
+
+        return $this;
     }
 
     /**
