@@ -492,7 +492,8 @@ class DefaultFormatter extends FormatterBase
         $output = [];
 
         foreach ($where->getConditions() as $condition) {
-            list($column, $value, $operator) = $condition;
+            $value = $condition->value;
+            $column = $condition->column;
 
             // Do not allow an empty where to be displayed
             if ($value instanceof Where && $value->isEmpty()) {
@@ -519,7 +520,7 @@ class DefaultFormatter extends FormatterBase
             }
 
             if (!$column) {
-                switch ($operator) {
+                switch ($operator = $condition->operator) {
 
                     case Where::EXISTS:
                     case Where::NOT_EXISTS:
@@ -536,7 +537,7 @@ class DefaultFormatter extends FormatterBase
                         break;
                 }
             } else {
-                switch ($operator) {
+                switch ($operator = $condition->operator) {
 
                     case Where::EXISTS:
                     case Where::NOT_EXISTS:

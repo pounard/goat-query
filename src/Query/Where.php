@@ -46,7 +46,7 @@ final class Where implements Statement
     protected $parent;
 
     /**
-     * @var mixed[]
+     * @var WhereCondition[]
      */
     protected $conditions = [];
 
@@ -145,7 +145,7 @@ final class Where implements Statement
             }
         }
 
-        $this->conditions[] = [$column, $value, $operator];
+        $this->conditions[] = new WhereCondition($column, $value, $operator);
         $this->reset();
 
         return $this;
@@ -180,7 +180,7 @@ final class Where implements Statement
             }
         }
 
-        $this->conditions[] = [null, $expression, null];
+        $this->conditions[] = new WhereCondition(null, $expression, null);
 
         return $this;
     }
@@ -190,7 +190,7 @@ final class Where implements Statement
      */
     public function exists(SelectQuery $query)
     {
-        $this->conditions[] = [null, $query, self::EXISTS];
+        $this->conditions[] = new WhereCondition(null, $query, self::EXISTS);
 
         return $this;
     }
@@ -200,7 +200,7 @@ final class Where implements Statement
      */
     public function notExists(SelectQuery $query)
     {
-        $this->conditions[] = [null, $query, self::NOT_EXISTS];
+        $this->conditions[] = new WhereCondition(null, $query, self::NOT_EXISTS);
 
         return $this;
     }
@@ -219,7 +219,7 @@ final class Where implements Statement
         $this->reset();
 
         $where = (new Where($operator))->setParent($this);
-        $this->conditions[] = [null, $where, null];
+        $this->conditions[] = new WhereCondition(null, $where, null);
 
         return $where;
     }
@@ -467,13 +467,12 @@ final class Where implements Statement
 
         $arguments = new ArgumentBag();
 
+        /** @var \Goat\Query\WhereCondition $condition */
         foreach ($this->conditions as $condition) {
-            list(, $value, $operator) = $condition;
-
-            if ($value instanceof Statement) {
-                $arguments->append($value->getArguments());
+            if ($condition->value instanceof Statement) {
+                $arguments->append($condition->value->getArguments());
             } else {
-                switch ($operator) {
+                switch ($condition->operator) {
 
                     case Where::IS_NULL:
                     case Where::NOT_IS_NULL:
@@ -481,10 +480,7 @@ final class Where implements Statement
 
                     default:
                         // This is ugly as hell, fix me.
-                        if (!\is_array($value)) {
-                            $value = [$value];
-                        }
-                        foreach ($value as $candidate) {
+                        foreach ((array)$condition->value as $candidate) {
                             if ($candidate instanceof Statement) {
                                 $arguments->append($candidate->getArguments());
                             } else {
@@ -512,7 +508,7 @@ final class Where implements Statement
     /**
      * Get conditions
      *
-     * @return mixed[]
+     * @return WhereCondition[]
      */
     public function getConditions() : array
     {
@@ -527,15 +523,26 @@ final class Where implements Statement
         $this->reset();
 
         foreach ($this->conditions as $index => $condition) {
-            if (\is_object($condition)) {
-                $this->conditions[$index] = clone $condition;
-            } else if (\is_array($condition)) {
-                foreach ($condition as $key => $item) {
-                    if (\is_object($item)) {
-                        $this->conditions[$index][$key] = clone $item;
-                    }
-                }
-            }
+            $this->conditions[$index] = clone $condition;
         }
+    }
+}
+
+final class WhereCondition
+{
+    /** @var null|Statement */
+    public $column;
+
+    /** @var string|Statement */
+    public $operator;
+
+    /** @var null|string */
+    public $value;
+
+    public function __construct($column, $value, ?string $operator = null)
+    {
+        $this->column = $column;
+        $this->value = $value;
+        $this->operator = $operator;
     }
 }
