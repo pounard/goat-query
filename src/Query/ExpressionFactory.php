@@ -29,7 +29,10 @@ final class ExpressionFactory
      */
     public static function callable($expression, $context = null)
     {
-        if (\is_callable($expression)) {
+        // Do not permit 'function_name' type callables, because values
+        // are sometime strings which actually might be PHP valid function
+        // names such as 'exp' for example.
+        if (\is_callable($expression) && (\is_array($expression) || $expression instanceof \Closure)) {
             return \call_user_func($expression, $context);
         }
 

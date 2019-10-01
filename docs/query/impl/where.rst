@@ -98,6 +98,12 @@ Which is equivalent to:
    Calling ``condition()`` with a single callable argument is strictly equivalent
    to calling ``expression()`` with a single callable argument.
 
+.. warning::
+
+   In order to keep backward compatibility, and because values and expressions
+   can be raw strings that may conflict with existing PHP function names,
+   **function names as strings cannot be used as callables**.
+
 WHERE .. [NOT] IN (..)
 ----------------------
 
