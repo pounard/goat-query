@@ -16,6 +16,9 @@ abstract class AbstractResultIterator implements ResultIterator
     private $columnCount;
 
     /** @var bool */
+    private $iterationStarted = false;
+
+    /** @var bool */
     private $debug = false;
 
     /** @var ResultMetadata */
@@ -27,11 +30,14 @@ abstract class AbstractResultIterator implements ResultIterator
     /** @var ?string */
     protected $columnKey;
 
-    /** @var ?ConverterInterface */
+    /** @var null|ConverterInterface */
     protected $converter;
 
-    /** @var ?HydratorInterface */
+    /** @var null|callable|HydratorInterface */
     protected $hydrator;
+
+    /** @var bool */
+    protected $hydratorIsCallable = false;
 
     /**
      * Implementation of both getColumnType() and getColumnName().
@@ -92,9 +98,22 @@ abstract class AbstractResultIterator implements ResultIterator
     /**
      * {@inheritdoc}
      */
-    public function setHydrator(HydratorInterface $hydrator): void
+    final public function setHydrator($hydrator): void
     {
-        $this->hydrator = $hydrator;
+        if ($this->iterationStarted) {
+            throw new QueryError(\sprintf("You cannot change the hydrator once iteration has started."));
+        }
+        if (null === $hydrator) {
+            $this->hydrator = null;
+        } else if (\is_callable($hydrator)) {
+            $this->hydrator = $hydrator;
+            $this->hydratorIsCallable = true;
+        } else if ($hydrator instanceof HydratorInterface) {
+            $this->hydrator = $hydrator;
+            $this->hydratorIsCallable = false;
+        } else {
+            throw new QueryError(\sprintf("Result hydrator must be a callable or an instance of %s", HydratorInterface::class));
+        }
     }
 
     /**
@@ -105,14 +124,13 @@ abstract class AbstractResultIterator implements ResultIterator
      *
      * @return mixed
      */
-    protected function convertValue(string $name, $value)
+    final protected function convertValue(string $name, $value)
     {
+        if (!$this->iterationStarted) {
+            $this->iterationStarted = true;
+        }
         if ($this->converter) {
             return $this->converter->fromSQL($this->getColumnType($name), $value);
-        }
-
-        if ($this->debug) {
-            \trigger_error("result iterator has no converter set", E_USER_WARNING);
         }
 
         return $value;
@@ -127,11 +145,12 @@ abstract class AbstractResultIterator implements ResultIterator
      * @return mixed[]
      *   Same array, with converted values
      */
-    protected function convertValues(array $row): array
+    final protected function convertValues(array $row): array
     {
-        if (!$this->converter && $this->debug) {
-            \trigger_error("result iterator has no converter set", E_USER_WARNING);
-
+        if (!$this->iterationStarted) {
+            $this->iterationStarted = true;
+        }
+        if (!$this->converter) {
             return $row;
         }
 
@@ -158,11 +177,14 @@ abstract class AbstractResultIterator implements ResultIterator
      * @return array|object
      *   Raw object, return depends on the hydrator
      */
-    protected function hydrate(array $row)
+    final protected function hydrate(array $row)
     {
         $converted = $this->convertValues($row);
 
         if ($this->hydrator) {
+            if ($this->hydratorIsCallable) {
+                return ($this->hydrator)($converted);
+            }
             return $this->hydrator->createAndHydrateInstance($converted);
         }
 
