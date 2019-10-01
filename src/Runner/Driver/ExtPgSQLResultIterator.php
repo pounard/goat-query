@@ -96,6 +96,8 @@ class ExtPgSQLResultIterator extends AbstractResultIterator
     {
         $keyIndex = $this->getColumnNumber($columnKeyName);
 
+        // @todo this is not scalable, but fetchColumn() signature isn't as well
+        //   because we shouldn't return an array, but an iterable (stream).
         $valueColumn = \pg_fetch_all_columns($this->resource, $index);
         if (false === $valueColumn) {
             throw new QueryError(\sprintf("column '%d' is out of scope of the current result", $index));
