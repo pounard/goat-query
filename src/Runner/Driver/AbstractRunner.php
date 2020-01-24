@@ -306,7 +306,7 @@ abstract class AbstractRunner implements Runner, EscaperInterface
             if (isset($options['class']) && $this->isDebugEnabled()) {
                 \trigger_error("'hydrator' option overrides the 'class' option", E_USER_WARNING);
             }
-            if (!$options['hydrator'] instanceof HydratorInterface) {
+            if (!$options['hydrator'] instanceof HydratorInterface && !\is_callable($options['hydrator'])) {
                 throw new QueryError(\sprintf(
                     "'hydrator' option must be an instance of '%s' or a callable, found '%s'",
                     HydratorInterface::class, \gettype($options['hydrator'])
