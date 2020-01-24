@@ -13,12 +13,12 @@ trait ExtPgSQLErrorTrait
      *
      * @param resource $result
      */
-    private function resultError($result)
+    private function resultError($resource = null)
     {
-        $status = \pg_result_status($this->resource);
+        $status = \pg_result_status($resource);
 
         if (PGSQL_BAD_RESPONSE === $status || PGSQL_FATAL_ERROR === $status) {
-            $errorString = \pg_result_error($result);
+            $errorString = \pg_result_error($resource);
             if (false === $errorString) {
                 throw new QueryError("unknown error: could not fetch status code");
             } else {

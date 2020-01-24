@@ -16,11 +16,40 @@ final class Configuration
     const DEFAULT_PORT_MYSQL = 3306;
     const DEFAULT_PORT_PGSQL = 5432;
 
-    // @todo missing username and password
-    const REGEX_UNIX = '@^(unix\://|)([\w]+)\://(/[^\:]+)\:(.+)$@';
-    const REGEX_URL = '@^([\w]+)\://(([^/\:]+)(\:(\d+)|)|)/([^\.]+)$@';
+    /** MySQL with fallback on first enabled driver implementation */
+    const DRIVER_DEFAULT_MYSQL = 'mysql';
 
+    /** PgSQL with fallback on first enabled driver implementation */
+    const DRIVER_DEFAULT_PGSQL = 'pgsql';
+
+    /** ext-PgSQL driver */
+    const DRIVER_EXT_PGSQL = 'ext-pgsql';
+
+    /** PDO MySQL driver */
+    const DRIVER_PDO_MYSQL = 'pdo-mysql';
+
+    /** PDO PgSQL driver */
+    const DRIVER_PDO_PGSQL = 'pdo-pgsql';
+
+    /** Default allowed options */
+    const ALLOWED_OPTIONS = [
+        'charset' => self::DEFAULT_CHARSET,
+        'database' => null,
+        'driver' => null,
+        'host' => self::DEFAULT_HOST,
+        'password' => null,
+        'port' => null,
+        'socket' => null,
+        'username' => null,
+    ];
+
+    /** @deprecated @todo fix this */
+    const REGEX_UNIX = '@^(unix\://|)([\w]+)\://(/[^\:]+)\:(.+)$@';
+
+    /** @var array<string,bool|int|float|string> */
     private $options = [];
+
+    /** @var array<string,bool|int|float|string> */
     private $driverOptions = [];
 
     /**
@@ -32,39 +61,109 @@ final class Configuration
             throw new QueryError("Options must contain the 'driver' value");
         }
 
-        $this->options = $options + [
-            'charset' => self::DEFAULT_CHARSET,
-            'database' => null,
-            'driver' => null,
-            'host' => self::DEFAULT_HOST,
-            'password' => null,
-            'port' => false !== \strpos($options['driver'], 'pg') ? self::DEFAULT_PORT_PGSQL: self::DEFAULT_PORT_MYSQL,
-            'socket' => null,
-            'username' => null,
-        ];
+        // Reduce options to allowed ones only.
+        $this->options = \array_replace(self::ALLOWED_OPTIONS, $options);
+        if (!$this->options['port']) {
+            $this->options['port'] = false !== \strpos($options['driver'], 'pg') ? self::DEFAULT_PORT_PGSQL: self::DEFAULT_PORT_MYSQL;
+        }
+
+        // Merge disallowed options into driver options.
+        foreach (\array_diff_key($options, self::ALLOWED_OPTIONS) as $key => $value) {
+            if (\array_key_exists($key, $driverOptions)) {
+                throw new \InvalidArgumentException(\sprintf("'%s' key is duplicated in both \$options and \$driverOptions", $key));
+            }
+            $driverOptions[$key] = $value;
+        }
         $this->driverOptions = $driverOptions;
+    }
+
+    /**
+     * Parse an arbitrary string value and return a PHP typed one.
+     *
+     * @return bool|int|float|string
+     */
+    private static function parseValue(string $value)
+    {
+        $lowered = \strtolower($value);
+        if ("false" === $lowered) {
+            return false;
+        }
+        if ("true" === $lowered) {
+            return false;
+        }
+        $matches = [];
+        if (\preg_match('/^\d+(\.\d+|)$/', $value, $matches)) {
+            return $matches[1] ? ((float)$value) : ((int)$value);
+        }
+        return $value;
+    }
+
+    /**
+     * Normalize host DNS string.
+     *
+     * @internal This is public for unit testing purpose only
+     *
+     * @return array<string,bool|int|float|string>
+     */
+    public static function parseHostString(string $host): array
+    {
+        $result = \parse_url($host);
+        $ret = [
+            // Remove leading '/' on database name.
+            'database' => isset($result['path']) ? \substr($result['path'], 1) : null,
+            'driver' => $result['scheme'] ?? null,
+            'host' => $result['host'] ?? null,
+            'options' => [],
+            'password' => $result['pass'] ?? null,
+            'port' => $result['port'] ?? null,
+            'username' => $result['user'] ?? null,
+        ];
+        if (!empty($result['query'])) {
+            \parse_str($result['query'] ?? '', $ret['options']);
+            foreach ($ret['options'] as $key => $value) {
+                if (isset($ret[$key])) {
+                    throw new \InvalidArgumentException(\sprintf(
+                        "'%s' cannot be speficied in database URI query string",
+                        $key
+                    ));
+                }
+                // Basic converstion, "false" = false, "true" = true and numeric
+                // values are converted to their PHP rightful types (int or float).
+                $ret[$key] = self::parseValue($value);
+            }
+        }
+        return $ret;
+    }
+
+    /**
+     * Normalize host from arbitrary value.
+     *
+     * @internal This is public for unit testing purpose only
+     *
+     * @return array<string,bool|int|float|string>
+     */
+    public static function normalizeHost($host): array
+    {
+        if (\is_array($host)) {
+            return $host;
+        }
+        if (\is_string($host)) {
+            return self::parseHostString($host);
+        }
+        throw new \InvalidArgumentException("Host must be an array or a string");
     }
 
     /**
      * Create instance from string
      *
-     * Allow two different schemes:
-     *   - DBTYPE://[USERNAME[:PASSWORD]@][HOSTNAME[:PORT]]/DATABASE
-     *   - [UNIX://]DBTYPE:///PATH/TO/SOCKET:DATABASE
+     * @param array<string,bool|int|float|string> $options
+     *   Additional options, they will override ones parsed in URI
+     * @param array<string,bool|int|float|string> $driverOptions
+     *   Additional driver options, they will override ones parsed in URI
      */
     public static function fromString(string $string, array $options = [], array $driverOptions = []): self
     {
-        $matches = [];
-        if (\preg_match(self::REGEX_TCP, $string, $matches)) {
-            $options['driver'] = $matches[2];
-            $options['host'] = $matches[4];
-            $options['port'] = (int)$matches[6];
-            $options['database'] = $matches[7];
-        } else if (\preg_match(self::REGEX_UNIX, $string, $matches)) {
-            $options['driver'] = $matches[2];
-            $options['socket'] = $matches[3];
-            $options['database'] = $matches[4];
-        }
+        return new self(self::parseHostString($string), $driverOptions);
     }
 
     /**
@@ -113,71 +212,5 @@ final class Configuration
     public function getDriverOptions(): array
     {
         return $this->driverOptions;
-    }
-
-    /**
-     * Creates a valid ext-pgsql connection string
-     */
-    public function toExtPgSQLConnectionString(): string
-    {
-        $options = [
-            'port' => $this->options['port'],
-            'dbname' => $this->options['database'],
-            'user' => $this->options['username'],
-            'password' => $this->options['password'],
-        ];
-
-        // If 'host' is an absolute path, the library will lookup for the
-        // socket by itself, no need to specify it.
-        $dsn = 'host=' . $this->options['host'];
-
-        foreach ($options as $key => $value) {
-            if ($value) {
-                $dsn .= ' ' . $key . '=' . $value;
-            }
-        }
-
-        return $dsn;
-    }
-
-    /**
-     * Creates a valid PDO connection string
-     */
-    public function toPDOConnectionString(): string
-    {
-        $driver = $this->options['driver'];
-
-        $options = [
-            'port' => $this->options['port'],
-            'dbname' => $this->options['database'],
-        ];
-
-        // @todo this should be the connection object responsability to set the
-        //   client options, because they may differ from versions to versions
-        //   even using the same driver
-        switch ($driver) {
-
-            case 'mysql':
-                $options['charset'] = $this->options['charset'];
-                break;
-
-            case 'pgsql':
-                $options['client_encoding'] = $this->options['charset'];
-                break;
-        }
-
-        if ($this->options['socket']) {
-            $dsn = $driver . ':unix_socket=' . $this->options['socket'];
-        } else {
-            $dsn = $driver . ':host=' . $this->options['host'] ?? 'localhost';
-        }
-
-        foreach ($options as $key => $value) {
-            if ($value) {
-                $dsn .= ';' . $key . '=' . $value;
-            }
-        }
-
-        return $dsn;
     }
 }

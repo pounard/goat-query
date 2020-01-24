@@ -312,7 +312,7 @@ class ExtPgSQLRunner extends AbstractRunner
             // @merge argument types from query
 
             if (false === @\pg_prepare($connection, $identifier, $rawSQL)) {
-                $this->resultError($connection);
+                $this->driverError($connection);
             }
 
             $this->prepared[$identifier] = $prepared;

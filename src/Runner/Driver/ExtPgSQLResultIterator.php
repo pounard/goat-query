@@ -15,7 +15,7 @@ class ExtPgSQLResultIterator extends AbstractResultIterator
     private $columnNameMap;
 
     /** @var resource */
-    private $resource;
+    private $connection;
 
     /**
      * Default constructor
@@ -24,7 +24,7 @@ class ExtPgSQLResultIterator extends AbstractResultIterator
      */
     public function __construct($resource)
     {
-        $this->resource = $resource;
+        $this->connection = $resource;
     }
 
     /**
@@ -32,14 +32,14 @@ class ExtPgSQLResultIterator extends AbstractResultIterator
      */
     protected function getColumnInfoFromDriver(int $index): array
     {
-        $type = \pg_field_type($this->resource, $index);
+        $type = \pg_field_type($this->connection, $index);
         if (false === $type) {
-            $this->resultError($this->resource);
+            $this->resultError($this->connection);
         }
 
-        $key = \pg_field_name($this->resource, $index);
+        $key = \pg_field_name($this->connection, $index);
         if (false === $key) {
-            $this->resultError($this->resource);
+            $this->resultError($this->connection);
         }
 
         return [$key, $type];
@@ -50,9 +50,9 @@ class ExtPgSQLResultIterator extends AbstractResultIterator
      */
     protected function countColumnsFromDriver(): int
     {
-        $columnCount = \pg_num_fields($this->resource);
+        $columnCount = \pg_num_fields($this->connection);
         if (false === $columnCount) {
-            $this->resultError($this->resource);
+            $this->resultError($this->connection);
         }
         return $columnCount;
     }
@@ -62,7 +62,7 @@ class ExtPgSQLResultIterator extends AbstractResultIterator
      */
     public function getIterator()
     {
-        while ($row = \pg_fetch_assoc($this->resource)) {
+        while ($row = \pg_fetch_assoc($this->connection)) {
             if ($this->columnKey) {
                 yield $row[$this->columnKey] => $this->hydrate($row);
             } else {
@@ -71,7 +71,7 @@ class ExtPgSQLResultIterator extends AbstractResultIterator
         }
 
         if (false === $row) {
-            $this->resultError($this->resource);
+            $this->resultError($this->connection);
         }
     }
 
@@ -80,10 +80,10 @@ class ExtPgSQLResultIterator extends AbstractResultIterator
      */
     public function countRows() : int
     {
-        $ret = \pg_num_rows($this->resource);
+        $ret = \pg_num_rows($this->connection);
 
         if (-1 === $ret) {
-            $this->resultError($this->resource);
+            $this->resultError($this->connection);
         }
 
         return $ret;
@@ -98,12 +98,12 @@ class ExtPgSQLResultIterator extends AbstractResultIterator
 
         // @todo this is not scalable, but fetchColumn() signature isn't as well
         //   because we shouldn't return an array, but an iterable (stream).
-        $valueColumn = \pg_fetch_all_columns($this->resource, $index);
+        $valueColumn = \pg_fetch_all_columns($this->connection, $index);
         if (false === $valueColumn) {
             throw new QueryError(\sprintf("column '%d' is out of scope of the current result", $index));
         }
 
-        $indexColumn = \pg_fetch_all_columns($this->resource, $keyIndex);
+        $indexColumn = \pg_fetch_all_columns($this->connection, $keyIndex);
         if (false === $indexColumn) {
             throw new QueryError(\sprintf("column '%d' is out of scope of the current result", $keyIndex));
         }
@@ -137,7 +137,7 @@ class ExtPgSQLResultIterator extends AbstractResultIterator
 
         $ret = [];
 
-        $columns = \pg_fetch_all_columns($this->resource, $index);
+        $columns = \pg_fetch_all_columns($this->connection, $index);
         if (false === $columns) {
             throw new QueryError(\sprintf("column '%d' is out of scope of the current result", $index));
         }
@@ -154,10 +154,10 @@ class ExtPgSQLResultIterator extends AbstractResultIterator
      */
     public function fetch()
     {
-        $row = \pg_fetch_assoc($this->resource);
+        $row = \pg_fetch_assoc($this->connection);
 
         if (false === $row) {
-            $this->resultError($this->resource);
+            $this->resultError($this->connection);
         }
 
         if ($row) {

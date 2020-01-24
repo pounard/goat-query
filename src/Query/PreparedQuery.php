@@ -32,7 +32,7 @@ final class PreparedQuery implements Query
      */
     private function initialize(): string
     {
-        if ($this->initializer) {
+        if ($this->initializer && !$this->sqlIdentifier) {
             // Free memory even in case of error during callback execution,
             // this also ensure that in case of bugguy initializer, it wont
             // be called more than once.

@@ -45,7 +45,7 @@ class ExtPgSQLDriver implements Driver
     }
 
     /**
-     * Get configuration
+     * {@inheritdoc}
      */
     public function getConfiguration(): Configuration
     {
@@ -56,62 +56,71 @@ class ExtPgSQLDriver implements Driver
     }
 
     /**
-     * Run connection
-     *
-     * This method might actually never be called, the driver/runner combo
-     * can handle it by itself and do lazy-initialization.
+     * Creates a valid ext-pgsql connection string
+     */
+    private function buildConnectionString(array $options): string
+    {
+        $params = [
+            'port' => $options['port'],
+            'dbname' => $options['database'],
+            'user' => $options['username'],
+            'password' => $options['password'],
+        ];
+
+        // If 'host' is an absolute path, the library will lookup for the
+        // socket by itself, no need to specify it.
+        $dsn = 'host='.$options['host'];
+
+        foreach ($params as $key => $value) {
+            if ($value) {
+                $dsn .= ' '.$key.'='.$value;
+            }
+        }
+
+        return $dsn;
+    }
+
+    /**
+     * {@inheritdoc}
      */
     public function connect(): void
     {
         $configuration = $this->getConfiguration();
-        $connectionString = $configuration->toExtPgSQLConnectionString();
-
-        // $dsn = \sprintf("host=%s port=%s dbname=%s user=%s password=%s", $pgsqlHost, 5432, $pgsqlBase, $pgsqlUser, $pgsqlPass);
-        // $resource = \pg_connect($dsn, PGSQL_CONNECT_FORCE_NEW);
+        $connectionString = $this->buildConnectionString($configuration->getOptions());
 
         try {
-            $connection = \pg_connect($connectionString, PGSQL_CONNECT_FORCE_NEW);
+            $this->connection = \pg_connect($connectionString, PGSQL_CONNECT_FORCE_NEW);
+
+            \pg_query($this->connection, "SET client_encoding TO ".\pg_escape_literal($configuration->getClientEncoding()));
 
             /*
-            $connection->query(\sprintf(
-                "SET character_set_client = %s",
-                $connection->quote($configuration->getClientEncoding())
-            ));
-
             $connection->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
 
             foreach ($configuration->getDriverOptions() as $attribute => $value) {
                 $connection->setAttribute($attribute, $value);
             }
              */
-
-        } finally {
-            /*
-            if (\is_resource($connection)) {
-                \pg_close($connection);
+        } catch (\Throwable $e) {
+            if (\is_resource($this->connection)) {
+                \pg_close($this->connection);
             }
-             */
+            throw $e;
         }
-
-        $this->connection = $connection;
     }
 
     /**
-     * Close connection
-     *
-     * This method might be honnored, even if connect() was not called and
-     * connection was lazy-initialized.
+     * {@inheritdoc}
      */
     public function close(): void
     {
         if (\is_resource($this->connection)) {
             $this->connection = null;
         }
-        $this->runner = null; // @todo Not sure we should do this.
+        $this->runner = null;
     }
 
     /**
-     * Get runner
+     * {@inheritdoc}
      */
     public function getRunner(): Runner
     {

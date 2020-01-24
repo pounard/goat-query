@@ -55,7 +55,7 @@ class PDODriver implements Driver
     }
 
     /**
-     * Get configuration
+     * {@inheritdoc}
      */
     public function getConfiguration(): Configuration
     {
@@ -66,15 +66,54 @@ class PDODriver implements Driver
     }
 
     /**
-     * Run connection
-     *
-     * This method might actually never be called, the driver/runner combo
-     * can handle it by itself and do lazy-initialization.
+     * Creates a valid PDO connection string
+     */
+    private function buildConnectionString(array $options): string
+    {
+        $params = [
+            'port' => $options['port'],
+            'dbname' => $options['database'],
+        ];
+
+        // @todo this should be the connection object responsability to set the
+        //   client options, because they may differ from versions to versions
+        //   even using the same driver
+        switch ($driver = $options['driver']) {
+
+            case 'mysql':
+                $params['charset'] = $options['charset'];
+                break;
+
+            case 'pgsql':
+                $params['client_encoding'] = $options['charset'];
+                break;
+
+            default:
+                throw new \InvalidArgumentException(\sprintf("'%s': unsupported driver", $driver));
+        }
+
+        if ($options['socket']) {
+            $dsn = $driver . ':unix_socket='.$options['socket'];
+        } else {
+            $dsn = $driver . ':host='.$options['host'] ?? 'localhost';
+        }
+
+        foreach ($params as $key => $value) {
+            if ($value) {
+                $dsn .= ';'.$key.'='.$value;
+            }
+        }
+
+        return $dsn;
+    }
+
+    /**
+     * {@inheritdoc}
      */
     public function connect(): void
     {
         $configuration = $this->getConfiguration();
-        $connectionString = $configuration->toPDOConnectionString();
+        $connectionString = $this->buildConnectionString($configuration->getOptions());
 
         $connection = new \PDO(
             $connectionString,
@@ -99,21 +138,18 @@ class PDODriver implements Driver
     }
 
     /**
-     * Close connection
-     *
-     * This method might be honnored, even if connect() was not called and
-     * connection was lazy-initialized.
+     * {@inheritdoc}
      */
     public function close(): void
     {
         if ($this->connection) {
             $this->connection = null;
         }
-        $this->runner = null; // @todo Not sure we should do this.
+        $this->runner = null;
     }
 
     /**
-     * Get runner
+     * {@inheritdoc}
      */
     public function getRunner(): Runner
     {
