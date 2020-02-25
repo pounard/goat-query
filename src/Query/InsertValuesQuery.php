@@ -102,6 +102,14 @@ final class InsertValuesQuery extends AbstractQuery
      */
     public function getArguments(): ArgumentBag
     {
-        return $this->arguments;
+        $arguments = new ArgumentBag();
+
+        foreach ($this->getAllWith() as $selectQuery) {
+            $arguments->append($selectQuery[1]->getArguments());
+        }
+
+        $arguments->append($this->arguments);
+
+        return $arguments;
     }
 }

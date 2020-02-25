@@ -425,6 +425,11 @@ final class SelectQuery extends AbstractQuery implements Expression
     {
         $arguments = new ArgumentBag();
 
+        // WITH
+        foreach ($this->getAllWith() as $selectQuery) {
+            $arguments->append($selectQuery[1]->getArguments());
+        }
+
         // SELECT
         foreach ($this->columns as $column) {
             if ($column[0] instanceof Statement) {

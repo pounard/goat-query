@@ -76,6 +76,10 @@ final class DeleteQuery extends AbstractQuery
     {
         $arguments = new ArgumentBag();
 
+        foreach ($this->getAllWith() as $selectQuery) {
+            $arguments->append($selectQuery[1]->getArguments());
+        }
+
         foreach ($this->joins as $join) {
             $arguments->append($join[1]->getArguments());
         }

@@ -130,6 +130,10 @@ final class UpdateQuery extends AbstractQuery
     {
         $arguments = new ArgumentBag();
 
+        foreach ($this->getAllWith() as $selectQuery) {
+            $arguments->append($selectQuery[1]->getArguments());
+        }
+
         foreach ($this->columns as $statement) {
             if ($statement instanceof Statement) {
                 $arguments->append($statement->getArguments());
