@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Goat\Query;
 
-class QueryError extends \RuntimeException
+use Goat\Runner\DatabaseError;
+
+class QueryError extends \RuntimeException implements DatabaseError
 {
 }

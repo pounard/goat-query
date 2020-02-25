@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Goat\Driver;
 
-class ConfigurationError extends \RuntimeException
+use Goat\Runner\DatabaseError;
+
+class ConfigurationError extends \RuntimeException implements DatabaseError
 {
 }

@@ -10,6 +10,7 @@ use Goat\Query\Query;
 use Goat\Query\QueryError;
 use Goat\Query\Impl\PgSQLFormatter;
 use Goat\Query\Writer\FormatterInterface;
+use Goat\Runner\DatabaseError;
 use Goat\Runner\EmptyResultIterator;
 use Goat\Runner\ResultIterator;
 use Goat\Runner\Transaction;
@@ -251,9 +252,9 @@ class ExtPgSQLRunner extends AbstractRunner
 
             return $this->createResultIterator($prepared->getIdentifier(), $options, $resource);
 
-        } catch (QueryError $e) {
+        } catch (DatabaseError $e) {
             throw $e;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             throw new DriverError($rawSQL, $args, $e);
         }
     }
@@ -287,9 +288,9 @@ class ExtPgSQLRunner extends AbstractRunner
 
             return $rowCount;
 
-        } catch (QueryError $e) {
+        } catch (DatabaseError $e) {
             throw $e;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             throw new DriverError($rawSQL, $args, $e);
         }
     }
@@ -319,9 +320,9 @@ class ExtPgSQLRunner extends AbstractRunner
 
             return $identifier;
 
-        } catch (QueryError $e) {
+        } catch (DatabaseError $e) {
             throw $e;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             throw new DriverError($rawSQL, null, $e);
         }
     }
@@ -350,9 +351,9 @@ class ExtPgSQLRunner extends AbstractRunner
 
             return $this->createResultIterator($identifier, $options, $resource);
 
-        } catch (QueryError $e) {
+        } catch (DatabaseError $e) {
             throw $e;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             throw new DriverError($identifier, $args, $e);
         }
     }

@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Goat\Runner\Driver;
 
-class DriverError extends \RuntimeException
+use Goat\Runner\DatabaseError;
+
+class DriverError extends \RuntimeException implements DatabaseError
 {
     private $rawSQL;
     private $parameters;

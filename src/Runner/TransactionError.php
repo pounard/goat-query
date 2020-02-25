@@ -7,6 +7,6 @@ namespace Goat\Runner;
 /**
  * Errors have been raised during a transaction
  */
-class TransactionError extends \RuntimeException
+class TransactionError extends \RuntimeException implements DatabaseError
 {
 }

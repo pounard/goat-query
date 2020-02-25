@@ -246,7 +246,7 @@ final class TransactionTest extends DatabaseAwareQueryTest
         } catch (TransactionFailedError $e) {
             // This must not happen because of immediate constraints
             $this->fail();
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             // This should happen instead, arbitrary SQL error
             $transaction->rollback();
         } finally {
@@ -302,7 +302,7 @@ final class TransactionTest extends DatabaseAwareQueryTest
         } catch (TransactionFailedError $e) {
             // This must not happen because of immediate constraints
             $this->fail();
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             // This should happen instead, arbitrary SQL error
             $transaction->rollback();
         } finally {
@@ -357,7 +357,7 @@ final class TransactionTest extends DatabaseAwareQueryTest
         } catch (TransactionFailedError $e) {
             // This is what should happen, error at commit time
             $transaction->rollback();
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             // All constraints are deffered, we should not experience arbitrary
             // SQL errors at insert time
             $this->fail();

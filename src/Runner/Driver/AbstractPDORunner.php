@@ -6,6 +6,7 @@ namespace Goat\Runner\Driver;
 
 use Goat\Query\Query;
 use Goat\Query\QueryError;
+use Goat\Runner\DatabaseError;
 use Goat\Runner\EmptyResultIterator;
 use Goat\Runner\ResultIterator;
 
@@ -84,11 +85,9 @@ abstract class AbstractPDORunner extends AbstractRunner
 
             return $this->createResultIterator($prepared->getIdentifier(), $options, $statement);
 
-        } catch (QueryError $e) {
+        } catch (DatabaseError $e) {
             throw $e;
-        } catch (\PDOException $e) {
-            throw new DriverError($rawSQL, $arguments, $e);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             throw new DriverError($rawSQL, $arguments, $e);
         }
     }
@@ -111,11 +110,9 @@ abstract class AbstractPDORunner extends AbstractRunner
 
             return $statement->rowCount();
 
-        } catch (QueryError $e) {
+        } catch (DatabaseError $e) {
             throw $e;
-        } catch (\PDOException $e) {
-            throw new DriverError($rawSQL, $arguments, $e);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             throw new DriverError($rawSQL, $arguments, $e);
         }
     }
@@ -143,11 +140,9 @@ abstract class AbstractPDORunner extends AbstractRunner
 
             return $identifier;
 
-        } catch (QueryError $e) {
+        } catch (DatabaseError $e) {
             throw $e;
-        } catch (\PDOException $e) {
-            throw new DriverError($rawSQL, [], $e);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             throw new DriverError($rawSQL, [], $e);
         }
     }
@@ -170,11 +165,9 @@ abstract class AbstractPDORunner extends AbstractRunner
 
             return $this->createResultIterator($identifier, $options, $statement);
 
-        } catch (QueryError $e) {
+        } catch (DatabaseError $e) {
             throw $e;
-        } catch (\PDOException $e) {
-            throw new DriverError($identifier, [], $e);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             throw new DriverError($identifier, [], $e);
         }
     }
