@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Goat\Query\Tests;
 
+use Goat\Runner\Testing\NullEscaper;
 use PHPUnit\Framework\TestCase;
 
 class FormatterBaseRegexTest extends TestCase

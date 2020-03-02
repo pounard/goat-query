@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Goat\Runner\Testing;
 
 use GeneratedHydrator\Configuration as GeneratedHydratorConfiguration;

@@ -9,6 +9,7 @@ use Goat\Query\ExpressionRaw;
 use Goat\Query\Query;
 use Goat\Query\SelectQuery;
 use Goat\Query\Writer\DefaultFormatter;
+use Goat\Runner\Testing\NullEscaper;
 use PHPUnit\Framework\TestCase;
 
 final class SelectFunctionalTest extends TestCase

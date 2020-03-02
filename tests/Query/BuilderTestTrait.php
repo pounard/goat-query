@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Goat\Query\Tests;
 
 use Goat\Query\Writer\DefaultFormatter;
+use Goat\Runner\Testing\NullEscaper;
 
 trait BuilderTestTrait
 {

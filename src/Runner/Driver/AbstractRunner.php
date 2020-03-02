@@ -135,7 +135,7 @@ abstract class AbstractRunner implements Runner, EscaperInterface
      *
      * @internal For profiling and debugging purpose only
      */
-    final protected function getEscaper(): EscaperInterface
+    protected function getEscaper(): EscaperInterface
     {
         return $this;
     }

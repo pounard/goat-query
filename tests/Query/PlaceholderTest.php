@@ -6,6 +6,7 @@ namespace Goat\Query\Tests;
 
 use Goat\Query\ArgumentBag;
 use Goat\Query\SelectQuery;
+use Goat\Runner\Testing\NullEscaper;
 use PHPUnit\Framework\TestCase;
 
 class PlaceholderTest extends TestCase
