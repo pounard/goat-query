@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Goat\Query\Tests;
 
 use Goat\Query\InsertQueryQuery;
+use Goat\Query\QueryError;
 use Goat\Query\SelectQuery;
 use PHPUnit\Framework\TestCase;
-use Goat\Query\QueryError;
 
 final class InsertQueryUnitTest extends TestCase
 {
