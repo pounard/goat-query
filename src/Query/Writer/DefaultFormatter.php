@@ -691,7 +691,7 @@ class DefaultFormatter extends FormatterBase
 
         if ($columns) {
             $output[] = \sprintf(
-                "(%s) values",
+                "(%s)",
                 \implode(', ', \array_map(function ($column) use ($escaper) {
                     return $escaper->escapeIdentifier($column);
                 }, $columns))
