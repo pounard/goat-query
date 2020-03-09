@@ -237,6 +237,15 @@ final class SelectQuery extends AbstractQuery implements Expression
      */
     public function condition($column, $value = null, string $operator = Where::EQUAL): self
     {
+        if ($column instanceof Where) {
+            if (null !== $value) {
+                throw new QueryError(\sprintf("You cannot pass a %d instance to condition() method with a value", Where::class));
+            }
+            $this->where->expression($column);
+
+            return $this;
+        }
+
         $this->where->condition($column, $value, $operator);
 
         return $this;

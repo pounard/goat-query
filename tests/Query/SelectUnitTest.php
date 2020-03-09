@@ -314,6 +314,44 @@ final class QuerySelectUnitTest extends TestCase
         );
     }
 
+    public function testConditionWithWhereInstance()
+    {
+        $select = new SelectQuery('some_table');
+
+        $select->condition((new Where(Where::OR))
+            ->isNull('foo')
+            ->isNull('bar')
+        );
+
+        self::assertSameSql(
+            'select * from "some_table" where ("foo" is null or "bar" is null)',
+            self::createStandardFormatter()->format($select)
+        );
+    }
+
+    public function testConditionWithWhereInstanceAndValueFails()
+    {
+        $select = new SelectQuery('some_table');
+
+        self::expectException(QueryError::class);
+        $select->condition(new Where(Where::OR), 'foo');
+    }
+
+    public function testExpressionWithWhereInstance()
+    {
+        $select = new SelectQuery('some_table');
+
+        $select->expression((new Where(Where::OR))
+            ->isNull('foo')
+            ->isNull('bar')
+        );
+
+        self::assertSameSql(
+            'select * from "some_table" where ("foo" is null or "bar" is null)',
+            self::createStandardFormatter()->format($select)
+        );
+    }
+
     public function testConditionWithCallbackReturningExpression()
     {
         $select = new SelectQuery('some_table');
