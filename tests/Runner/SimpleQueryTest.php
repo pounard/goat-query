@@ -3,24 +3,28 @@
 namespace Goat\Runner\Tests;
 
 use Goat\Query\ExpressionRaw;
-use Goat\Runner\Runner;
 use Goat\Runner\Testing\DatabaseAwareQueryTest;
+use Goat\Runner\Testing\TestDriverFactory;
 
 class SimpleQueryTest extends DatabaseAwareQueryTest
 {
     /**
-     * @dataProvider getRunners
+     * @dataProvider runnerDataProvider
      */
-    public function testSelectOne(Runner $runner, bool $supportsReturning)
+    public function testSelectOne(TestDriverFactory $factory)
     {
+        $runner = $factory->getRunner();
+
         $this->assertSame(13, $runner->execute("SELECT 13")->fetchField());
     }
 
     /**
-     * @dataProvider getRunners
+     * @dataProvider runnerDataProvider
      */
-    public function testSelectOneAsQuery(Runner $runner, bool $supportsReturning)
+    public function testSelectOneAsQuery(TestDriverFactory $factory)
     {
+        $runner = $factory->getRunner();
+
         $this->assertSame(
             42,
             $runner
@@ -33,10 +37,12 @@ class SimpleQueryTest extends DatabaseAwareQueryTest
     }
 
     /**
-     * @dataProvider getRunners
+     * @dataProvider runnerDataProvider
      */
-    public function testPerformOne(Runner $runner, bool $supportsReturning)
+    public function testPerformOne(TestDriverFactory $factory)
     {
+        $runner = $factory->getRunner();
+
         $this->assertSame(1, $runner->perform("SELECT 1"));
     }
 }

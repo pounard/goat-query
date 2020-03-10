@@ -4,19 +4,17 @@ declare(strict_types=1);
 
 namespace Goat\Runner\Testing;
 
-use Goat\Query\Writer\DefaultFormatter;
-use Goat\Query\Writer\EscaperInterface;
-use Goat\Query\Writer\FormatterInterface;
+use Goat\Driver\Platform\Escaper\Escaper;
+use Goat\Driver\Runner\AbstractRunner;
 use Goat\Runner\ResultIterator;
 use Goat\Runner\Transaction;
-use Goat\Runner\Driver\AbstractRunner;
 
 class NullRunner extends AbstractRunner
 {
     /**
      * {@inheritdoc}
      */
-    protected function getEscaper(): EscaperInterface
+    protected function getEscaper(): Escaper
     {
         return $this->escaper ?? ($this->escaper = new NullEscaper());
     }
@@ -27,14 +25,6 @@ class NullRunner extends AbstractRunner
     public function supportsDeferingConstraints(): bool
     {
         return true;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    protected function createFormatter(): FormatterInterface
-    {
-        return new DefaultFormatter(new NullEscaper());
     }
 
     /**

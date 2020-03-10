@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Goat\Runner\Testing;
 
+use Goat\Driver\Platform\Escaper\Escaper;
 use Goat\Query\QueryError;
-use Goat\Query\Writer\EscaperInterface;
 
 /**
  * Does escape pretty much nothing.
  */
-class NullEscaper implements EscaperInterface
+class NullEscaper implements Escaper
 {
     private $useNumericIndices;
 

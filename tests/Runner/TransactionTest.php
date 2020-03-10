@@ -10,13 +10,14 @@ use Goat\Runner\TransactionError;
 use Goat\Runner\TransactionFailedError;
 use Goat\Runner\TransactionSavepoint;
 use Goat\Runner\Testing\DatabaseAwareQueryTest;
+use Goat\Runner\Testing\TestDriverFactory;
 
 final class TransactionTest extends DatabaseAwareQueryTest
 {
     /**
      * {@inheritdoc}
      */
-    protected function createTestSchema(Runner $runner)
+    protected function createTestData(Runner $runner, ?string $schema): void
     {
         $runner->execute("
             create temporary table transaction_test (
@@ -26,13 +27,14 @@ final class TransactionTest extends DatabaseAwareQueryTest
             )
         ");
 
-        if ($runner->supportsDeferingConstraints()) {
+        if ($runner->getPlatform()->supportsDeferingConstraints()) {
             $runner->execute("
                 alter table transaction_test
                     add constraint transaction_test_foo
                     unique (foo)
                     deferrable
             ");
+
             $runner->execute("
                 alter table transaction_test
                     add constraint transaction_test_bar
@@ -45,19 +47,14 @@ final class TransactionTest extends DatabaseAwareQueryTest
                     add constraint transaction_test_foo
                     unique (foo)
             ");
+
             $runner->execute("
                 alter table transaction_test
                     add constraint transaction_test_bar
                     unique (bar)
             ");
         }
-    }
 
-    /**
-     * {@inheritdoc}
-     */
-    protected function createTestData(Runner $runner)
-    {
         $runner
             ->getQueryBuilder()
             ->insertValues('transaction_test')
@@ -72,11 +69,11 @@ final class TransactionTest extends DatabaseAwareQueryTest
     /**
      * Normal working transaction
      *
-     * @dataProvider getRunners
+     * @dataProvider runnerDataProvider
      */
-    public function testTransaction(Runner $runner)
+    public function testTransaction(TestDriverFactory $factory)
     {
-        $this->prepare($runner);
+        $runner = $factory->getRunner();
 
         $transaction = $runner->beginTransaction();
 
@@ -105,15 +102,16 @@ final class TransactionTest extends DatabaseAwareQueryTest
     }
 
     /**
-     * @dataProvider getRunners
+     * @dataProvider runnerDataProvider
      */
-    public function testNestedTransactionCreatesSavepoint(Runner $runner)
+    public function testNestedTransactionCreatesSavepoint(TestDriverFactory $factory)
     {
-        if (!$runner->supportsTransactionSavepoints()) {
+        $runner = $factory->getRunner();
+
+        if (!$runner->getPlatform()->supportsTransactionSavepoints()) {
             $this->markTestSkipped(\sprintf("Driver '%s' does not supports savepoints", $runner->getDriverName()));
         }
 
-        $this->prepare($runner);
         $runner->getQueryBuilder()->delete('transaction_test')->execute();
 
         $transaction = $runner->beginTransaction();
@@ -155,15 +153,16 @@ final class TransactionTest extends DatabaseAwareQueryTest
     }
 
     /**
-     * @dataProvider getRunners
+     * @dataProvider runnerDataProvider
      */
-    public function testNestedTransactionRollbackToSavepointTransparently(Runner $runner)
+    public function testNestedTransactionRollbackToSavepointTransparently(TestDriverFactory $factory)
     {
-        if (!$runner->supportsTransactionSavepoints()) {
+        $runner = $factory->getRunner();
+
+        if (!$runner->getPlatform()->supportsTransactionSavepoints()) {
             $this->markTestSkipped(\sprintf("Driver '%s' does not supports savepoints", $runner->getDriverName()));
         }
 
-        $this->prepare($runner);
         $runner->getQueryBuilder()->delete('transaction_test')->execute();
 
         $transaction = $runner->beginTransaction();
@@ -207,11 +206,11 @@ final class TransactionTest extends DatabaseAwareQueryTest
     /**
      * Fail with immediate constraints (not deferred)
      *
-     * @dataProvider getRunners
+     * @dataProvider runnerDataProvider
      */
-    public function testImmediateTransactionFail(Runner $runner)
+    public function testImmediateTransactionFail(TestDriverFactory $factory)
     {
-        $this->prepare($runner);
+        $runner = $factory->getRunner();
 
         $transaction = $runner
             ->beginTransaction()
@@ -261,13 +260,13 @@ final class TransactionTest extends DatabaseAwareQueryTest
     /**
      * Fail with deferred constraints
      *
-     * @dataProvider getRunners
+     * @dataProvider runnerDataProvider
      */
-    public function testDeferredTransactionFail(Runner $runner)
+    public function testDeferredTransactionFail(TestDriverFactory $factory)
     {
-        $this->prepare($runner);
+        $runner = $factory->getRunner();
 
-        if (!$runner->supportsDeferingConstraints()) {
+        if (!$runner->getPlatform()->supportsDeferingConstraints()) {
             $this->markTestSkipped("driver does not support defering constraints");
         }
 
@@ -317,13 +316,13 @@ final class TransactionTest extends DatabaseAwareQueryTest
     /**
      * Fail with ALL constraints deferred
      *
-     * @dataProvider getRunners
+     * @dataProvider runnerDataProvider
      */
-    public function testDeferredAllTransactionFail(Runner $runner)
+    public function testDeferredAllTransactionFail(TestDriverFactory $factory)
     {
-        $this->prepare($runner);
+        $runner = $factory->getRunner();
 
-        if (!$runner->supportsDeferingConstraints()) {
+        if (!$runner->getPlatform()->supportsDeferingConstraints()) {
             $this->markTestSkipped("driver does not support defering constraints");
         }
 
@@ -373,11 +372,11 @@ final class TransactionTest extends DatabaseAwareQueryTest
     /**
      * Tests that rollback works
      *
-     * @dataProvider getRunners
+     * @dataProvider runnerDataProvider
      */
-    public function testTransactionRollback(Runner $runner)
+    public function testTransactionRollback(TestDriverFactory $factory)
     {
-        $this->prepare($runner);
+        $runner = $factory->getRunner();
 
         $transaction = $runner->beginTransaction();
 
@@ -403,11 +402,11 @@ final class TransactionTest extends DatabaseAwareQueryTest
     /**
      * Test that fetching a pending transaction is disallowed
      *
-     * @dataProvider getRunners
+     * @dataProvider runnerDataProvider
      */
-    public function testPendingAllowed(Runner $runner)
+    public function testPendingAllowed(TestDriverFactory $factory)
     {
-        $this->prepare($runner);
+        $runner = $factory->getRunner();
 
         $transaction = $runner->beginTransaction();
 
@@ -438,11 +437,11 @@ final class TransactionTest extends DatabaseAwareQueryTest
     /**
      * Test the savepoint feature
      *
-     * @dataProvider getRunners
+     * @dataProvider runnerDataProvider
      */
-    public function testTransactionSavepoint(Runner $runner)
+    public function testTransactionSavepoint(TestDriverFactory $factory)
     {
-        $this->prepare($runner);
+        $runner = $factory->getRunner();
 
         $transaction = $runner->beginTransaction();
 

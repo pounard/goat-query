@@ -9,7 +9,7 @@ use Goat\Query\InsertQueryQuery;
 use Goat\Query\InsertValuesQuery;
 use Goat\Query\SelectQuery;
 use Goat\Query\UpdateQuery;
-use Goat\Runner\Driver\DefaultQueryBuilder;
+use Goat\Runner\DefaultQueryBuilder;
 use PHPUnit\Framework\TestCase;
 
 class DefaultQueryBuilderTest extends TestCase

@@ -21,7 +21,7 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select * from "some_table"',
-            self::createStandardFormatter()->format($select)
+            self::createStandardSqlWriter()->format($select)
         );
     }
 
@@ -35,7 +35,7 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select * from "some_table" for update',
-            self::createStandardFormatter()->format($select)
+            self::createStandardSqlWriter()->format($select)
         );
     }
 
@@ -49,7 +49,7 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select * from "some_table"',
-            self::createStandardFormatter()->format($select),
+            self::createStandardSqlWriter()->format($select),
             "Will return row does not change formatting"
         );
     }
@@ -62,7 +62,7 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select "a" from "some_table"',
-            self::createStandardFormatter()->format($select)
+            self::createStandardSqlWriter()->format($select)
         );
     }
 
@@ -74,7 +74,7 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select "a" as "my_alias" from "some_table"',
-            self::createStandardFormatter()->format($select)
+            self::createStandardSqlWriter()->format($select)
         );
     }
 
@@ -86,7 +86,7 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select "foo"."a" from "some_table"',
-            self::createStandardFormatter()->format($select)
+            self::createStandardSqlWriter()->format($select)
         );
     }
 
@@ -98,7 +98,7 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select count(distinct foo) as "bar" from "some_table"',
-            self::createStandardFormatter()->format($select)
+            self::createStandardSqlWriter()->format($select)
         );
     }
 
@@ -109,7 +109,7 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select foo.a as "my_alias" from "some_table"',
-            self::createStandardFormatter()->format($select)
+            self::createStandardSqlWriter()->format($select)
         );
     }
 
@@ -151,7 +151,7 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select sum(?) from "some_table"',
-            self::createStandardFormatter()->format($select)
+            self::createStandardSqlWriter()->format($select)
         );
     }
 
@@ -168,7 +168,7 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select "foo"."bar" as "result" from "some_table"',
-            self::createStandardFormatter()->format($select)
+            self::createStandardSqlWriter()->format($select)
         );
     }
 
@@ -185,7 +185,7 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select foo.bar as "result" from "some_table"',
-            self::createStandardFormatter()->format($select)
+            self::createStandardSqlWriter()->format($select)
         );
     }
 
@@ -202,7 +202,7 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select foo.bar as "result" from "some_table"',
-            self::createStandardFormatter()->format($select)
+            self::createStandardSqlWriter()->format($select)
         );
     }
 
@@ -219,7 +219,7 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select count(*) as "result" from "some_table"',
-            self::createStandardFormatter()->format($select)
+            self::createStandardSqlWriter()->format($select)
         );
     }
 
@@ -260,7 +260,7 @@ final class QuerySelectUnitTest extends TestCase
                 count(c) as c,
                 count(d) as "d"
             from "some_table"',
-            self::createStandardFormatter()->format($select)
+            self::createStandardSqlWriter()->format($select)
         );
     }
 
@@ -272,7 +272,7 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select * from "some_table" where "foo" = ?',
-            self::createStandardFormatter()->format($select)
+            self::createStandardSqlWriter()->format($select)
         );
     }
 
@@ -284,7 +284,7 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select * from "some_table" where "bar" = 12',
-            self::createStandardFormatter()->format($select)
+            self::createStandardSqlWriter()->format($select)
         );
     }
 
@@ -296,7 +296,7 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select * from "some_table" where "baz" = ?::json',
-            self::createStandardFormatter()->format($select)
+            self::createStandardSqlWriter()->format($select)
         );
     }
 
@@ -310,7 +310,7 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select * from "some_table" where "boo" = ?',
-            self::createStandardFormatter()->format($select)
+            self::createStandardSqlWriter()->format($select)
         );
     }
 
@@ -325,7 +325,7 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select * from "some_table" where ("foo" is null or "bar" is null)',
-            self::createStandardFormatter()->format($select)
+            self::createStandardSqlWriter()->format($select)
         );
     }
 
@@ -348,7 +348,7 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select * from "some_table" where ("foo" is null or "bar" is null)',
-            self::createStandardFormatter()->format($select)
+            self::createStandardSqlWriter()->format($select)
         );
     }
 
@@ -362,7 +362,7 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select * from "some_table" where "baa" < now()',
-            self::createStandardFormatter()->format($select)
+            self::createStandardSqlWriter()->format($select)
         );
     }
 
@@ -379,7 +379,7 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select * from "some_table" where "id" = ? and "birthdate" >= ?',
-            self::createStandardFormatter()->format($select)
+            self::createStandardSqlWriter()->format($select)
         );
     }
 
@@ -391,7 +391,7 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select * from "some_table" where a < b',
-            self::createStandardFormatter()->format($select)
+            self::createStandardSqlWriter()->format($select)
         );
     }
 
@@ -405,7 +405,7 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select * from "some_table" where "a" = ?',
-            self::createStandardFormatter()->format($select)
+            self::createStandardSqlWriter()->format($select)
         );
     }
 
@@ -437,7 +437,7 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select * from "some_table" having "foo" = ?',
-            self::createStandardFormatter()->format($select)
+            self::createStandardSqlWriter()->format($select)
         );
     }
 
@@ -449,7 +449,7 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select * from "some_table" having "bar" = 12',
-            self::createStandardFormatter()->format($select)
+            self::createStandardSqlWriter()->format($select)
         );
     }
 
@@ -461,7 +461,7 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select * from "some_table" having "baz" = ?::json',
-            self::createStandardFormatter()->format($select)
+            self::createStandardSqlWriter()->format($select)
         );
     }
 
@@ -475,7 +475,7 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select * from "some_table" having "boo" = ?',
-            self::createStandardFormatter()->format($select)
+            self::createStandardSqlWriter()->format($select)
         );
     }
 
@@ -489,7 +489,7 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select * from "some_table" having "baa" < now()',
-            self::createStandardFormatter()->format($select)
+            self::createStandardSqlWriter()->format($select)
         );
     }
 
@@ -501,7 +501,7 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select * from "some_table" having a < b',
-            self::createStandardFormatter()->format($select)
+            self::createStandardSqlWriter()->format($select)
         );
     }
 
@@ -515,7 +515,7 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select * from "some_table" having "a" = ?',
-            self::createStandardFormatter()->format($select)
+            self::createStandardSqlWriter()->format($select)
         );
     }
 
@@ -527,7 +527,7 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select * from "some_table" limit 10 offset 3',
-            self::createStandardFormatter()->format($select)
+            self::createStandardSqlWriter()->format($select)
         );
     }
 
@@ -559,7 +559,7 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select * from "some_table" limit 10 offset 20',
-            self::createStandardFormatter()->format($select)
+            self::createStandardSqlWriter()->format($select)
         );
     }
 

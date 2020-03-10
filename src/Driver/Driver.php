@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Goat\Driver;
 
+use Goat\Driver\Platform\Platform;
 use Goat\Runner\Runner;
 
 interface Driver
@@ -17,6 +18,13 @@ interface Driver
      *   If this method is called subsenquently to connection
      */
     public function setConfiguration(Configuration $configuration): void;
+
+    /**
+     * Tell if close() method really closes the connection.
+     *
+     * PDO is probably the only implementation that won't.
+     */
+    public function canBeClosedProperly(): bool;
 
     /**
      * Run connection
@@ -33,6 +41,11 @@ interface Driver
      * connection was lazy-initialized.
      */
     public function close(): void;
+
+    /**
+     * Get platform
+     */
+    public function getPlatform(): Platform;
 
     /**
      * Get runner

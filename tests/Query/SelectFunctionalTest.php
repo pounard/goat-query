@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Goat\Query\Tests;
 
+use Goat\Driver\Query\DefaultSqlWriter;
 use Goat\Query\ExpressionColumn;
 use Goat\Query\ExpressionRaw;
 use Goat\Query\Query;
 use Goat\Query\SelectQuery;
-use Goat\Query\Writer\DefaultFormatter;
 use Goat\Runner\Testing\NullEscaper;
 use PHPUnit\Framework\TestCase;
 
@@ -18,7 +18,7 @@ final class SelectFunctionalTest extends TestCase
 
     public function testSimpleQuery()
     {
-        $formatter = new DefaultFormatter(new NullEscaper());
+        $formatter = new DefaultSqlWriter(new NullEscaper());
 
         $referenceArguments = [12, 3];
         $reference = <<<EOT
@@ -213,7 +213,7 @@ EOT;
 
     public function testWith()
     {
-        $formatter = new DefaultFormatter(new NullEscaper());
+        $formatter = new DefaultSqlWriter(new NullEscaper());
 
         $reference = <<<EOT
 with "test1" as (
@@ -243,7 +243,7 @@ EOT;
 
     public function testWhereInSelect()
     {
-        $formatter = new DefaultFormatter(new NullEscaper());
+        $formatter = new DefaultSqlWriter(new NullEscaper());
 
         $reference = <<<EOT
 select "foo"

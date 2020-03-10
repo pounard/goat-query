@@ -15,7 +15,7 @@ class WhereFunctionalTest extends TestCase
 
     public function testWhere()
     {
-        $formatter = $this->createStandardFormatter();
+        $formatter = self::createStandardSqlWriter();
 
         $select = new SelectQuery('the_universe', 'u');
         $select->column('id');
@@ -155,7 +155,7 @@ EOT;
 
     public function testWhereWhenEmpty()
     {
-        $formatter = $this->createStandardFormatter();
+        $formatter = self::createStandardSqlWriter();
 
         $where = (new Where());
 

@@ -21,7 +21,7 @@ final class InsertValuesUnitTest extends TestCase
 
         self::assertSameSql(
             'insert into "some_table" ("foo", "int") values (?, ?)',
-            self::createStandardFormatter()->format($insert)
+            self::createStandardSqlWriter()->format($insert)
         );
     }
 
@@ -39,7 +39,7 @@ final class InsertValuesUnitTest extends TestCase
 
         self::assertSameSql(
             'insert into "some_table" ("foo", "int") values (?, ?), (?, ?)',
-            self::createStandardFormatter()->format($insert)
+            self::createStandardSqlWriter()->format($insert)
         );
     }
 
@@ -58,7 +58,7 @@ final class InsertValuesUnitTest extends TestCase
 
         self::assertSameSql(
             'insert into "some_table" ("a", "b") values (?, ?), (?, ?)',
-            self::createStandardFormatter()->format($insert)
+            self::createStandardSqlWriter()->format($insert)
         );
     }
 }

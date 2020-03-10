@@ -2,19 +2,20 @@
 
 declare(strict_types=1);
 
-namespace Goat\Runer\Tests\Query;
+namespace Goat\Runner\Tests\Query;
 
 use Goat\Query\Query;
 use Goat\Runner\Runner;
 use Goat\Runner\Testing\DatabaseAwareQueryTest;
-use Goat\Tests\Driver\Mock\InsertAndTheCatSays;
+use Goat\Runner\Testing\TestDriverFactory;
+use Goat\Runner\Tests\Query\Mock\InsertAndTheCatSays;
 
 class InsertTest extends DatabaseAwareQueryTest
 {
     /**
      * {@inheritdoc}
      */
-    protected function createTestSchema(Runner $runner)
+    protected function createTestData(Runner $runner, ?string $schema): void
     {
         $runner->execute("
             create temporary table some_table (
@@ -24,32 +25,37 @@ class InsertTest extends DatabaseAwareQueryTest
                 baz timestamp default now()
             )
         ");
+
         $runner->execute("
             create temporary table users (
                 id serial primary key,
                 name varchar(255)
             )
         ");
-    }
 
-    /**
-     * {@inheritdoc}
-     */
-    protected function createTestData(Runner $runner)
-    {
-        $runner->insertValues('users')->columns(['name'])->values(["admin"])->values(["jean"])->execute();
+        $runner
+            ->getQueryBuilder()
+            ->insertValues('users')
+            ->columns(['name'])
+            ->values(["admin"])
+            ->values(["jean"])
+            ->execute()
+        ;
     }
 
     /**
      * Very simple test
      *
-     * @dataProvider driverDataSource
+     * @dataProvider runnerDataProvider
      */
-    public function testSingleValueInsert($runner, $class)
+    public function testSingleValueInsert(TestDriverFactory $factory)
     {
+        $runner = $factory->getRunner();
+
         $referenceDate = new \DateTime();
 
         $runner
+            ->getQueryBuilder()
             ->insertValues('some_table')
             ->columns(['foo', 'bar', 'baz'])
             // @todo argument conversion on querybuilder!
@@ -58,6 +64,7 @@ class InsertTest extends DatabaseAwareQueryTest
         ;
 
         $value = $runner
+            ->getQueryBuilder()
             ->select('some_table', 't')
             ->column('t.foo')
             ->column('t.bar')
@@ -79,11 +86,14 @@ class InsertTest extends DatabaseAwareQueryTest
     /**
      * Okay, let's bulk!
      *
-     * @dataProvider driverDataSource
+     * @dataProvider runnerDataProvider
      */
-    public function testBulkValueInsert($runner, $class)
+    public function testBulkValueInsert(TestDriverFactory $factory)
     {
+        $runner = $factory->getRunner();
+
         $insert = $runner
+            ->getQueryBuilder()
             ->insertValues('some_table')
             ->columns(['foo', 'bar'])
             ->values([1, 'one'])
@@ -98,8 +108,8 @@ class InsertTest extends DatabaseAwareQueryTest
 
         $insert->execute();
 
-        /** @var \Goat\Runner\ResultIteratorInterface $result */
         $result = $runner
+            ->getQueryBuilder()
             ->select('some_table', 't')
             ->orderBy('t.id', Query::ORDER_ASC)
             ->execute()
@@ -118,13 +128,16 @@ class InsertTest extends DatabaseAwareQueryTest
     /**
      * Test value insert with a RETURNING clause
      *
-     * @dataProvider driverDataSource
+     * @dataProvider runnerDataProvider
      */
-    public function testBulkValueInsertWithReturning($runner, $class)
+    public function testBulkValueInsertWithReturning(TestDriverFactory $factory)
     {
+        $runner = $factory->getRunner();
+
         // Add one value, so there is data in the table, it will ensure that
         // the returning count is the right one
         $result = $runner
+            ->getQueryBuilder()
             ->insertValues('some_table')
             ->columns(['foo', 'bar'])
             ->values([1, 'a'])
@@ -142,6 +155,7 @@ class InsertTest extends DatabaseAwareQueryTest
         // Add one value, so there is data in the table, it will ensure that
         // the returning count is the right one
         $affectedRowCount = $runner
+            ->getQueryBuilder()
             ->insertValues('some_table')
             ->columns(['foo', 'bar'])
             ->values([3, 'c'])
@@ -152,11 +166,12 @@ class InsertTest extends DatabaseAwareQueryTest
 
         $this->assertSame(3, $affectedRowCount);
 
-        if (!$runner->supportsReturning()) {
+        if (!$runner->getPlatform()->supportsReturning()) {
             $this->markTestIncomplete("driver does not support RETURNING");
         }
 
         $result = $runner
+            ->getQueryBuilder()
             ->insertValues('some_table')
             ->columns(['foo', 'bar'])
             ->returning('id')
@@ -192,17 +207,20 @@ class InsertTest extends DatabaseAwareQueryTest
     /**
      * Test value insert with a RETURNING clause and object hydration
      *
-     * @dataProvider driverDataSource
+     * @dataProvider runnerDataProvider
      */
-    public function testBulkValueInsertWithReturningAndHydration($runner, $class)
+    public function testBulkValueInsertWithReturningAndHydration(TestDriverFactory $factory)
     {
-        if (!$runner->supportsReturning()) {
+        $runner = $factory->getRunner();
+
+        if (!$runner->getPlatform()->supportsReturning()) {
             $this->markTestIncomplete("driver does not support RETURNING");
         }
 
         // Add one value, so there is data in the table, it will ensure that
         // the returning count is the right one
         $result = $runner
+            ->getQueryBuilder()
             ->insertValues('some_table')
             ->columns(['foo', 'bar'])
             ->values([1, 'a'])
@@ -222,10 +240,12 @@ class InsertTest extends DatabaseAwareQueryTest
     /**
      * Test a bulk insert from SELECT
      *
-     * @dataProvider driverDataSource
+     * @dataProvider runnerDataProvider
      */
-    public function testBulkInsertFromQuery($runner, $class)
+    public function testBulkInsertFromQuery(TestDriverFactory $factory)
     {
+        // $runner = $factory->getRunner();
+
         $this->markTestIncomplete("not implemented yet");
     }
 }

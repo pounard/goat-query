@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Goat\Query\Tests;
 
+use Goat\Driver\Platform\Escaper\Escaper;
 use Goat\Query\QueryError;
-use Goat\Query\Writer\EscaperInterface;
 
 /**
  * Does escape pretty much nothing.
  */
-class NullEscaper implements EscaperInterface
+class NullEscaper implements Escaper
 {
     private $useNumericIndices;
 
@@ -66,7 +66,7 @@ class NullEscaper implements EscaperInterface
      */
     public function escapeLike(string $string) : string
     {
-        return addcslashes($string, '\%_');
+        return \addcslashes($string, '\%_');
     }
 
     /**

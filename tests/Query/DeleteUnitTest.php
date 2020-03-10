@@ -26,7 +26,7 @@ final class DeleteUnitTest extends TestCase
 
         self::assertSameSql(
             'delete from "some_table"',
-            self::createStandardFormatter()->format($delete)
+            self::createStandardSqlWriter()->format($delete)
         );
     }
 
@@ -38,7 +38,7 @@ final class DeleteUnitTest extends TestCase
 
         self::assertSameSql(
             'delete from "some_table" where "a" = ?',
-            self::createStandardFormatter()->format($delete)
+            self::createStandardSqlWriter()->format($delete)
         );
     }
 
@@ -50,7 +50,7 @@ final class DeleteUnitTest extends TestCase
 
         self::assertSameSql(
             'delete from "some_table" where true',
-            self::createStandardFormatter()->format($delete)
+            self::createStandardSqlWriter()->format($delete)
         );
     }
 
@@ -62,7 +62,7 @@ final class DeleteUnitTest extends TestCase
 
         self::assertSameSql(
             'delete from "some_table" returning *',
-            self::createStandardFormatter()->format($delete)
+            self::createStandardSqlWriter()->format($delete)
         );
     }
 
@@ -74,7 +74,7 @@ final class DeleteUnitTest extends TestCase
 
         self::assertSameSql(
             'delete from "some_table" returning "a"',
-            self::createStandardFormatter()->format($delete)
+            self::createStandardSqlWriter()->format($delete)
         );
     }
 
@@ -86,7 +86,7 @@ final class DeleteUnitTest extends TestCase
 
         self::assertSameSql(
             'delete from "some_table" returning "foo"."a"',
-            self::createStandardFormatter()->format($delete)
+            self::createStandardSqlWriter()->format($delete)
         );
     }
 
@@ -98,7 +98,7 @@ final class DeleteUnitTest extends TestCase
 
         self::assertSameSql(
             'delete from "some_table" returning a + 2 as "a_plus_two"',
-            self::createStandardFormatter()->format($delete)
+            self::createStandardSqlWriter()->format($delete)
         );
     }
 }

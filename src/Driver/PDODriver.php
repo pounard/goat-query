@@ -4,65 +4,36 @@ declare(strict_types=1);
 
 namespace Goat\Driver;
 
+use Goat\Driver\Platform\MySQLPlatform;
+use Goat\Driver\Platform\PgSQLPlatform;
+use Goat\Driver\Platform\Platform;
+use Goat\Driver\Platform\Escaper\Escaper;
+use Goat\Driver\Platform\Escaper\PDOMySQLEscaper;
+use Goat\Driver\Platform\Escaper\PDOPgSQLEscaper;
+use Goat\Driver\Runner\PDOMySQLRunner;
+use Goat\Driver\Runner\PDOPgSQLRunner;
 use Goat\Runner\Runner;
-use Goat\Runner\Driver\PDOMySQLRunner;
-use Goat\Runner\Driver\PDOPgSQLRunner;
 
-class PDODriver implements Driver
+class PDODriver extends AbstractDriver
 {
-    private $configuration;
+    /** @var null|\PDO */
     private $connection;
+
+    /** @var null|Escaper */
+    private $escaper;
+
+    /** @var null|Platform */
+    private $platform;
+
+    /** @var null|Runner */
     private $runner;
 
     /**
      * Is connection alive
      */
-    private function isConnected(): bool
+    protected function isConnected(): bool
     {
         return null !== $this->connection;
-    }
-
-    /**
-     * Create runner
-     */
-    private function createRunner(): Runner
-    {
-        if (!$this->connection) {
-            $this->connect();
-        }
-
-        switch ($driver = $this->configuration->getDriver()) {
-
-            case 'mysql':
-                return new PDOMySQLRunner($this->connection);
-
-            case 'pgsql':
-                return new PDOPgSQLRunner($this->connection);
-        }
-
-        throw new ConfigurationError(\sprintf("Cannot create runner for driver '%s'", $driver));
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function setConfiguration(Configuration $configuration): void
-    {
-        if ($this->isConnected()) {
-            throw new ConfigurationError("Cannot set configuration after connection has been made");
-        }
-        $this->configuration = $configuration;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getConfiguration(): Configuration
-    {
-        if (!$this->configuration) {
-            throw new ConfigurationError("No configuration was set");
-        }
-        return $this->configuration;
     }
 
     /**
@@ -110,12 +81,20 @@ class PDODriver implements Driver
     /**
      * {@inheritdoc}
      */
-    public function connect(): void
+    public function canBeClosedProperly(): bool
+    {
+        return false;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function doConnect(): void
     {
         $configuration = $this->getConfiguration();
         $connectionString = $this->buildConnectionString($configuration->getOptions());
 
-        $connection = new \PDO(
+        $this->connection = $connection = new \PDO(
             $connectionString,
             $configuration->getUsername(),
             $configuration->getPassword()
@@ -134,18 +113,69 @@ class PDODriver implements Driver
             $connection->setAttribute($attribute, $value);
         }
 
-        $this->connection = $connection;
+        switch ($driver = $configuration->getDriver()) {
+
+            case 'mysql':
+                $this->escaper = new PDOMySQLEscaper($this->connection);
+                $this->platform = new MySQLPlatform($this->escaper);
+                $this->runner = new PDOMySQLRunner($this->platform, $this->connection);
+                break;
+
+            case 'pgsql':
+                $this->escaper = new PDOPgSQLEscaper($this->connection);
+                $this->platform = new PgSQLPlatform($this->escaper);
+                $this->runner = new PDOPgSQLRunner($this->platform, $this->connection);
+                break;
+
+            default:
+                $this->connection = null;
+                throw new ConfigurationError(\sprintf("Cannot create runner for driver '%s'", $driver));
+        }
     }
 
     /**
      * {@inheritdoc}
      */
-    public function close(): void
+    protected function doClose(): void
     {
-        if ($this->connection) {
-            $this->connection = null;
-        }
+        // Attention here, if something kept a reference to the \PDO object
+        // it will not close the connection, you've been warned. This is
+        // especially true during unit and functionnal tests. Hence the
+        // \gc_collect_cycles() call at the end of this method.
         $this->runner = null;
+        $this->platform = null;
+        $this->connection = null;
+        \gc_collect_cycles();
+    }
+
+    /**
+     * Create platform
+     */
+    private function createPlatform(): Platform
+    {
+        if (!$this->connection) {
+            $this->connect();
+        }
+        return $this->platform;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getPlatform(): Platform
+    {
+        return $this->platform ?? $this->createPlatform();
+    }
+
+    /**
+     * Create runner
+     */
+    private function createRunner(): Runner
+    {
+        if (!$this->connection) {
+            $this->connect();
+        }
+        return $this->runner;
     }
 
     /**
@@ -153,6 +183,6 @@ class PDODriver implements Driver
      */
     public function getRunner(): Runner
     {
-        return $this->runner ?? ($this->runner = $this->createRunner());
+        return $this->runner ?? $this->createRunner();
     }
 }

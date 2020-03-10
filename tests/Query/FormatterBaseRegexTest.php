@@ -18,7 +18,7 @@ class FormatterBaseRegexTest extends TestCase
      */
     public function testEscapeSequenceIsNonGreedy()
     {
-        $formatter = new FooFormatter(new NullEscaper(true));
+        $formatter = new FooSqlWriter(new NullEscaper(true));
 
         $prepared = $formatter->prepare(<<<SQL
 select "foo" from "some_table" where "a" = ? and "b" = ?"
@@ -34,7 +34,7 @@ SQL
      */
     public function testNamedParametersAreFound()
     {
-        $formatter = new FooFormatter(new NullEscaper(true));
+        $formatter = new FooSqlWriter(new NullEscaper(true));
 
         $prepared = $formatter->prepare(<<<SQL
 select "foo" from "some_table" where "a" = :foo and "b" = :bar and "c" = ?
@@ -52,7 +52,7 @@ SQL
      */
     public function testPlaceholderAreFound()
     {
-        $formatter = new FooFormatter(new NullEscaper(true));
+        $formatter = new FooSqlWriter(new NullEscaper(true));
 
         $prepared = $formatter->prepare(<<<SQL
 select * from bar where foo = ?
@@ -69,7 +69,7 @@ SQL
      */
     public function testPgSqlCastDoesNotMixedUpWithNames()
     {
-        $formatter = new FooFormatter(new NullEscaper(true));
+        $formatter = new FooSqlWriter(new NullEscaper(true));
 
         $prepared = $formatter->prepare(<<<SQL
 select *, a::int from bar where foo = :foo and bar = :bar::bigint
@@ -89,7 +89,7 @@ SQL
      */
     public function testPlaceholderInEscapeSequencesAreIgnored()
     {
-        $formatter = new FooFormatter(new NullEscaper(true));
+        $formatter = new FooSqlWriter(new NullEscaper(true));
 
         $prepared = $formatter->prepare(<<<SQL
 select "oups ?" from bar where foo = 'some ? randomly placed'
@@ -105,7 +105,7 @@ SQL
      */
     public function testNamedParametersInEscapeSequencesAreIgnored()
     {
-        $formatter = new FooFormatter(new NullEscaper(true));
+        $formatter = new FooSqlWriter(new NullEscaper(true));
 
         $prepared = $formatter->prepare(<<<SQL
 select ":oups" from bar where foo = 'some :param randomly placed'

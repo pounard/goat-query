@@ -6,7 +6,7 @@ Installation
 
 .. code-block:: sh
 
-   composer req makinacorpus/goat-query
+   composer require makinacorpus/goat-query
 
 Standalone setup
 ^^^^^^^^^^^^^^^^
@@ -34,8 +34,8 @@ Standalone setup
       use Goat\Driver\Configuration;
       use Goat\Driver\PDODriver;
 
-      $runner = new PDODriver();
-      $runner->setConfiguration(new Configuration([
+      $driver = new PDODriver();
+      $driver->setConfiguration(new Configuration([
           'charset' => 'UTF8',
           'database' => 'my_database',
           'driver' => 'pqsql', // 'mysql' is supported as well
@@ -46,6 +46,7 @@ Standalone setup
       ], [
           'arbitrary_driver_option' => 42,
       ]));
+      $runner = $driver->getRunner();
 
    With PDO via a unix socket:
 
@@ -56,8 +57,8 @@ Standalone setup
       use Goat\Driver\Configuration;
       use Goat\Driver\PDODriver;
 
-      $runner = new PDODriver();
-      $runner->setConfiguration(new Configuration([
+      $driver = new PDODriver();
+      $driver->setConfiguration(new Configuration([
           'charset' => 'UTF8',
           'database' => 'my_database',
           'driver' => 'pqsql', // 'mysql' is supported as well
@@ -67,6 +68,7 @@ Standalone setup
       ], [
           'arbitrary_driver_option' => 42,
       ]));
+      $runner = $driver->getRunner();
 
    Or with ext-pgsql driver:
 
@@ -77,8 +79,8 @@ Standalone setup
       use Goat\Driver\Configuration;
       use Goat\Driver\ExtPgSQLDriver;
 
-      $runner = new ExtPgSQLDriver();
-      $runner->setConfiguration(new Configuration([
+      $driver = new ExtPgSQLDriver();
+      $driver->setConfiguration(new Configuration([
           'charset' => 'UTF8',
           'database' => 'my_database',
           'host' => 'database.example.com',
@@ -88,7 +90,9 @@ Standalone setup
       ], [
           'arbitrary_driver_option' => 42,
       ]));
+      $runner = $driver->getRunner();
 
+   @todo document creation by URL.
 
 3. initialize the data converter and object hydrator:
 

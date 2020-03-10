@@ -4,55 +4,33 @@ declare(strict_types=1);
 
 namespace Goat\Driver;
 
+use Goat\Driver\Platform\PgSQLPlatform;
+use Goat\Driver\Platform\Platform;
+use Goat\Driver\Platform\Escaper\Escaper;
+use Goat\Driver\Platform\Escaper\ExtPgSQLEscaper;
+use Goat\Driver\Runner\ExtPgSQLRunner;
 use Goat\Runner\Runner;
-use Goat\Runner\Driver\ExtPgSQLRunner;
 
-class ExtPgSQLDriver implements Driver
+class ExtPgSQLDriver extends AbstractDriver
 {
-    private $configuration;
+    /** @var null|resource */
     private $connection;
+
+    /** @var null|Escaper */
+    private $escaper;
+
+    /** @var null|Platform */
+    private $platform;
+
+    /** @var null|Runner */
     private $runner;
 
     /**
-     * Is connection alive
+     * {@inheritdoc}
      */
-    private function isConnected(): bool
+    protected function isConnected(): bool
     {
         return \is_resource($this->connection);
-    }
-
-    /**
-     * Create runner
-     */
-    private function createRunner(): Runner
-    {
-        if (!$this->connection) {
-            $this->connect();
-        }
-
-        return new ExtPgSQLRunner($this->connection);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function setConfiguration(Configuration $configuration): void
-    {
-        if ($this->isConnected()) {
-            throw new ConfigurationError("Cannot set configuration after connection has been made");
-        }
-        $this->configuration = $configuration;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getConfiguration(): Configuration
-    {
-        if (!$this->configuration) {
-            throw new ConfigurationError("No configuration was set");
-        }
-        return $this->configuration;
     }
 
     /**
@@ -83,23 +61,36 @@ class ExtPgSQLDriver implements Driver
     /**
      * {@inheritdoc}
      */
-    public function connect(): void
+    public function canBeClosedProperly(): bool
+    {
+        return true;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function doConnect(): void
     {
         $configuration = $this->getConfiguration();
         $connectionString = $this->buildConnectionString($configuration->getOptions());
 
         try {
-            $this->connection = \pg_connect($connectionString, PGSQL_CONNECT_FORCE_NEW);
+            $this->connection = $resource = \pg_connect($connectionString, PGSQL_CONNECT_FORCE_NEW);
 
-            \pg_query($this->connection, "SET client_encoding TO ".\pg_escape_literal($configuration->getClientEncoding()));
+            \pg_query($resource, "SET client_encoding TO ".\pg_escape_literal($configuration->getClientEncoding()));
+
+            $versionInformation = \pg_version($resource);
+
+            $this->escaper = new ExtPgSQLEscaper($this, $this->connection);
+            $this->platform = new PgSQLPlatform($this->escaper);
+            $this->runner = new ExtPgSQLRunner($this->platform, $resource);
 
             /*
-            $connection->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
-
             foreach ($configuration->getDriverOptions() as $attribute => $value) {
                 $connection->setAttribute($attribute, $value);
             }
              */
+
         } catch (\Throwable $e) {
             if (\is_resource($this->connection)) {
                 \pg_close($this->connection);
@@ -110,13 +101,121 @@ class ExtPgSQLDriver implements Driver
 
     /**
      * {@inheritdoc}
+     *
+    protected function fetchDatabaseInfo() : array
+    {
+        $conn = $this->getConn();
+        $resource = @\pg_query($conn, "select version();");
+
+        if (false === $resource) {
+            $this->serverError($conn);
+        }
+
+        $row = @\pg_fetch_array($resource);
+        if (false === $row) {
+            $this->resultError($resource);
+        }
+
+        // Example string to parse:
+        //   PostgreSQL 9.2.9 on x86_64-unknown-linux-gnu, compiled by gcc (GCC) 4.4.7 20120313 (Red Hat 4.4.7-4), 64-bit
+        $string = \reset($row);
+        $pieces = \explode(', ', $string);
+        $server = \explode(' ', $pieces[0]);
+
+        return [
+            'name'    => $server[0],
+            'version' => $server[1],
+            'arch'    => $pieces[2],
+            'os'      => $server[3],
+            'build'   => $pieces[1],
+        ];
+    }
      */
-    public function close(): void
+
+    /**
+     * {@inheritdoc}
+     *
+    public function setClientEncoding(string $encoding)
+    {
+        // https://www.postgresql.org/docs/9.3/static/multibyte.html#AEN34087
+        // @todo investigate differences between versions
+
+        throw new NotImplementedError();
+
+        // @todo this cannot work
+        $this
+            ->getConn()
+            ->query(
+                \sprintf(
+                    "SET CLIENT_ENCODING TO %s",
+                    $this->getEscaper()->escapeLiteral($encoding)
+                )
+            )
+        ;
+    }
+     */
+
+    /**
+     * Send PDO configuration
+     *
+    protected function sendConfiguration(array $configuration)
+    {
+        $pdo = $this->getConn();
+
+        foreach ($configuration as $key => $value) {
+            $pdo->query(\sprintf(
+                "SET %s TO %s",
+                $this->getEscaper()->escapeIdentifier($key),
+                $this->getEscaper()->escapeLiteral($value)
+            ));
+        }
+
+        return $this;
+    }
+     */
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function doClose(): void
     {
         if (\is_resource($this->connection)) {
+            \pg_close($this->connection);
             $this->connection = null;
         }
+        $this->platform = null;
         $this->runner = null;
+        \gc_collect_cycles();
+    }
+
+    /**
+     * Create runner
+     */
+    private function createPlatform(): Platform
+    {
+        if (!$this->connection) {
+            $this->connect();
+        }
+        return $this->platform;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getPlatform(): Platform
+    {
+        return $this->platform ?? $this->createPlatform();
+    }
+
+    /**
+     * Create runner
+     */
+    private function createRunner(): Runner
+    {
+        if (!$this->connection) {
+            $this->connect();
+        }
+        return $this->runner;
     }
 
     /**
@@ -124,6 +223,6 @@ class ExtPgSQLDriver implements Driver
      */
     public function getRunner(): Runner
     {
-        return $this->runner ?? ($this->runner = $this->createRunner());
+        return $this->runner ?? $this->createRunner();
     }
 }

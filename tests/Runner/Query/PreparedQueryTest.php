@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Goat\Runer\Tests\Query;
+namespace Goat\Runner\Tests\Query;
 
 use Goat\Query\ExpressionValue;
 use Goat\Query\PreparedQuery;
@@ -11,6 +11,7 @@ use Goat\Query\QueryBuilder;
 use Goat\Query\QueryError;
 use Goat\Runner\Runner;
 use Goat\Runner\Testing\DatabaseAwareQueryTest;
+use Goat\Runner\Testing\TestDriverFactory;
 
 class PreparedQueryTest extends DatabaseAwareQueryTest
 {
@@ -20,7 +21,7 @@ class PreparedQueryTest extends DatabaseAwareQueryTest
     /**
      * {@inheritdoc}
      */
-    protected function createTestSchema(Runner $runner)
+    protected function createTestData(Runner $runner, ?string $schema): void
     {
         $runner->perform("
             create temporary table some_table (
@@ -31,13 +32,7 @@ class PreparedQueryTest extends DatabaseAwareQueryTest
                 id_user integer
             )
         ");
-    }
 
-    /**
-     * {@inheritdoc}
-     */
-    protected function createTestData(Runner $runner)
-    {
         $runner
             ->getQueryBuilder()
             ->insertValues('some_table')
@@ -54,11 +49,11 @@ class PreparedQueryTest extends DatabaseAwareQueryTest
     /**
      * Test that it will raise error if not correctly initialized.
      *
-      * @dataProvider getRunners
+      * @dataProvider runnerDataProvider
      */
-    public function testPreparedQueryErrorWhenNoReturn(Runner $runner, bool $supportsReturning)
+    public function testPreparedQueryErrorWhenNoReturn(TestDriverFactory $factory)
     {
-        $this->prepare($runner);
+        $runner = $factory->getRunner();
 
         $preparedQuery = $runner->getQueryBuilder()->prepare(
             function () {
@@ -74,11 +69,11 @@ class PreparedQueryTest extends DatabaseAwareQueryTest
     /**
      * Test that it will raise error on subsequent calls.
      *
-     * @dataProvider getRunners
+     * @dataProvider runnerDataProvider
      */
-    public function testPreparedQueryErrorOnSubsquentCalls(Runner $runner, bool $supportsReturning)
+    public function testPreparedQueryErrorOnSubsquentCalls(TestDriverFactory $factory)
     {
-        $this->prepare($runner);
+        $runner = $factory->getRunner();
 
         $preparedQuery = $runner->getQueryBuilder()->prepare(
             function () {
@@ -100,11 +95,11 @@ class PreparedQueryTest extends DatabaseAwareQueryTest
     /**
      * Test that it will raise error when attempt nesting
      *
-      * @dataProvider getRunners
+      * @dataProvider runnerDataProvider
      */
-    public function testPreparedQueryErrorWhenNestingAttempt(Runner $runner, bool $supportsReturning)
+    public function testPreparedQueryErrorWhenNestingAttempt(TestDriverFactory $factory)
     {
-        $this->prepare($runner);
+        $runner = $factory->getRunner();
 
         $preparedQuery = $runner->getQueryBuilder()->prepare(
             function () use ($runner) {
@@ -118,11 +113,11 @@ class PreparedQueryTest extends DatabaseAwareQueryTest
     }
 
     /**
-     * @dataProvider getRunners
+     * @dataProvider runnerDataProvider
      */
-    public function testPrepareSelect(Runner $runner, bool $supportsReturning)
+    public function testPrepareSelect(TestDriverFactory $factory)
     {
-        $this->prepare($runner);
+        $runner = $factory->getRunner();
 
         $preparedQuery = $runner->getQueryBuilder()->prepare(
             function (QueryBuilder $builder) {

@@ -41,7 +41,7 @@ final class TransactionSavepoint implements Transaction
     public function start(): Transaction
     {
         if (!$this->running) {
-            throw new TransactionError(\sprintf("can not restart a rollbacked transaction with savedpoint '%s'", $this->name));
+            throw new TransactionError(\sprintf("Cannot restart a rollbacked transaction with savedpoint '%s'", $this->name));
         }
 
         return $this;

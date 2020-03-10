@@ -26,7 +26,7 @@ final class InsertQueryUnitTest extends TestCase
 
         self::assertSameSql(
             'insert into "some_table" ("pif", "paf") select "foo", "bar" from "other_table" where "baz" = ?',
-            self::createStandardFormatter()->format($insert)
+            self::createStandardSqlWriter()->format($insert)
         );
     }
 
@@ -36,6 +36,6 @@ final class InsertQueryUnitTest extends TestCase
         $insert->columns(['pif', 'paf']);
 
         self::expectException(QueryError::class);
-        self::createStandardFormatter()->format($insert);
+        self::createStandardSqlWriter()->format($insert);
     }
 }

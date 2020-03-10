@@ -2,23 +2,24 @@
 
 declare(strict_types=1);
 
-namespace Goat\Runer\Tests\Query;
+namespace Goat\Runner\Tests\Query;
 
 use Goat\Query\ExpressionColumn;
 use Goat\Query\ExpressionRaw;
 use Goat\Query\Where;
 use Goat\Runner\Runner;
 use Goat\Runner\Testing\DatabaseAwareQueryTest;
+use Goat\Runner\Testing\TestDriverFactory;
 
 class UpdateTest extends DatabaseAwareQueryTest
 {
-    private $idAdmin;
-    private $idJean;
+    const ID_ADMIN = 1;
+    const ID_JEAN = 2;
 
     /**
      * {@inheritdoc}
      */
-    protected function createTestSchema(Runner $runner)
+    protected function createTestData(Runner $runner, ?string $schema): void
     {
         $runner->execute("
             create temporary table some_table (
@@ -29,46 +30,32 @@ class UpdateTest extends DatabaseAwareQueryTest
                 id_user integer
             )
         ");
+
         $runner->execute("
             create temporary table users (
-                id serial primary key,
+                id integer primary key,
                 name varchar(255)
             )
         ");
-    }
 
-    /**
-     * {@inheritdoc}
-     */
-    protected function createTestData(Runner $runner)
-    {
         $runner
+            ->getQueryBuilder()
             ->insertValues('users')
-            ->columns(['name'])
-            ->values(["admin"])
-            ->values(["jean"])
+            ->columns(['name', 'id'])
+            ->values(["admin", self::ID_ADMIN])
+            ->values(["jean", self::ID_JEAN])
             ->execute()
         ;
-
-        $idList = $runner
-            ->select('users')
-            ->column('id')
-            ->orderBy('name')
-            ->execute()
-            ->fetchColumn()
-        ;
-
-        $this->idAdmin = $idList[0];
-        $this->idJean = $idList[1];
 
         $runner
+            ->getQueryBuilder()
             ->insertValues('some_table')
             ->columns(['foo', 'bar', 'id_user'])
-            ->values([42, 'a', $this->idAdmin])
-            ->values([666, 'b', $this->idAdmin])
-            ->values([37, 'c', $this->idJean])
-            ->values([11, 'd', $this->idJean])
-            ->values([27, 'e', $this->idAdmin])
+            ->values([42, 'a', self::ID_ADMIN])
+            ->values([666, 'b', self::ID_ADMIN])
+            ->values([37, 'c', self::ID_JEAN])
+            ->values([11, 'd', self::ID_JEAN])
+            ->values([27, 'e', self::ID_ADMIN])
             ->execute()
         ;
     }
@@ -76,11 +63,14 @@ class UpdateTest extends DatabaseAwareQueryTest
     /**
      * Update using simple WHERE conditions
      *
-     * @dataProvider driverDataSource
+     * @dataProvider runnerDataProvider
      */
-    public function testUpdateWhere($runner, $class)
+    public function testUpdateWhere(TestDriverFactory $factory)
     {
+        $runner = $factory->getRunner();
+
         $result = $runner
+            ->getQueryBuilder()
             ->update('some_table')
             ->condition('foo', 42)
             ->set('foo', 43)
@@ -90,6 +80,7 @@ class UpdateTest extends DatabaseAwareQueryTest
         $this->assertSame(1, $result->countRows());
 
         $result = $runner
+            ->getQueryBuilder()
             ->select('some_table')
             ->condition('foo', 43)
             ->execute()
@@ -98,7 +89,10 @@ class UpdateTest extends DatabaseAwareQueryTest
         $this->assertSame(1, $result->countRows());
         $this->assertSame('a', $result->fetch()['bar']);
 
-        $query = $runner->update('some_table', 'trout');
+        $query = $runner
+            ->getQueryBuilder()
+            ->update('some_table', 'trout')
+        ;
         $query
             ->getWhere()
             ->open(Where::OR)
@@ -118,11 +112,14 @@ class UpdateTest extends DatabaseAwareQueryTest
     /**
      * Update using FROM ... JOIN statements
      *
-     * @dataProvider driverDataSource
+     * @dataProvider runnerDataProvider
      */
-    public function testUpdateJoin($runner, $class)
+    public function testUpdateJoin(TestDriverFactory $factory)
     {
+        $runner = $factory->getRunner();
+
         $result = $runner
+            ->getQueryBuilder()
             ->update('some_table', 't')
             ->set('foo', 127)
             ->join('users', "u.id = t.id_user", 'u')
@@ -134,6 +131,7 @@ class UpdateTest extends DatabaseAwareQueryTest
 
         // All code below is just consistency checks
         $result = $runner
+            ->getQueryBuilder()
             ->select('some_table', 'roger')
             ->join('users', 'john.id = roger.id_user', 'john')
             ->condition('john.name', 'admin')
@@ -146,6 +144,7 @@ class UpdateTest extends DatabaseAwareQueryTest
         }
 
         $result = $runner
+            ->getQueryBuilder()
             ->select('some_table')
             ->condition('foo', 127)
             ->execute()
@@ -157,17 +156,21 @@ class UpdateTest extends DatabaseAwareQueryTest
     /**
      * Update using a IN (SELECT ...)
      *
-     * @dataProvider driverDataSource
+     * @dataProvider runnerDataProvider
      */
-    public function testUpdateWhereIn($runner, $class)
+    public function testUpdateWhereIn(TestDriverFactory $factory)
     {
+        $runner = $factory->getRunner();
+
         $selectInQuery = $runner
+            ->getQueryBuilder()
             ->select('users')
             ->column('id')
             ->condition('name', 'admin')
         ;
 
         $result = $runner
+            ->getQueryBuilder()
             ->update('some_table', 't')
             ->set('foo', 127)
             ->condition('t.id_user', $selectInQuery)
@@ -178,6 +181,7 @@ class UpdateTest extends DatabaseAwareQueryTest
 
         // All code below is just consistency checks
         $result = $runner
+            ->getQueryBuilder()
             ->select('some_table', 'roger')
             ->join('users', 'john.id = roger.id_user', 'john')
             ->condition('john.name', 'admin')
@@ -190,6 +194,7 @@ class UpdateTest extends DatabaseAwareQueryTest
         }
 
         $result = $runner
+            ->getQueryBuilder()
             ->select('some_table')
             ->condition('foo', 127)
             ->execute()
@@ -201,20 +206,23 @@ class UpdateTest extends DatabaseAwareQueryTest
     /**
      * Update RETURNING
      *
-     * @dataProvider driverDataSource
+     * @dataProvider runnerDataProvider
      */
-    public function testUpateReturning($runner, $class)
+    public function testUpdateReturning(TestDriverFactory $factory)
     {
-        if (!$runner->supportsReturning()) {
+        $runner = $factory->getRunner();
+
+        if (!$runner->getPlatform()->supportsReturning()) {
             $this->markTestSkipped("driver does not support RETURNING");
         }
 
         $result = $runner
+            ->getQueryBuilder()
             ->update('some_table', 't')
             ->set('foo', 127)
             ->join('users', "u.id = t.id_user", 'u')
             ->condition('u.name', 'admin')
-            ->returning(new ExpressionRaw('*'))
+            ->returning('*')
             ->execute()
         ;
 
@@ -228,11 +236,14 @@ class UpdateTest extends DatabaseAwareQueryTest
     /**
      * Update by using SET column = other_table.column from FROM using ExpressionColumn
      *
-     * @dataProvider driverDataSource
+     * @dataProvider runnerDataProvider
      */
-    public function testUpateSetExpressionColumn($runner, $class)
+    public function testUpdateSetExpressionColumn(TestDriverFactory $factory)
     {
+        $runner = $factory->getRunner();
+
         $result = $runner
+            ->getQueryBuilder()
             ->update('some_table', 't')
             ->set('foo', new ExpressionColumn('u.id'))
             ->join('users', "u.id = t.id_user", 'u')
@@ -244,6 +255,7 @@ class UpdateTest extends DatabaseAwareQueryTest
 
         // All code below is just consistency checks
         $result = $runner
+            ->getQueryBuilder()
             ->select('some_table', 't')
             ->columns(['t.foo', 't.id_user'])
             ->join('users', 'u.id = t.id_user', 'u')
@@ -260,11 +272,14 @@ class UpdateTest extends DatabaseAwareQueryTest
     /**
      * Update by using SET column = other_table.column from FROM using ExpressionRaw
      *
-     * @dataProvider driverDataSource
+     * @dataProvider runnerDataProvider
      */
-    public function testUpateSetExpressionRaw($runner, $class)
+    public function testUpdateSetExpressionRaw(TestDriverFactory $factory)
     {
+        $runner = $factory->getRunner();
+
         $result = $runner
+            ->getQueryBuilder()
             ->update('some_table', 't')
             ->set('foo', new ExpressionRaw('u.id'))
             ->join('users', "u.id = t.id_user", 'u')
@@ -276,6 +291,7 @@ class UpdateTest extends DatabaseAwareQueryTest
 
         // All code below is just consistency checks
         $result = $runner
+            ->getQueryBuilder()
             ->select('some_table', 't')
             ->columns(['t.foo', 't.id_user'])
             ->join('users', 'u.id = t.id_user', 'u')
@@ -292,39 +308,49 @@ class UpdateTest extends DatabaseAwareQueryTest
     /**
      * Update by using SET column = (SELECT ...)
      *
-     * @dataProvider driverDataSource
+     * @dataProvider runnerDataProvider
      */
-    public function testUpateSetSelectQuery($runner, $class)
+    public function testUpdateSetSelectQuery(TestDriverFactory $factory)
     {
+        self::markTestIncomplete("Investigate if this needs to be supported or not.");
+
+        $runner = $factory->getRunner();
+
         $selectValueQuery = $runner
+            ->getQueryBuilder()
             ->select('users', 'z')
             ->columnExpression('z.id + 7')
             ->expression('z.id = id_user')
         ;
 
         $result = $runner
+            ->getQueryBuilder()
             ->update('some_table')
             ->set('foo', $selectValueQuery)
-            ->condition('id_user', $this->idJean)
+            ->condition('id_user', self::ID_JEAN)
             ->execute()
         ;
 
         $this->assertSame(2, $result->countRows());
 
         $result = $runner
+            ->getQueryBuilder()
             ->select('some_table')
-            ->condition('id_user', $this->idJean)
+            ->condition('id_user', self::ID_JEAN)
             ->execute()
         ;
+
         foreach ($result as $row) {
             $this->assertSame($row['id_user'] + 7, $row['foo']);
         }
 
         $result = $runner
+            ->getQueryBuilder()
             ->select('some_table')
-            ->condition('id_user', $this->idAdmin)
+            ->condition('id_user', self::ID_ADMIN)
             ->execute()
         ;
+
         foreach ($result as $row) {
             $this->assertNotSame($row['id_user'] + 7, $row['foo']);
         }
@@ -333,18 +359,21 @@ class UpdateTest extends DatabaseAwareQueryTest
     /**
      * Update by using SET column = some_statement()
      *
-     * @dataProvider driverDataSource
+     * @dataProvider runnerDataProvider
      */
-    public function testUpateSetSqlStatement($runner, $class)
+    public function testUpdateSetSqlStatement(TestDriverFactory $factory)
     {
-        $result = $runner
+        $runner = $factory->getRunner();
+
+        $affectedRows = $runner
+            ->getQueryBuilder()
             ->update('some_table')
             ->set('foo', new ExpressionRaw('id_user * 2'))
             ->join('users', 'u.id = id_user', 'u')
-            ->condition('id_user', $this->idJean)
-            ->execute()
+            ->condition('id_user', self::ID_JEAN)
+            ->perform()
         ;
 
-        $this->assertSame(2, $result->countRows());
+        $this->assertSame(2, $affectedRows);
     }
 }

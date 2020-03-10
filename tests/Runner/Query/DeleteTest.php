@@ -2,21 +2,22 @@
 
 declare(strict_types=1);
 
-namespace Goat\Runer\Tests\Query;
+namespace Goat\Runner\Tests\Query;
 
 use Goat\Runner\Runner;
-use Goat\Tests\Driver\Mock\DeleteSomeTableWithUser;
 use Goat\Runner\Testing\DatabaseAwareQueryTest;
+use Goat\Runner\Testing\TestDriverFactory;
+use Goat\Runner\Tests\Query\Mock\DeleteSomeTableWithUser;
 
 class DeleteTest extends DatabaseAwareQueryTest
 {
-    private $idAdmin;
-    private $idJean;
+    const ID_ADMIN = 1;
+    const ID_JEAN = 2;
 
     /**
      * {@inheritdoc}
      */
-    protected function createTestSchema(Runner $runner)
+    protected function createTestData(Runner $runner, ?string $schema): void
     {
         $runner->perform("
             create temporary table some_table (
@@ -29,7 +30,7 @@ class DeleteTest extends DatabaseAwareQueryTest
         ");
         $runner->perform("
             create temporary table users (
-                id serial primary key,
+                id integer primary key,
                 name varchar(255)
             )
         ");
@@ -39,49 +40,35 @@ class DeleteTest extends DatabaseAwareQueryTest
                 status integer
             )
         ");
-    }
 
-    /**
-     * {@inheritdoc}
-     */
-    protected function createTestData(Runner $runner)
-    {
         $runner
+            ->getQueryBuilder()
             ->insertValues('users')
-            ->columns(['name'])
-            ->values(["admin"])
-            ->values(["jean"])
+            ->columns(['name', 'id'])
+            ->values(["admin", self::ID_ADMIN])
+            ->values(["jean", self::ID_JEAN])
             ->execute()
         ;
-
-        $idList = $runner
-            ->select('users')
-            ->column('id')
-            ->orderBy('name')
-            ->execute()
-            ->fetchColumn()
-        ;
-
-        $this->idAdmin = $idList[0];
-        $this->idJean = $idList[1];
 
         $runner
+            ->getQueryBuilder()
             ->insertValues('users_status')
             ->columns(['id_user', 'status'])
-            ->values([$this->idAdmin, 7])
-            ->values([$this->idJean, 11])
-            ->values([$this->idJean, 17])
+            ->values([self::ID_ADMIN, 7])
+            ->values([self::ID_JEAN, 11])
+            ->values([self::ID_JEAN, 17])
             ->execute()
         ;
 
         $runner
+            ->getQueryBuilder()
             ->insertValues('some_table')
             ->columns(['foo', 'bar', 'id_user'])
-            ->values([42, 'a', $this->idAdmin])
-            ->values([666, 'b', $this->idAdmin])
-            ->values([37, 'c', $this->idJean])
-            ->values([11, 'd', $this->idJean])
-            ->values([27, 'e', $this->idAdmin])
+            ->values([42, 'a', self::ID_ADMIN])
+            ->values([666, 'b', self::ID_ADMIN])
+            ->values([37, 'c', self::ID_JEAN])
+            ->values([11, 'd', self::ID_JEAN])
+            ->values([27, 'e', self::ID_ADMIN])
             ->execute()
         ;
     }
@@ -89,57 +76,50 @@ class DeleteTest extends DatabaseAwareQueryTest
     /**
      * Test simple DELETE FROM WHERE
      *
-     * @dataProvider driverDataSource
+     * @dataProvider runnerDataProvider
      */
-    public function testDeleteWhere($runner, $class)
+    public function testDeleteWhere(TestDriverFactory $factory)
     {
+        $runner = $factory->getRunner();
+
         $this->assertSame(5, $runner->execute("select count(*) from some_table")->fetchField());
-        $this->assertSame(3, $runner->execute("select count(*) from some_table where id_user = $*::int", [$this->idAdmin])->fetchField());
+        $this->assertSame(3, $runner->execute("select count(*) from some_table where id_user = ?::int", [self::ID_ADMIN])->fetchField());
 
         $result = $runner
+            ->getQueryBuilder()
             ->delete('some_table', 't')
-            ->condition('t.id_user', $this->idJean)
+            ->condition('t.id_user', self::ID_JEAN)
             ->execute()
         ;
         $this->assertSame(2, $result->countRows());
         $this->assertSame(3, $runner->execute("select count(*) from some_table")->fetchField());
-        $this->assertSame(0, $runner->execute("select count(*) from some_table where id_user = $*::int", [$this->idJean])->fetchField());
+        $this->assertSame(0, $runner->execute("select count(*) from some_table where id_user = ?::int", [self::ID_JEAN])->fetchField());
 
         $result = $runner
+            ->getQueryBuilder()
             ->delete('some_table')
             ->condition('bar', 'a')
             ->execute()
         ;
         $this->assertSame(1, $result->countRows());
         $this->assertSame(2, $runner->execute("select count(*) from some_table")->fetchField());
-        $this->assertSame(2, $runner->execute("select count(*) from some_table where id_user = $*::int", [$this->idAdmin])->fetchField());
-        $this->assertSame(0, $runner->execute("select count(*) from some_table where bar = $*::varchar", ['a'])->fetchField());
-
-        // For fun, test with a named parameter
-        $result = $runner
-            ->delete('some_table')
-            ->condition('bar', ':bar::varchar')
-            ->execute([
-                'bar' => 'e',
-            ])
-        ;
-        $this->assertSame(1, $result->countRows());
-        $this->assertSame(1, $runner->execute("select count(*) from some_table")->fetchField());
-        $this->assertSame(1, $runner->execute("select count(*) from some_table where id_user = $*::int", [$this->idAdmin])->fetchField());
-        $this->assertSame(0, $runner->execute("select count(*) from some_table where bar = $*::varchar", ['e'])->fetchField());
+        $this->assertSame(2, $runner->execute("select count(*) from some_table where id_user = ?::int", [self::ID_ADMIN])->fetchField());
+        $this->assertSame(0, $runner->execute("select count(*) from some_table where bar = ?::varchar", ['a'])->fetchField());
     }
 
     /**
      * Test simple DELETE FROM
      *
-     * @dataProvider driverDataSource
+     * @dataProvider runnerDataProvider
      */
-    public function testDeleteAll($runner, $class)
+    public function testDeleteAll(TestDriverFactory $factory)
     {
-        $this->assertSame(5, $runner->execute("select count(*) from some_table")->fetchField());
-        $this->assertSame(3, $runner->execute("select count(*) from some_table where id_user = $*::int", [$this->idAdmin])->fetchField());
+        $runner = $factory->getRunner();
 
-        $result = $runner->delete('some_table')->execute();
+        $this->assertSame(5, $runner->execute("select count(*) from some_table")->fetchField());
+        $this->assertSame(3, $runner->execute("select count(*) from some_table where id_user = ?::int", [self::ID_ADMIN])->fetchField());
+
+        $result = $runner->getQueryBuilder()->delete('some_table')->execute();
         $this->assertSame(5, $result->countRows());
         $this->assertSame(0, $runner->execute("select count(*) from some_table")->fetchField());
     }
@@ -147,68 +127,78 @@ class DeleteTest extends DatabaseAwareQueryTest
     /**
      * Test DELETE FROM WHERE IN (SELECT ... )
      *
-     * @dataProvider driverDataSource
+     * @dataProvider runnerDataProvider
      */
-    public function testDeleteWhereIn($runner, $class)
+    public function testDeleteWhereIn(TestDriverFactory $factory)
     {
+        $runner = $factory->getRunner();
+
         $this->assertSame(5, $runner->execute("select count(*) from some_table")->fetchField());
-        $this->assertSame(3, $runner->execute("select count(*) from some_table where id_user = $*::int", [$this->idAdmin])->fetchField());
+        $this->assertSame(3, $runner->execute("select count(*) from some_table where id_user = ?::int", [self::ID_ADMIN])->fetchField());
 
         $whereInSelect = $runner
+            ->getQueryBuilder()
             ->select('users')
             ->column('id')
             ->condition('name', 'jean')
         ;
 
         $result = $runner
+            ->getQueryBuilder()
             ->delete('some_table')
             ->condition('id_user', $whereInSelect)
             ->execute()
         ;
         $this->assertSame(2, $result->countRows());
         $this->assertSame(3, $runner->execute("select count(*) from some_table")->fetchField());
-        $this->assertSame(0, $runner->execute("select count(*) from some_table where id_user = $*::int", [$this->idJean])->fetchField());
+        $this->assertSame(0, $runner->execute("select count(*) from some_table where id_user = ?::int", [self::ID_JEAN])->fetchField());
     }
 
     /**
      * Test DELETE FROM USING WHERE
      *
-     * @dataProvider driverDataSource
+     * @dataProvider runnerDataProvider
      */
-    public function testDeleteUsing($runner, $class)
+    public function testDeleteUsing(TestDriverFactory $factory)
     {
+        $runner = $factory->getRunner();
+
         $this->assertSame(5, $runner->execute("select count(*) from some_table")->fetchField());
-        $this->assertSame(3, $runner->execute("select count(*) from some_table where id_user = $*::int", [$this->idAdmin])->fetchField());
+        $this->assertSame(3, $runner->execute("select count(*) from some_table where id_user = ?::int", [self::ID_ADMIN])->fetchField());
 
         $result = $runner
+            ->getQueryBuilder()
             ->delete('some_table', 't')
             ->join('users', 'u.id = t.id_user', 'u')
-            ->condition('u.id', $this->idJean)
+            ->condition('u.id', self::ID_JEAN)
             ->execute()
         ;
         $this->assertSame(2, $result->countRows());
         $this->assertSame(3, $runner->execute("select count(*) from some_table")->fetchField());
-        $this->assertSame(0, $runner->execute("select count(*) from some_table where id_user = $*::int", [$this->idJean])->fetchField());
+        $this->assertSame(0, $runner->execute("select count(*) from some_table where id_user = ?::int", [self::ID_JEAN])->fetchField());
     }
 
     /**
      * Test simple DELETE FROM USING RETURNING
      *
-     * @dataProvider driverDataSource
+     * @dataProvider runnerDataProvider
      */
-    public function testDeleteUsingReturning($runner, $class)
+    public function testDeleteUsingReturning(TestDriverFactory $factory)
     {
-        if (!$runner->supportsReturning()) {
+        $runner = $factory->getRunner();
+
+        if (!$runner->getPlatform()->supportsReturning()) {
             $this->markTestIncomplete("driver does not support RETURNING");
         }
 
         $this->assertSame(5, $runner->execute("select count(*) from some_table")->fetchField());
-        $this->assertSame(3, $runner->execute("select count(*) from some_table where id_user = $*::int", [$this->idAdmin])->fetchField());
+        $this->assertSame(3, $runner->execute("select count(*) from some_table where id_user = ?::int", [self::ID_ADMIN])->fetchField());
 
         $result = $runner
+            ->getQueryBuilder()
             ->delete('some_table', 't')
             ->join('users', 'u.id = t.id_user', 'u')
-            ->condition('u.id', $this->idJean)
+            ->condition('u.id', self::ID_JEAN)
             ->returning('t.id')
             ->returning('t.id_user')
             ->returning('u.name')
@@ -217,10 +207,10 @@ class DeleteTest extends DatabaseAwareQueryTest
         ;
         $this->assertCount(2, $result);
         $this->assertSame(3, $runner->execute("select count(*) from some_table")->fetchField());
-        $this->assertSame(0, $runner->execute("select count(*) from some_table where id_user = $*::int", [$this->idJean])->fetchField());
+        $this->assertSame(0, $runner->execute("select count(*) from some_table where id_user = ?::int", [self::ID_JEAN])->fetchField());
 
         foreach ($result as $row) {
-            $this->assertSame($this->idJean, $row['id_user']);
+            $this->assertSame(self::ID_JEAN, $row['id_user']);
             $this->assertSame('jean', $row['name']);
             $this->assertInternalType('integer', $row['id']);
             $this->assertInternalType('string', $row['bar']);
@@ -230,21 +220,24 @@ class DeleteTest extends DatabaseAwareQueryTest
     /**
      * Test simple DELETE FROM USING RETURNING
      *
-     * @dataProvider driverDataSource
+     * @dataProvider runnerDataProvider
      */
-    public function testDeleteUsingReturningAndHydrating($runner, $class)
+    public function testDeleteUsingReturningAndHydrating(TestDriverFactory $factory)
     {
-        if (!$runner->supportsReturning()) {
+        $runner = $factory->getRunner();
+
+        if (!$runner->getPlatform()->supportsReturning()) {
             $this->markTestIncomplete("driver does not support RETURNING");
         }
 
         $this->assertSame(5, $runner->execute("select count(*) from some_table")->fetchField());
-        $this->assertSame(3, $runner->execute("select count(*) from some_table where id_user = $*::int", [$this->idAdmin])->fetchField());
+        $this->assertSame(3, $runner->execute("select count(*) from some_table where id_user = ?::int", [self::ID_ADMIN])->fetchField());
 
         $result = $runner
+            ->getQueryBuilder()
             ->delete('some_table', 't')
             ->join('users', 'u.id = t.id_user', 'u')
-            ->condition('u.id', $this->idJean)
+            ->condition('u.id', self::ID_JEAN)
             ->returning('t.id')
             ->returning('t.id_user', 'userId')
             ->returning('u.name')
@@ -253,11 +246,11 @@ class DeleteTest extends DatabaseAwareQueryTest
         ;
         $this->assertCount(2, $result);
         $this->assertSame(3, $runner->execute("select count(*) from some_table")->fetchField());
-        $this->assertSame(0, $runner->execute("select count(*) from some_table where id_user = $*::int", [$this->idJean])->fetchField());
+        $this->assertSame(0, $runner->execute("select count(*) from some_table where id_user = ?::int", [self::ID_JEAN])->fetchField());
 
         foreach ($result as $row) {
             $this->assertTrue($row instanceof DeleteSomeTableWithUser);
-            $this->assertSame($this->idJean, $row->getUserId());
+            $this->assertSame(self::ID_JEAN, $row->getUserId());
             $this->assertSame('jean', $row->getUserName());
             $this->assertInternalType('integer', $row->getId());
             $this->assertInternalType('string', $row->getBar());
@@ -267,14 +260,17 @@ class DeleteTest extends DatabaseAwareQueryTest
     /**
      * Test DELETE FROM USING JOIN WHERE
      *
-     * @dataProvider driverDataSource
+     * @dataProvider runnerDataProvider
      */
-    public function testDeleteUsingJoin($runner, $class)
+    public function testDeleteUsingJoin(TestDriverFactory $factory)
     {
+        $runner = $factory->getRunner();
+
         $this->assertSame(5, $runner->execute("select count(*) from some_table")->fetchField());
-        $this->assertSame(3, $runner->execute("select count(*) from some_table where id_user = $*::int", [$this->idAdmin])->fetchField());
+        $this->assertSame(3, $runner->execute("select count(*) from some_table where id_user = ?::int", [self::ID_ADMIN])->fetchField());
 
         $result = $runner
+            ->getQueryBuilder()
             ->delete('some_table', 't')
             ->join('users', 'u.id = t.id_user', 'u')
             ->join('users_status', 'u.id = st.id_user', 'st')
@@ -284,9 +280,10 @@ class DeleteTest extends DatabaseAwareQueryTest
 
         $this->assertSame(0, $result->countRows());
         $this->assertSame(5, $runner->execute("select count(*) from some_table")->fetchField());
-        $this->assertSame(2, $runner->execute("select count(*) from some_table where id_user = $*::int", [$this->idJean])->fetchField());
+        $this->assertSame(2, $runner->execute("select count(*) from some_table where id_user = ?::int", [self::ID_JEAN])->fetchField());
 
         $result = $runner
+            ->getQueryBuilder()
             ->delete('some_table', 't')
             ->join('users', 'u.id = t.id_user', 'u')
             ->join('users_status', 'u.id = st.id_user', 'st')
@@ -296,7 +293,7 @@ class DeleteTest extends DatabaseAwareQueryTest
 
         $this->assertSame(2, $result->countRows());
         $this->assertSame(3, $runner->execute("select count(*) from some_table")->fetchField());
-        $this->assertSame(0, $runner->execute("select count(*) from some_table where id_user = $*::int", [$this->idJean])->fetchField());
-        $this->assertSame(3, $runner->execute("select count(*) from some_table where id_user = $*::int", [$this->idAdmin])->fetchField());
+        $this->assertSame(0, $runner->execute("select count(*) from some_table where id_user = ?::int", [self::ID_JEAN])->fetchField());
+        $this->assertSame(3, $runner->execute("select count(*) from some_table where id_user = ?::int", [self::ID_ADMIN])->fetchField());
     }
 }

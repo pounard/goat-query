@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace Goat\Runer\Tests\Query;
+namespace Goat\Runner\Tests\Query;
 
 use Goat\Runner\Runner;
 use Goat\Runner\Testing\DatabaseAwareQueryTest;
-use Goat\Query\Writer\EscaperInterface;
+use Goat\Runner\Testing\TestDriverFactory;
 
 class BinaryObjectTest extends DatabaseAwareQueryTest
 {
     /**
      * {@inheritdoc}
      */
-    protected function createTestSchema(Runner $runner)
+    protected function createTestData(Runner $runner, ?string $schema): void
     {
         if (false !== \stripos($runner->getDriverName(), 'pgsql')) {
             $runner->execute("
@@ -32,19 +32,10 @@ class BinaryObjectTest extends DatabaseAwareQueryTest
         }
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    protected function createTestData(Runner $runner)
+    /** @dataProvider runnerDataProvider */
+    public function testInsertAndSelect(TestDriverFactory $factory)
     {
-    }
-
-    /**
-     * @dataProvider getRunners
-     */
-    public function testInsertAndSelect(Runner $runner)
-    {
-        $this->prepare($runner);
+        $runner = $factory->getRunner();
 
         $runner
             ->getQueryBuilder()
@@ -63,14 +54,8 @@ class BinaryObjectTest extends DatabaseAwareQueryTest
             ->fetchField()
         ;
 
-        if (\is_resource($value)) {
-            $value = \stream_get_contents($value);
-        }
-
-        if ($runner instanceof EscaperInterface) {
-            $this->assertSame("åß∂ƒ©˙∆˚¬…æ", $runner->unescapeBlob($value));
-        } else {
-            $this->assertSame("åß∂ƒ©˙∆˚¬…æ", $value);
-        }
+        // @todo Should blog be object instances with a getContents() instead?
+        $escaper = $runner->getPlatform()->getEscaper();
+        $this->assertSame("åß∂ƒ©˙∆˚¬…æ", $escaper->unescapeBlob($value));
     }
 }

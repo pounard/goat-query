@@ -6,8 +6,7 @@ namespace Goat\Runner;
 
 use Goat\Converter\ConverterInterface;
 use Goat\Query\QueryBuilder;
-use Goat\Query\Writer\FormatterInterface;
-use Goat\Runner\Metadata\ResultMetadataCache;
+use Goat\Driver\Platform\Platform;
 
 interface Runner
 {
@@ -17,24 +16,9 @@ interface Runner
     public function getDriverName(): string;
 
     /**
-     * Does this driver supports SQL standard RETURNING clause
+     * Get underlaying platform.
      */
-    public function supportsReturning(): bool;
-
-    /**
-     * Does this driver supports transaction savepoints
-     */
-    public function supportsTransactionSavepoints(): bool;
-
-    /**
-     * Does this driver supports deferring constraints
-     */
-    public function supportsDeferingConstraints(): bool;
-
-    /**
-     * Toggle debug mode
-     */
-    public function setDebug(bool $value): void;
+    public function getPlatform(): Platform;
 
     /**
      * Is debug mode enabled
@@ -52,19 +36,9 @@ interface Runner
     public function isResultMetadataSlow(): bool;
 
     /**
-     * Inject the result metadata cache implementation?
-     */
-    public function setResultMetadataCache(ResultMetadataCache $metadataCache): void;
-
-    /**
      * Get the query builder
      */
     public function getQueryBuilder(): QueryBuilder;
-
-    /**
-     * Get SQL formatter
-     */
-    public function getFormatter(): FormatterInterface;
 
     /**
      * Get converter

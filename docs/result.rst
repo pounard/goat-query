@@ -13,7 +13,9 @@ Result iterator is an iterator of values, values can be either:
    converted values from the database,
 
  * **an hydrated class instance** if the ``class`` option was provided to the
-   query options.
+   query options,
+
+ * **any object** hydrated by the callback provided in the ``hydrator`` option.
 
 .. warning::
 
@@ -209,7 +211,7 @@ callable for hydrating rows, callable signature must be:
 
    <?php
 
-   function (array $row): void;
+   function (array $row): mixed;
 
 Where ``$row`` is raw row fetched from database whose values have been converted
 using the ``Converter`` component.

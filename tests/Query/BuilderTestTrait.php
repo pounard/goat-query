@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Goat\Query\Tests;
 
-use Goat\Query\Writer\DefaultFormatter;
+use Goat\Driver\Query\DefaultSqlWriter;
 use Goat\Runner\Testing\NullEscaper;
 
 trait BuilderTestTrait
@@ -35,8 +35,8 @@ trait BuilderTestTrait
         );
     }
 
-    protected static function createStandardFormatter()
+    protected static function createStandardSqlWriter()
     {
-        return new DefaultFormatter(new NullEscaper());
+        return new DefaultSqlWriter(new NullEscaper());
     }
 }

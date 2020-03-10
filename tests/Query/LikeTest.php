@@ -17,7 +17,7 @@ class LikeTest extends TestCase
      */
     public function testLikeWithValue()
     {
-        $formatter = $this->createStandardFormatter();
+        $formatter = self::createStandardSqlWriter();
         $expression = ExpressionLike::like('some column', '%foo?_', 'b%a_r');
 
         $this->assertSameSql("\"some column\" like '%foob\\%a\\_r_'", $formatter->format($expression));
@@ -28,7 +28,7 @@ class LikeTest extends TestCase
      */
     public function testLikeWithValueWithDifferentWildcard()
     {
-        $formatter = $this->createStandardFormatter();
+        $formatter = self::createStandardSqlWriter();
         $expression = ExpressionLike::like('some column', '%foo#BOUH#_', 'b%a_r', '#BOUH#');
 
         $this->assertSameSql("\"some column\" like '%foob\\%a\\_r_'", $formatter->format($expression));
@@ -39,7 +39,7 @@ class LikeTest extends TestCase
      */
     public function testLikeWithoutValue()
     {
-        $formatter = $this->createStandardFormatter();
+        $formatter = self::createStandardSqlWriter();
         $expression = ExpressionLike::like('some column', '%foo?_');
 
         $this->assertSameSql("\"some column\" like '%foo?_'", $formatter->format($expression));
@@ -68,7 +68,7 @@ class LikeTest extends TestCase
      */
     public function testNotLike()
     {
-        $formatter = $this->createStandardFormatter();
+        $formatter = self::createStandardSqlWriter();
         $expression = ExpressionLike::notLike('some column', '?%', 'b%ar');
 
         $this->assertSameSql("\"some column\" not like 'b\\%ar%'", $formatter->format($expression));
@@ -79,7 +79,7 @@ class LikeTest extends TestCase
      */
     public function testILike()
     {
-        $formatter = $this->createStandardFormatter();
+        $formatter = self::createStandardSqlWriter();
         $expression = ExpressionLike::iLike('some column', '?%', 'b%ar');
 
         $this->assertSameSql("\"some column\" ilike 'b\\%ar%'", $formatter->format($expression));
@@ -90,7 +90,7 @@ class LikeTest extends TestCase
      */
     public function testNotILike()
     {
-        $formatter = $this->createStandardFormatter();
+        $formatter = self::createStandardSqlWriter();
         $expression = ExpressionLike::notILike('some column', '?%', 'b%ar');
 
         $this->assertSameSql("\"some column\" not ilike 'b\\%ar%'", $formatter->format($expression));

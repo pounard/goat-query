@@ -15,7 +15,7 @@ class PlaceholderTest extends TestCase
 
     public function testArbitraryPgTypeCastAreNotConverted()
     {
-        $formatter = new FooFormatter(new NullEscaper(true));
+        $formatter = new FooSqlWriter(new NullEscaper(true));
 
         $formatted = $formatter->prepare(
             'select * from some_table where foo::date = ?::date',
@@ -28,7 +28,7 @@ class PlaceholderTest extends TestCase
 
     public function testNamedParametersWithoutTypeAreReplaced()
     {
-        $formatter = new FooFormatter(new NullEscaper(true));
+        $formatter = new FooSqlWriter(new NullEscaper(true));
 
         $formatted = $formatter->prepare(
             'select * from some_table where foo = :date',
@@ -42,7 +42,7 @@ class PlaceholderTest extends TestCase
 
     public function testNamedParametersWithTypeAreReplacedAndTyped()
     {
-        $formatter = new FooFormatter(new NullEscaper(true));
+        $formatter = new FooSqlWriter(new NullEscaper(true));
 
         $formatted = $formatter->prepare(
             'select * from some_table where foo = :date::date',
@@ -56,7 +56,7 @@ class PlaceholderTest extends TestCase
 
     public function testCastWithConverterAndTypeInQuery()
     {
-        $formatter = new FooFormatter(new NullEscaper(true));
+        $formatter = new FooSqlWriter(new NullEscaper(true));
 
         $formatted = $formatter->prepare(
             'select * from some_table where foo = ?::timestamp',
@@ -69,7 +69,7 @@ class PlaceholderTest extends TestCase
 
     public function testWithConverterAndTypeGuessShouldNotCast()
     {
-        $formatter = new FooFormatter(new NullEscaper(true));
+        $formatter = new FooSqlWriter(new NullEscaper(true));
 
         $formatted = $formatter->prepare(
             'select * from some_table where foo = ?',
@@ -82,7 +82,7 @@ class PlaceholderTest extends TestCase
 
     public function testCastWithConverterAndTypeFromBag()
     {
-        $formatter = new FooFormatter(new NullEscaper(true));
+        $formatter = new FooSqlWriter(new NullEscaper(true));
 
         $arguments =  new ArgumentBag();
         $arguments->add(\DateTimeImmutable::createFromFormat('Y-m-d', '1983-03-22'), null, 'date');
@@ -98,7 +98,7 @@ class PlaceholderTest extends TestCase
 
     public function testWithConverterAndTypeInQuery()
     {
-        $formatter = new FooFormatter(new NullEscaper(true));
+        $formatter = new FooSqlWriter(new NullEscaper(true));
 
         $formatted = $formatter->prepare(
             'select * from some_table where foo = ?::bool',
@@ -111,7 +111,7 @@ class PlaceholderTest extends TestCase
 
     public function testWithConverterAndTypeFromBag()
     {
-        $formatter = new FooFormatter(new NullEscaper(true));
+        $formatter = new FooSqlWriter(new NullEscaper(true));
 
         $arguments =  new ArgumentBag();
         $arguments->add(true, null, 'bool');
@@ -127,7 +127,7 @@ class PlaceholderTest extends TestCase
 
     public function testWithoutConverter()
     {
-        $formatter = new FooFormatter(new NullEscaper(true));
+        $formatter = new FooSqlWriter(new NullEscaper(true));
 
         $builder = new SelectQuery('some_table');
         $builder->condition('foo', 7);
@@ -142,7 +142,7 @@ class PlaceholderTest extends TestCase
     /*
     public function testNamedPlaceholder()
     {
-        $formatter = new FooFormatter(new NullEscaper(true));
+        $formatter = new FooSqlWriter(new NullEscaper(true));
 
         $builder = new SelectQuery('some_table');
         $builder->condition('foo', 7);
@@ -157,7 +157,7 @@ class PlaceholderTest extends TestCase
 
     public function testEscapedPlaceholderIsIgnored()
     {
-        $formatter = new FooFormatter(new NullEscaper(true));
+        $formatter = new FooSqlWriter(new NullEscaper(true));
 
         // Query builder in parameters escaping
         $builder = new SelectQuery('some_table');

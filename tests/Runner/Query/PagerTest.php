@@ -2,13 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Goat\Runer\Tests\Query;
+namespace Goat\Runner\Tests\Query;
 
 use Goat\Query\QueryError;
 use Goat\Runner\EmptyResultIterator;
 use Goat\Runner\PagerResultIterator;
 use Goat\Runner\Runner;
 use Goat\Runner\Testing\DatabaseAwareQueryTest;
+use Goat\Runner\Testing\TestDriverFactory;
 
 class PagerTest extends DatabaseAwareQueryTest
 {
@@ -18,7 +19,7 @@ class PagerTest extends DatabaseAwareQueryTest
     /**
      * {@inheritdoc}
      */
-    protected function createTestSchema(Runner $runner)
+    protected function createTestData(Runner $runner, ?string $schema): void
     {
         $runner->execute("
             create temporary table some_table (
@@ -26,13 +27,7 @@ class PagerTest extends DatabaseAwareQueryTest
                 foo integer not null
             )
         ");
-    }
 
-    /**
-     * {@inheritdoc}
-     */
-    protected function createTestData(Runner $runner)
-    {
         $query = $runner->getQueryBuilder()->insertValues('some_table');
         for ($i = 0; $i < 157; ++$i) {
             $query->values(['foo' => $i]);
@@ -56,12 +51,10 @@ class PagerTest extends DatabaseAwareQueryTest
         new PagerResultIterator($result, 0, -1, 1);
     }
 
-    /**
-     * @dataProvider getRunners
-     */
-    public function testPagerBasics(Runner $runner)
+    /** @dataProvider runnerDataProvider */
+    public function testPagerBasics(TestDriverFactory $factory)
     {
-        $this->prepare($runner);
+        $runner = $factory->getRunner();
 
         $query = $runner->getQueryBuilder()->select('some_table')->column('foo')->range(7, 14);
 
@@ -77,12 +70,10 @@ class PagerTest extends DatabaseAwareQueryTest
         $this->assertSame(7, $iterator->getLimit());
     }
 
-    /**
-     * @dataProvider getRunners
-     */
-    public function testPagerFirstPage(Runner $runner)
+    /** @dataProvider runnerDataProvider */
+    public function testPagerFirstPage(TestDriverFactory $factory)
     {
-        $this->prepare($runner);
+        $runner = $factory->getRunner();
 
         $query = $runner->getQueryBuilder()->select('some_table')->column('foo')->range(50, 0);
 
@@ -94,12 +85,10 @@ class PagerTest extends DatabaseAwareQueryTest
         $this->assertFalse($iterator->hasPreviousPage());
     }
 
-    /**
-     * @dataProvider getRunners
-     */
-    public function testPagerLastPage(Runner $runner)
+    /** @dataProvider runnerDataProvider */
+    public function testPagerLastPage(TestDriverFactory $factory)
     {
-        $this->prepare($runner);
+        $runner = $factory->getRunner();
 
         $query = $runner->getQueryBuilder()->select('some_table')->column('foo')->range(50, 150);
 

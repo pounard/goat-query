@@ -64,9 +64,19 @@ In order to have a complete list of all supported aliases, please refer to the
 PostgreSQL arrays
 ^^^^^^^^^^^^^^^^^
 
-All types without exception can be manipulated as value arrays.
+All types without exception can be manipulated as value-arrays. In order to cast
+values as typed arrays, use the form ``TYPE[]``, for example: ``int[]``.
 
-@todo
+When you want to pass an array of values into your parameters, just pass the
+value transparently:
+
+.. code-block:: php
+
+   <?php
+
+   $runner->execute("insert into foo (my_array) values (?)", [[1, 2, 3]]);
+
+Conversion is automatic.
 
 Explicit type cast
 ^^^^^^^^^^^^^^^^^^
@@ -153,7 +163,6 @@ Let SQL do the cast
 
 If you are trying to let the SQL server do the cast by itself, you should write
 it using the SQL-92 standard ``CAST()`` function as such:
-
 
 .. code-block:: php
 
