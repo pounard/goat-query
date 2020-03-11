@@ -279,8 +279,8 @@ abstract class AbstractRunner implements Runner
         }
 
         if (isset($options['hydrator'])) {
-            if (isset($options['class']) && $this->isDebugEnabled()) {
-                \trigger_error("'hydrator' option overrides the 'class' option", E_USER_WARNING);
+            if (isset($options['class'])) {
+                $this->logger->warning("'hydrator' option overrides the 'class' option");
             }
             if (!$options['hydrator'] instanceof HydratorInterface && !\is_callable($options['hydrator'])) {
                 throw new QueryError(\sprintf(

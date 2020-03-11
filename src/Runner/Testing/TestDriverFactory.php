@@ -13,6 +13,8 @@ use Goat\Hydrator\HydratorMap;
 use Goat\Runner\Runner;
 use Goat\Runner\Metadata\ApcuResultMetadataCache;
 use Goat\Runner\Metadata\ArrayResultMetadataCache;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 
 class TestDriverFactory
 {
@@ -28,76 +30,76 @@ class TestDriverFactory
     /** @var callable */
     private $initializer;
 
+    /** @var LoggerInterface */
+    private $logger;
+
     public function __construct(string $driverName, bool $apcuEnabled = false, ?callable $initializer = null)
     {
         $this->apcuEnabled = $apcuEnabled;
         $this->driverName = $driverName;
         $this->initializer = $initializer;
+        $this->logger = new NullLogger();
         $this->schema = \uniqid('test_schema_');
     }
 
-    protected static function createExtPgSQLDriver(): ExtPgSQLDriver
+    public function setLogger(LoggerInterface $logger): void
     {
-        if ($hostname = \getenv('PGSQL_HOSTNAME')) {
-            $database = \getenv('PGSQL_DATABASE');
-            $username = \getenv('PGSQL_PASSWORD');
-            $password = \getenv('PGSQL_USERNAME');
+        $this->logger = $logger;
+    }
+
+    public function getLogger(): LoggerInterface
+    {
+        return $this->logger;
+    }
+
+    private function createConfiguration(string $prefix, string $driver): Configuration
+    {
+        if ($hostname = \getenv($prefix.'_HOSTNAME')) {
+            $database = \getenv($prefix.'_DATABASE');
+            $username = \getenv($prefix.'_PASSWORD');
+            $password = \getenv($prefix.'_USERNAME');
         } else {
-            self::markTestSkipped(\sprintf("'PGSQL_HOSTNAME' environment variable is missing."));
+            self::markTestSkipped(\sprintf("$prefix.'_HOSTNAME' environment variable is missing."));
         }
+
+        $configuration = new Configuration([
+            'database' => $database,
+            'driver' => $driver,
+            'host' => $hostname,
+            'password' => $password,
+            'username' => $username,
+        ]);
+        $configuration->setLogger($this->logger);
+
+        return $configuration;
+    }
+
+    protected function createExtPgSQLDriver(): ExtPgSQLDriver
+    {
+        $configuration = $this->createConfiguration('PGSQL', 'pgsql');
 
         $driver = new ExtPgSQLDriver();
-        $driver->setConfiguration(new Configuration([
-            'database' => $database,
-            'driver' => 'pgsql',
-            'host' => $hostname,
-            'password' => $password,
-            'username' => $username,
-        ]));
+        $driver->setConfiguration($configuration);
 
         return $driver;
     }
 
-    protected static function createPDOMySQLDriver(): PDODriver
+    protected function createPDOMySQLDriver(): PDODriver
     {
-        if ($hostname = \getenv('MYSQL_HOSTNAME')) {
-            $database = \getenv('MYSQL_DATABASE');
-            $username = \getenv('MYSQL_USERNAME');
-            $password = \getenv('MYSQL_PASSWORD');
-        } else {
-            self::markTestSkipped(\sprintf("'MYSQL_HOSTNAME' environment variable is missing."));
-        }
+        $configuration = $this->createConfiguration('MYSQL', 'mysql');
 
         $driver = new PDODriver();
-        $driver->setConfiguration(new Configuration([
-            'database' => $database,
-            'driver' => 'mysql',
-            'host' => $hostname,
-            'password' => $password,
-            'username' => $username,
-        ]));
+        $driver->setConfiguration($configuration);
 
         return $driver;
     }
 
-    protected static function createPDOPgSQLDriver(): PDODriver
+    protected function createPDOPgSQLDriver(): PDODriver
     {
-        if ($hostname = \getenv('PGSQL_HOSTNAME')) {
-            $database = \getenv('PGSQL_DATABASE');
-            $username = \getenv('PGSQL_PASSWORD');
-            $password = \getenv('PGSQL_USERNAME');
-        } else {
-            self::markTestSkipped(\sprintf("'PGSQL_HOSTNAME' environment variable is missing."));
-        }
+        $configuration = $this->createConfiguration('PGSQL', 'pgsql');
 
         $driver = new PDODriver();
-        $driver->setConfiguration(new Configuration([
-            'database' => $database,
-            'driver' => 'pgsql',
-            'host' => $hostname,
-            'password' => $password,
-            'username' => $username,
-        ]));
+        $driver->setConfiguration($configuration);
 
         return $driver;
     }
