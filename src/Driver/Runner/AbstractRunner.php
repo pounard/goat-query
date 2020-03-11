@@ -19,9 +19,14 @@ use Goat\Runner\Transaction;
 use Goat\Runner\TransactionError;
 use Goat\Runner\Metadata\ArrayResultMetadataCache;
 use Goat\Runner\Metadata\ResultMetadataCache;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 
 abstract class AbstractRunner implements Runner
 {
+    /** @var LoggerInterface */
+    private $logger;
+
     /** @var Platform */
     private $platform;
 
@@ -51,6 +56,7 @@ abstract class AbstractRunner implements Runner
      */
     public function __construct(Platform $platform)
     {
+        $this->logger = new NullLogger();
         $this->platform = $platform;
         $this->formatter = $platform->getSqlWriter();
         $this->setConverter(new DefaultConverter());
@@ -65,6 +71,14 @@ abstract class AbstractRunner implements Runner
     final public function getPlatform(): Platform
     {
         return $this->platform;
+    }
+
+    /**
+     * Set logger.
+     */
+    final public function setLogger(LoggerInterface $logger): void
+    {
+        $this->logger = $logger;
     }
 
     /**
@@ -173,7 +187,10 @@ abstract class AbstractRunner implements Runner
             if (!$this->platform->supportsTransactionSavepoints()) {
                 throw new TransactionError("Cannot create a nested transaction, driver does not support savepoints");
             }
-            return $transaction->savepoint();
+
+            $savepoint = $transaction->savepoint();
+
+            return $savepoint;
         }
 
         $transaction = $this->platform->createTransaction($this, $isolationLevel);

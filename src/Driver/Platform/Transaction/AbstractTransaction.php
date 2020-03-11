@@ -14,8 +14,14 @@ use Goat\Runner\TransactionSavepoint;
  */
 abstract class AbstractTransaction implements Transaction
 {
+    /** Transaction count during runtime. */
+    const TRANSACTION_COUNT = 0;
+
     /** Default savepoint name prefix */
     const SAVEPOINT_PREFIX = 'gsp_';
+
+    /** @var int */
+    private $count;
 
     /** @var int */
     private $isolationLevel = self::REPEATABLE_READ;
@@ -61,6 +67,7 @@ abstract class AbstractTransaction implements Transaction
      */
     final public function __construct(Runner $runner, int $isolationLevel = self::REPEATABLE_READ)
     {
+        $this->count = ++$this->count;
         $this->runner = $runner;
         $this->level($isolationLevel);
     }
@@ -251,6 +258,14 @@ abstract class AbstractTransaction implements Transaction
     public function isNested(): bool
     {
         return false;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getName(): string
+    {
+        return (string)$this->count;
     }
 
     /**

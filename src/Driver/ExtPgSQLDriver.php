@@ -19,12 +19,6 @@ class ExtPgSQLDriver extends AbstractDriver
     /** @var null|Escaper */
     private $escaper;
 
-    /** @var null|Platform */
-    private $platform;
-
-    /** @var null|Runner */
-    private $runner;
-
     /**
      * {@inheritdoc}
      */
@@ -79,11 +73,14 @@ class ExtPgSQLDriver extends AbstractDriver
 
             \pg_query($resource, "SET client_encoding TO ".\pg_escape_literal($configuration->getClientEncoding()));
 
-            $versionInformation = \pg_version($resource);
+            // $versionInformation = \pg_version($resource);
 
             $this->escaper = new ExtPgSQLEscaper($this, $this->connection);
             $this->platform = new PgSQLPlatform($this->escaper);
-            $this->runner = new ExtPgSQLRunner($this->platform, $resource);
+
+            $runner = new ExtPgSQLRunner($this->platform, $resource);
+            $runner->setLogger($configuration->getLogger());
+            $this->runner = $runner;
 
             /*
             foreach ($configuration->getDriverOptions() as $attribute => $value) {
@@ -189,9 +186,9 @@ class ExtPgSQLDriver extends AbstractDriver
     }
 
     /**
-     * Create runner
+     * {@inheritdoc}
      */
-    private function createPlatform(): Platform
+    protected function doCreatePlatform(): Platform
     {
         if (!$this->connection) {
             $this->connect();
@@ -202,27 +199,11 @@ class ExtPgSQLDriver extends AbstractDriver
     /**
      * {@inheritdoc}
      */
-    public function getPlatform(): Platform
-    {
-        return $this->platform ?? $this->createPlatform();
-    }
-
-    /**
-     * Create runner
-     */
-    private function createRunner(): Runner
+    protected function doCreateRunner(): Runner
     {
         if (!$this->connection) {
             $this->connect();
         }
         return $this->runner;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getRunner(): Runner
-    {
-        return $this->runner ?? $this->createRunner();
     }
 }

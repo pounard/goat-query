@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Goat\Driver;
 
 use Goat\Query\QueryError;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 
 /**
  * Runner/driver onfiguration
@@ -52,6 +54,12 @@ final class Configuration
     /** @var array<string,bool|int|float|string> */
     private $driverOptions = [];
 
+    /** @var null|LoggerInterface */
+    private $logger;
+
+    /** @var null|string */
+    private $description;
+
     /**
      * Default constructor
      */
@@ -75,6 +83,48 @@ final class Configuration
             $driverOptions[$key] = $value;
         }
         $this->driverOptions = $driverOptions;
+    }
+
+    /**
+     * Get a meaningful technical description of this configuration.
+     */
+    public function toString(): string
+    {
+        if ($this->description) {
+            return $this->description;
+        }
+
+        $prefix = $this->options['driver'].'://';
+
+        $uri = '';
+        if ($host = ($this->options['host'] ?? null)) {
+            if ($port = ($this->options['port'] ?? null)) {
+                $uri = $host.':'.$port;
+            } else {
+                $uri = $host;
+            }
+        }
+
+        if ($user = ($this->options['username'] ?? null)) {
+            return $this->description = $prefix.$user.'@'.$uri;
+        }
+        return $this->description = $prefix.$uri;
+    }
+
+    /**
+     * Set logger for driver and runner.
+     */
+    public function setLogger(LoggerInterface $logger): void
+    {
+        $this->logger = $logger;
+    }
+
+    /**
+     * Get logger for driver and runner.
+     */
+    public function getLogger(): LoggerInterface
+    {
+        return $this->logger ?? ($this->logger = new NullLogger());
     }
 
     /**

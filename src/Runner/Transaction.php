@@ -80,6 +80,11 @@ interface Transaction
     public function isNested(): bool;
 
     /**
+     * Get transaction generated name.
+     */
+    public function getName(): string;
+
+    /**
      * Get savepoint name, if transaction is a savepoint, null otherwise
      */
     public function getSavepointName(): ?string;

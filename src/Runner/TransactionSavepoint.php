@@ -97,6 +97,14 @@ final class TransactionSavepoint implements Transaction
     /**
      * {@inheritdoc}
      */
+    public function getName(): string
+    {
+        return $this->root->getName();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function getSavepointName(): ?string
     {
         return $this->name;

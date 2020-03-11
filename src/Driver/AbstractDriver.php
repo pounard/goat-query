@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Goat\Driver;
 
+use Goat\Driver\Platform\Platform;
+use Goat\Runner\Runner;
+
 abstract class AbstractDriver implements Driver
 {
     /** @var null|Configuration */
@@ -11,6 +14,12 @@ abstract class AbstractDriver implements Driver
 
     /** @var bool */
     private $isClosed = true;
+
+    /** @var null|Platform */
+    protected $platform;
+
+    /** @var null|Runner */
+    protected $runner;
 
     /**
      * Is connection alive
@@ -35,6 +44,9 @@ abstract class AbstractDriver implements Driver
      */
     final public function connect(): void
     {
+        $configuration = $this->getConfiguration();
+        $configuration->getLogger()->info(\sprintf("[goat-query] Connecting to %d using %s.", $configuration->toString(), static::class));
+
         $this->doConnect();
         $this->isClosed = false;
     }
@@ -49,8 +61,37 @@ abstract class AbstractDriver implements Driver
      */
     final public function close(): void
     {
+        $configuration = $this->getConfiguration();
+        $configuration->getLogger()->info(\sprintf("[goat-query] Disconnecting from %s using %s.", $configuration->toString(), static::class));
+
         $this->isClosed = true;
         $this->doClose();
+    }
+
+    /**
+     * Create platform.
+     */
+    protected abstract function doCreatePlatform(): Platform;
+
+    /**
+     * {@inheritdoc}
+     */
+    final public function getPlatform(): Platform
+    {
+        return $this->platform ?? ($this->platform = $this->doCreatePlatform());
+    }
+
+    /**
+     * Create runner.
+     */
+    protected abstract function doCreateRunner(): Runner;
+
+    /**
+     * {@inheritdoc}
+     */
+    final public function getRunner(): Runner
+    {
+        return $this->runner ?? ($this->runner = $this->doCreateRunner());
     }
 
     /**

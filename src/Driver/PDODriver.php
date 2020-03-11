@@ -22,12 +22,6 @@ class PDODriver extends AbstractDriver
     /** @var null|Escaper */
     private $escaper;
 
-    /** @var null|Platform */
-    private $platform;
-
-    /** @var null|Runner */
-    private $runner;
-
     /**
      * Create driver from existing PDO connection
      */
@@ -109,18 +103,26 @@ class PDODriver extends AbstractDriver
      */
     private function preparePlatform(): void
     {
-        switch ($driver = $this->getConfiguration()->getDriver()) {
+        $configuration = $this->getConfiguration();
+
+        switch ($driver = $configuration->getDriver()) {
 
             case 'mysql':
                 $this->escaper = new PDOMySQLEscaper($this->connection);
                 $this->platform = new MySQLPlatform($this->escaper);
-                $this->runner = new PDOMySQLRunner($this->platform, $this->connection);
+
+                $runner = new PDOMySQLRunner($this->platform, $this->connection);
+                $runner->setLogger($configuration->getLogger());
+                $this->runner = $runner;
                 break;
 
             case 'pgsql':
                 $this->escaper = new PDOPgSQLEscaper($this->connection);
                 $this->platform = new PgSQLPlatform($this->escaper);
-                $this->runner = new PDOPgSQLRunner($this->platform, $this->connection);
+
+                $runner = new PDOPgSQLRunner($this->platform, $this->connection);
+                $runner->setLogger($configuration->getLogger());
+                $this->runner = $runner;
                 break;
 
             default:
@@ -177,7 +179,7 @@ class PDODriver extends AbstractDriver
     /**
      * Create platform
      */
-    private function createPlatform(): Platform
+    protected function doCreatePlatform(): Platform
     {
         if (!$this->connection) {
             $this->connect();
@@ -186,29 +188,13 @@ class PDODriver extends AbstractDriver
     }
 
     /**
-     * {@inheritdoc}
-     */
-    public function getPlatform(): Platform
-    {
-        return $this->platform ?? $this->createPlatform();
-    }
-
-    /**
      * Create runner
      */
-    private function createRunner(): Runner
+    protected function doCreateRunner(): Runner
     {
         if (!$this->connection) {
             $this->connect();
         }
         return $this->runner;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getRunner(): Runner
-    {
-        return $this->runner ?? $this->createRunner();
     }
 }
