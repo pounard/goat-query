@@ -29,6 +29,24 @@ class PDODriver extends AbstractDriver
     private $runner;
 
     /**
+     * Create driver from existing PDO connection
+     */
+    public static function createFromPDO(\PDO $connection, string $driverName): self
+    {
+        $configuration = new Configuration([
+            'driver' => $driverName,
+        ]);
+
+        $ret = new self();
+        $ret->setConfiguration($configuration);
+        $ret->connection = $connection;
+
+        $ret->preparePlatform();
+
+        return $ret;
+    }
+
+    /**
      * Is connection alive
      */
     protected function isConnected(): bool
@@ -87,6 +105,31 @@ class PDODriver extends AbstractDriver
     }
 
     /**
+     * Create and prepare internals.
+     */
+    private function preparePlatform(): void
+    {
+        switch ($driver = $this->getConfiguration()->getDriver()) {
+
+            case 'mysql':
+                $this->escaper = new PDOMySQLEscaper($this->connection);
+                $this->platform = new MySQLPlatform($this->escaper);
+                $this->runner = new PDOMySQLRunner($this->platform, $this->connection);
+                break;
+
+            case 'pgsql':
+                $this->escaper = new PDOPgSQLEscaper($this->connection);
+                $this->platform = new PgSQLPlatform($this->escaper);
+                $this->runner = new PDOPgSQLRunner($this->platform, $this->connection);
+                break;
+
+            default:
+                $this->connection = null;
+                throw new ConfigurationError(\sprintf("Cannot create runner for driver '%s'", $driver));
+        }
+    }
+
+    /**
      * {@inheritdoc}
      */
     protected function doConnect(): void
@@ -113,24 +156,7 @@ class PDODriver extends AbstractDriver
             $connection->setAttribute($attribute, $value);
         }
 
-        switch ($driver = $configuration->getDriver()) {
-
-            case 'mysql':
-                $this->escaper = new PDOMySQLEscaper($this->connection);
-                $this->platform = new MySQLPlatform($this->escaper);
-                $this->runner = new PDOMySQLRunner($this->platform, $this->connection);
-                break;
-
-            case 'pgsql':
-                $this->escaper = new PDOPgSQLEscaper($this->connection);
-                $this->platform = new PgSQLPlatform($this->escaper);
-                $this->runner = new PDOPgSQLRunner($this->platform, $this->connection);
-                break;
-
-            default:
-                $this->connection = null;
-                throw new ConfigurationError(\sprintf("Cannot create runner for driver '%s'", $driver));
-        }
+        $this->preparePlatform();
     }
 
     /**
