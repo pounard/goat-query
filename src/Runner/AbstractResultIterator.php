@@ -9,6 +9,8 @@ use Goat\Hydrator\HydratorInterface;
 use Goat\Query\QueryError;
 use Goat\Runner\Metadata\DefaultResultMetadata;
 use Goat\Runner\Metadata\ResultMetadata;
+use Goat\Runner\Metadata\ResultProfile;
+use Goat\Runner\Metadata\DefaultResultProfile;
 
 abstract class AbstractResultIterator implements ResultIterator
 {
@@ -26,6 +28,9 @@ abstract class AbstractResultIterator implements ResultIterator
 
     /** @var string[] */
     private $userTypeMap = [];
+
+    /** @var ResultProfile */
+    private $profile;
 
     /** @var ?string */
     protected $columnKey;
@@ -69,6 +74,22 @@ abstract class AbstractResultIterator implements ResultIterator
                 $this->metadata->setColumnInformation($i, $name, $type);
             }
         }
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getResultProfile(): ResultProfile
+    {
+        return $this->profile ?? new DefaultResultProfile();
+    }
+
+    /**
+     * @internal
+     */
+    public function setResultProfile(ResultProfile $profile): void
+    {
+        $this->profile = $profile;
     }
 
     /**

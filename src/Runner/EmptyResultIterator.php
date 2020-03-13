@@ -6,7 +6,9 @@ namespace Goat\Runner;
 
 use Goat\Converter\ConverterInterface;
 use Goat\Hydrator\HydratorInterface;
+use Goat\Runner\Metadata\DefaultResultProfile;
 use Goat\Runner\Metadata\ResultMetadata;
+use Goat\Runner\Metadata\ResultProfile;
 
 /**
  * Empty iterator for some edge cases results
@@ -23,6 +25,22 @@ final class EmptyResultIterator implements ResultIterator
     public function __construct(int $affectedRowCount = 0)
     {
         $this->affectedRowCount = $affectedRowCount;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getResultProfile(): ResultProfile
+    {
+        return $this->profile ?? new DefaultResultProfile();
+    }
+
+    /**
+     * @internal
+     */
+    public function setResultProfile(ResultProfile $profile): void
+    {
+        $this->profile = $profile;
     }
 
     /**

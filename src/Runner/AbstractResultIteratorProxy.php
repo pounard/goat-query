@@ -7,12 +7,31 @@ namespace Goat\Runner;
 use Goat\Converter\ConverterInterface;
 use Goat\Hydrator\HydratorInterface;
 use Goat\Runner\Metadata\ResultMetadata;
+use Goat\Runner\Metadata\ResultProfile;
 
 abstract class AbstractResultIteratorProxy implements ResultIterator
 {
     private $count;
 
     abstract protected function getResult(): ResultIterator;
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getResultProfile(): ResultProfile
+    {
+        return $this->getResult()->getResultProfile();
+    }
+
+    /**
+     * @internal
+     *
+     * This may break if your result iterator is not an AbstractResultIterator
+     */
+    public function setResultProfile(ResultProfile $profile): void
+    {
+        $this->getResult()->setResultProfile($profile);
+    }
 
     /**
      * {@inheritdoc}

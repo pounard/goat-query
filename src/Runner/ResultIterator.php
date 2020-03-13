@@ -7,12 +7,18 @@ namespace Goat\Runner;
 use Goat\Converter\ConverterInterface;
 use Goat\Hydrator\HydratorInterface;
 use Goat\Runner\Metadata\ResultMetadata;
+use Goat\Runner\Metadata\ResultProfile;
 
 /**
  * When in use using the iterator, default behavior is to return associative arrays
  */
 interface ResultIterator extends ResultMetadata, \IteratorAggregate, \Countable
 {
+    /**
+     * Get result profiler data.
+     */
+    public function getResultProfile(): ResultProfile;
+
     /**
      * Set converter
      *

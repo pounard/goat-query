@@ -10,10 +10,12 @@ use Goat\Driver\Platform\Platform;
 use Goat\Driver\Query\FormattedQuery;
 use Goat\Query\Query;
 use Goat\Query\QueryError;
+use Goat\Runner\AbstractResultIterator;
 use Goat\Runner\DatabaseError;
 use Goat\Runner\EmptyResultIterator;
 use Goat\Runner\ResultIterator;
 use Goat\Runner\ServerError;
+use Goat\Runner\Metadata\DefaultResultProfile;
 
 /**
  * ext_pgsql connection implementation
@@ -63,7 +65,7 @@ class ExtPgSQLRunner extends AbstractRunner
     /**
      * {@inheritdoc}
      */
-    protected function doCreateResultIterator(...$constructorArgs) : ResultIterator
+    protected function doCreateResultIterator(...$constructorArgs) : AbstractResultIterator
     {
         return new ExtPgSQLResultIterator(...$constructorArgs);
     }
@@ -85,17 +87,21 @@ class ExtPgSQLRunner extends AbstractRunner
         $connection = $this->connection;
 
         try {
+            $profile = new DefaultResultProfile();
+
             $prepared = $this->formatter->prepare($query);
             $rawSQL = $prepared->getRawSQL();
             $args = $prepared->prepareArgumentsWith($this->converter, $query, $arguments);
+            $profile->donePrepare();
 
             $resource = @\pg_query_params($connection, $rawSQL, $args);
+            $profile->doneExecute();
 
             if (false === $resource) {
                 $this->serverError($connection, $rawSQL);
             }
 
-            return $this->createResultIterator($prepared->getIdentifier(), $options, $resource);
+            return $this->createResultIterator($prepared->getIdentifier(), $profile, $options, $resource);
 
         } catch (DatabaseError $e) {
             throw $e;
@@ -113,11 +119,15 @@ class ExtPgSQLRunner extends AbstractRunner
         $connection = $this->connection;
 
         try {
+            $profile = new DefaultResultProfile();
+
             $prepared = $this->formatter->prepare($query);
             $rawSQL = $prepared->getRawSQL();
             $args = $prepared->prepareArgumentsWith($this->converter, $query, $arguments);
+            $profile->donePrepare();
 
             $resource = @\pg_query_params($connection, $rawSQL, $args);
+            $profile->doneExecute();
 
             if (false === $resource) {
                 $this->serverError($connection, $rawSQL);
@@ -131,6 +141,7 @@ class ExtPgSQLRunner extends AbstractRunner
             // No need to keep any result into memory.
             @\pg_free_result($resource);
 
+            // @todo How to fetch result profile?
             return $rowCount;
 
         } catch (DatabaseError $e) {
@@ -187,15 +198,19 @@ class ExtPgSQLRunner extends AbstractRunner
         $connection = $this->connection;
 
         try {
+            $profile = new DefaultResultProfile();
+
             $args = $prepared->prepareArgumentsWith($this->converter, '', $arguments);
+            $profile->donePrepare();
 
             $resource = @\pg_execute($connection, $identifier, $args);
+            $profile->doneExecute();
 
             if (false === $resource) {
                 $this->serverError($connection, $identifier);
             }
 
-            return $this->createResultIterator($identifier, $options, $resource);
+            return $this->createResultIterator($identifier, $profile, $options, $resource);
 
         } catch (DatabaseError $e) {
             throw $e;

@@ -212,8 +212,8 @@ class DeleteTest extends DatabaseAwareQueryTest
         foreach ($result as $row) {
             $this->assertSame(self::ID_JEAN, $row['id_user']);
             $this->assertSame('jean', $row['name']);
-            $this->assertInternalType('integer', $row['id']);
-            $this->assertInternalType('string', $row['bar']);
+            $this->assertIsInt($row['id']);
+            $this->assertIsString($row['bar']);
         }
     }
 
@@ -252,8 +252,8 @@ class DeleteTest extends DatabaseAwareQueryTest
             $this->assertTrue($row instanceof DeleteSomeTableWithUser);
             $this->assertSame(self::ID_JEAN, $row->getUserId());
             $this->assertSame('jean', $row->getUserName());
-            $this->assertInternalType('integer', $row->getId());
-            $this->assertInternalType('string', $row->getBar());
+            $this->assertIsInt($row->getId());
+            $this->assertIsString($row->getBar());
         }
     }
 

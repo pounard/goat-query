@@ -19,8 +19,10 @@ use Goat\Runner\Transaction;
 use Goat\Runner\TransactionError;
 use Goat\Runner\Metadata\ArrayResultMetadataCache;
 use Goat\Runner\Metadata\ResultMetadataCache;
+use Goat\Runner\Metadata\ResultProfile;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+use Goat\Runner\AbstractResultIterator;
 
 abstract class AbstractRunner implements Runner
 {
@@ -247,7 +249,7 @@ abstract class AbstractRunner implements Runner
      * @param mixed[] $constructorArgs
      *   Driver specific parameters
      */
-    abstract protected function doCreateResultIterator(...$constructorArgs) : ResultIterator;
+    abstract protected function doCreateResultIterator(...$constructorArgs) : AbstractResultIterator;
 
     /**
      * Create the result iterator instance
@@ -264,10 +266,11 @@ abstract class AbstractRunner implements Runner
      *
      * @return ResultIterator
      */
-    final protected function createResultIterator(string $identifier, $options = null, ...$constructorArgs): ResultIterator
+    final protected function createResultIterator(string $identifier, ResultProfile $profile, $options = null, ...$constructorArgs): ResultIterator
     {
         $result = $this->doCreateResultIterator(...$constructorArgs);
         $result->setConverter($this->converter);
+        $result->setResultProfile($profile);
 
         // Normalize options, it might be a string only.
         if ($options) {

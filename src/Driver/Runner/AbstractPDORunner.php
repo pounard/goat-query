@@ -8,10 +8,12 @@ use Goat\Driver\Platform\Platform;
 use Goat\Driver\Query\FormattedQuery;
 use Goat\Query\Query;
 use Goat\Query\QueryError;
+use Goat\Runner\AbstractResultIterator;
 use Goat\Runner\DatabaseError;
 use Goat\Runner\EmptyResultIterator;
 use Goat\Runner\ResultIterator;
 use Goat\Runner\ServerError;
+use Goat\Runner\Metadata\DefaultResultProfile;
 
 abstract class AbstractPDORunner extends AbstractRunner
 {
@@ -50,7 +52,7 @@ abstract class AbstractPDORunner extends AbstractRunner
     /**
      * {@inheritdoc}
      */
-    protected function doCreateResultIterator(...$constructorArgs): ResultIterator
+    protected function doCreateResultIterator(...$constructorArgs): AbstractResultIterator
     {
         return new PDOResultIterator(...$constructorArgs);
     }
@@ -72,14 +74,18 @@ abstract class AbstractPDORunner extends AbstractRunner
         $rawSQL = '';
 
         try {
+            $profile = new DefaultResultProfile();
+
             $prepared = $this->formatter->prepare($query);
             $rawSQL = $prepared->getRawSQL();
             $args = $prepared->prepareArgumentsWith($this->converter, $query, $arguments);
+            $profile->donePrepare();
 
             $statement = $this->connection->prepare($rawSQL, [\PDO::ATTR_CURSOR => \PDO::CURSOR_FWDONLY]);
             $statement->execute($args);
+            $profile->doneExecute();
 
-            return $this->createResultIterator($prepared->getIdentifier(), $options, $statement);
+            return $this->createResultIterator($prepared->getIdentifier(), $profile, $options, $statement);
 
         } catch (DatabaseError $e) {
             throw $e;
@@ -99,13 +105,18 @@ abstract class AbstractPDORunner extends AbstractRunner
         $rawSQL = '';
 
         try {
+            $profile = new DefaultResultProfile();
+
             $prepared = $this->formatter->prepare($query);
             $rawSQL = $prepared->getRawSQL();
             $args = $prepared->prepareArgumentsWith($this->converter, $query, $arguments);
+            $profile->donePrepare();
 
             $statement = $this->connection->prepare($rawSQL, [\PDO::ATTR_CURSOR => \PDO::CURSOR_FWDONLY]);
             $statement->execute($args);
+            $profile->doneExecute();
 
+            // @todo How to fetch result profile?
             return $statement->rowCount();
 
         } catch (DatabaseError $e) {
@@ -162,10 +173,15 @@ abstract class AbstractPDORunner extends AbstractRunner
         \assert($prepared instanceof FormattedQuery);
 
         try {
-            $args = $prepared->prepareArgumentsWith($this->converter, '', $arguments);
-            $statement->execute($args);
+            $profile = new DefaultResultProfile();
 
-            return $this->createResultIterator($identifier, $options, $statement);
+            $args = $prepared->prepareArgumentsWith($this->converter, '', $arguments);
+            $profile->donePrepare();
+
+            $statement->execute($args);
+            $profile->doneExecute();
+
+            return $this->createResultIterator($identifier, $profile, $options, $statement);
 
         } catch (DatabaseError $e) {
             throw $e;

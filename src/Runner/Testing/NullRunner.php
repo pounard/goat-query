@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Goat\Runner\Testing;
 
 use Goat\Driver\Runner\AbstractRunner;
+use Goat\Runner\AbstractResultIterator;
 use Goat\Runner\ResultIterator;
 
 class NullRunner extends AbstractRunner
@@ -52,7 +53,7 @@ class NullRunner extends AbstractRunner
     /**
      * {@inheritdoc}
      */
-    protected function doCreateResultIterator(...$constructorArgs) : ResultIterator
+    protected function doCreateResultIterator(...$constructorArgs) : AbstractResultIterator
     {
         throw new \Exception("Null runner cannot actually run queries.");
     }

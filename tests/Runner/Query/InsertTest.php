@@ -232,8 +232,8 @@ class InsertTest extends DatabaseAwareQueryTest
 
         foreach ($result as $row) {
             $this->assertTrue($row instanceof InsertAndTheCatSays);
-            $this->assertInternalType('string', $row->miaw());
-            $this->assertInternalType('integer', $row->getId());
+            $this->assertIsString($row->miaw());
+            $this->assertIsInt($row->getId());
         }
     }
 
