@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Goat\Runner;
 
 use Goat\Converter\ConverterInterface;
-use Goat\Hydrator\HydratorInterface;
 use Goat\Query\QueryError;
+use Goat\Runner\Hydrator\ResultHydrator;
 use Goat\Runner\Metadata\DefaultResultMetadata;
 use Goat\Runner\Metadata\ResultMetadata;
 
@@ -27,17 +27,14 @@ abstract class AbstractResultIterator implements ResultIterator
     /** @var string[] */
     private $userTypeMap = [];
 
+    /** @var null|ResultHydrator */
+    private $hydrator;
+
     /** @var ?string */
     protected $columnKey;
 
     /** @var null|ConverterInterface */
     protected $converter;
-
-    /** @var null|callable|HydratorInterface */
-    protected $hydrator;
-
-    /** @var bool */
-    protected $hydratorIsCallable = false;
 
     /**
      * Implementation of both getColumnType() and getColumnName().
@@ -105,17 +102,10 @@ abstract class AbstractResultIterator implements ResultIterator
         if ($this->iterationStarted) {
             throw new QueryError(\sprintf("You cannot change the hydrator once iteration has started."));
         }
-        if (null === $hydrator) {
-            $this->hydrator = null;
-        } else if (\is_callable($hydrator)) {
-            $this->hydrator = $hydrator;
-            $this->hydratorIsCallable = true;
-        } else if ($hydrator instanceof HydratorInterface) {
-            $this->hydrator = $hydrator;
-            $this->hydratorIsCallable = false;
-        } else {
-            throw new QueryError(\sprintf("Result hydrator must be a callable or an instance of %s", HydratorInterface::class));
+        if (!$hydrator instanceof ResultHydrator) {
+            $hydrator = new ResultHydrator($hydrator);
         }
+        $this->hydrator = $hydrator;
 
         return $this;
     }
@@ -136,40 +126,7 @@ abstract class AbstractResultIterator implements ResultIterator
         if ($this->converter) {
             return $this->converter->fromSQL($this->getColumnType($name), $value);
         }
-
         return $value;
-    }
-
-    /**
-     * Convert values from SQL types to PHP native types
-     *
-     * @param string[] $row
-     *   SQL fetched raw values are always strings
-     *
-     * @return mixed[]
-     *   Same array, with converted values
-     */
-    final protected function convertValues(array $row): array
-    {
-        if (!$this->iterationStarted) {
-            $this->iterationStarted = true;
-        }
-        if (!$this->converter) {
-            return $row;
-        }
-
-        $ret = [];
-
-        foreach ($row as $name => $value) {
-            $name = (string)$name; // Column name can be an integer (eg. SELECT 1 ...).
-            if (null !== $value) {
-                $ret[$name] = $this->converter->fromSQL($this->getColumnType($name), $value);
-            } else {
-                $ret[$name] = null;
-            }
-        }
-
-        return $ret;
     }
 
     /**
@@ -183,16 +140,31 @@ abstract class AbstractResultIterator implements ResultIterator
      */
     final protected function hydrate(array $row)
     {
-        $converted = $this->convertValues($row);
-
-        if ($this->hydrator) {
-            if ($this->hydratorIsCallable) {
-                return ($this->hydrator)($converted);
-            }
-            return $this->hydrator->createAndHydrateInstance($converted);
+        if (!$this->iterationStarted) {
+            $this->iterationStarted = true;
         }
 
-        return $converted;
+        $ret = [];
+        if ($this->converter) {
+            foreach ($row as $name => $value) {
+                $name = (string)$name; // Column name can be an integer (eg. SELECT 1 ...).
+                if (null !== $value) {
+                    $ret[$name] = $this->converter->fromSQL($this->getColumnType($name), $value);
+                } else {
+                    $ret[$name] = null;
+                }
+            }
+        } else {
+            foreach ($row as $name => $value) {
+                $ret[(string)$name] = $value;
+            }
+        }
+
+        if (!$this->hydrator) {
+            return $ret;
+        }
+
+        return $this->hydrator->hydrate($ret);
     }
 
     /**
