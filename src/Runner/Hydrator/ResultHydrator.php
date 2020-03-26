@@ -21,9 +21,20 @@ final class ResultHydrator
     /** @var string[][] */
     private $groupCache = [];
 
-    public function __construct($hydrator = null, ?string $separator = '.')
+    /** @var bool */
+    private $doDropNullArrays = true;
+
+    /**
+     * @param callable|HydratorInterface $hydrator
+     * @param string $separator
+     * @param bool $dropNullArrays
+     *   If an array contains only null values during nested property hydration
+     *   then replace it will null simply.
+     */
+    public function __construct($hydrator = null, ?string $separator = '.', bool $dropNullArrays = true)
     {
         $this->separator = $separator;
+        $this->doDropNullArrays = $dropNullArrays;
 
         if (null === $hydrator) {
             $this->hydrator = null;
@@ -83,6 +94,16 @@ final class ResultHydrator
         return null === $value || '' === $value || [] === $value;
     }
 
+    private function handleNullArray(array $value): ?array
+    {
+        foreach ($value as $item) {
+            if (null !== $item) {
+                return $value;
+            }
+        }
+        return null;
+    }
+
     private function aggregatePropertiesOf(array $groups, array $values, $prefix = null): array
     {
         $ret = [];
@@ -102,7 +123,12 @@ final class ResultHydrator
             if (\is_string($group)) {
                 $ret[$key] = $values[$group] ?? null;
             } else {
-                $ret[$key] = $this->aggregatePropertiesOf($group, $values, $path);
+                $value = $this->aggregatePropertiesOf($group, $values, $path);
+                if ($this->doDropNullArrays) {
+                    $ret[$key] = $this->handleNullArray($value);
+                } else {
+                    $ret[$key] = $value;
+                }
             }
         }
 

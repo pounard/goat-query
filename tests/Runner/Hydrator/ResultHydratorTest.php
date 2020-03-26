@@ -4,13 +4,7 @@ declare(strict_types=1);
 
 namespace Goat\Runner\Tests\Hydrator;
 
-use Goat\Hydrator\HydratorInterface;
-use Goat\Hydrator\Configuration\ClassConfiguration;
 use Goat\Runner\Hydrator\ResultHydrator;
-use Goat\Runner\Tests\Hydrator\Mock\HydratedClass;
-use Goat\Runner\Tests\Hydrator\Mock\HydratedNestingClass;
-use Goat\Runner\Tests\Hydrator\Mock\HydratedParentClass;
-use Goat\Runner\Tests\Hydrator\Mock\RecursivelyHydratedClass;
 use PHPUnit\Framework\TestCase;
 
 final class ResultHydratorTest extends TestCase
@@ -44,6 +38,94 @@ final class ResultHydratorTest extends TestCase
                 ],
                 'nestedObject2' => [
                     'miaw' => 11,
+                ],
+            ],
+            $hydrator->hydrate($values)
+        );
+    }
+
+    public function testNullArraysAreDroppedPerDefault(): void
+    {
+        $hydrator = new ResultHydrator(null, '.');
+
+        $values = [
+            'foo' => 12,
+            // 'bar' here will be null.
+            'bar.bar' => null,
+            'bar.pouet' => null,
+            'roger.mouette' => 47,
+            // 'roger.tutu' here will be null.
+            'roger.tutu.bouh' => null,
+            'roger.truc.aaaa' => 12,
+            'roger.truc.bbbb' => null,
+            // 'a' here will cascade to null.
+            'a.b.c' => null,
+            'a.b.d.e.f' => null,
+        ];
+
+        self::assertSame(
+            [
+                'foo' => 12,
+                'bar' => null,
+                'roger' => [
+                    'mouette' => 47,
+                    'tutu' => null,
+                    'truc' => [
+                        'aaaa' => 12,
+                        'bbbb' => null
+                    ],
+                ],
+                'a' => null,
+            ],
+            $hydrator->hydrate($values)
+        );
+    }
+
+    public function testNullArraysAreNotDropped(): void
+    {
+        $hydrator = new ResultHydrator(null, '.', false);
+
+        $values = [
+            'foo' => 12,
+            // 'bar' here will be null.
+            'bar.baz' => null,
+            'bar.pouet' => null,
+            'roger.mouette' => 47,
+            // 'roger.tutu' here will be null.
+            'roger.tutu.bouh' => null,
+            'roger.truc.aaaa' => 12,
+            'roger.truc.bbbb' => null,
+            // 'a' here will cascade to null.
+            'a.b.c' => null,
+            'a.b.d.e.f' => null,
+        ];
+
+        self::assertSame(
+            [
+                'foo' => 12,
+                'bar' => [
+                    'baz' => null,
+                    'pouet' => null,
+                ],
+                'roger' => [
+                    'mouette' => 47,
+                    'tutu' => [
+                        'bouh' => null,
+                    ],
+                    'truc' => [
+                        'aaaa' => 12,
+                        'bbbb' => null
+                    ],
+                ],
+                'a' => [
+                    'b' => [
+                        'c' => null,
+                        'd' => [
+                            'e' => [
+                                'f' => null,
+                            ]
+                        ]
+                    ],
                 ],
             ],
             $hydrator->hydrate($values)
