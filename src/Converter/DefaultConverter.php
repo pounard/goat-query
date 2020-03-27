@@ -253,6 +253,11 @@ final class DefaultConverter implements ConverterInterface
      */
     public function fromSQL(string $type, $value)
     {
+        // Null values are null.
+        if (null === $value) {
+            return null;
+        }
+
         switch ($type) {
             case ConverterInterface::TYPE_NULL:
                 return null;
@@ -384,6 +389,11 @@ final class DefaultConverter implements ConverterInterface
      */
     public function toSQL(string $type, $value) : ?string
     {
+        // Null values are null.
+        if (null === $value) {
+            return null;
+        }
+
         if (ConverterInterface::TYPE_UNKNOWN === $type) {
             $type = $this->guessType($value);
         }
