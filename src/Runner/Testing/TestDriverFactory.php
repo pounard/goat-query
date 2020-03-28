@@ -13,6 +13,7 @@ use Goat\Hydrator\HydratorMap;
 use Goat\Runner\Runner;
 use Goat\Runner\Metadata\ApcuResultMetadataCache;
 use Goat\Runner\Metadata\ArrayResultMetadataCache;
+use PHPUnit\Framework\SkippedTestError;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
@@ -59,7 +60,7 @@ class TestDriverFactory
             $username = \getenv($prefix.'_PASSWORD');
             $password = \getenv($prefix.'_USERNAME');
         } else {
-            self::markTestSkipped(\sprintf("$prefix.'_HOSTNAME' environment variable is missing."));
+            throw new SkippedTestError(\sprintf("$prefix.'_HOSTNAME' environment variable is missing."));
         }
 
         $configuration = new Configuration([
