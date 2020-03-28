@@ -12,7 +12,7 @@ abstract class DatabaseAwareQueryTest extends TestCase
     /**
      * {@inheritdoc}
      */
-    protected function tearDown(): void
+    protected function tearDown()
     {
         \gc_collect_cycles();
     }

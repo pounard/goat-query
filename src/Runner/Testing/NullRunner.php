@@ -11,6 +11,14 @@ use Goat\Runner\ResultIterator;
 class NullRunner extends AbstractRunner
 {
     /**
+     * Constructor
+     */
+    public function __construct()
+    {
+        parent::__construct(new NullPlatform());
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function getDriverName(): string
