@@ -142,7 +142,7 @@ class TestDriverFactory
         }
     }
 
-    public function getRunner(): Runner
+    public function getRunner(?callable $initializer): Runner
     {
         $runner = $this->getDriver()->getRunner();
 
@@ -163,6 +163,9 @@ class TestDriverFactory
         if ($this->initializer) {
             \call_user_func($this->initializer, $runner, $this->schema);
             $this->initializer = null;
+        }
+        if ($initializer) {
+            \call_user_func($initializer, $runner, $this->schema);
         }
 
         return $runner;
