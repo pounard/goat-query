@@ -232,7 +232,8 @@ abstract class AbstractPDORunner extends AbstractRunner
      */
     public function escapeBlob(string $word): string
     {
-        return $this->connection->quote($word /*, \PDO::PARAM_LOB */);
+        // We have to trim extra ' chars added by PDO.
+        return \trim($this->connection->quote($word, \PDO::PARAM_LOB), "'");
     }
 
     /**

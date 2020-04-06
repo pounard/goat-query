@@ -111,7 +111,7 @@ abstract class AbstractRunner implements Runner, EscaperInterface
      */
     public function setConverter(ConverterInterface $converter): void
     {
-        $this->converter = $converter;
+        $this->converter = new RunnerConverter($converter, $this);
     }
 
     /**
