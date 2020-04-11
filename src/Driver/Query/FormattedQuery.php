@@ -65,7 +65,7 @@ final class FormattedQuery
      * In all cases, it will reconcile the awaited parameter count and raise
      * errors if the number doesn't match.
      */
-    private static function convertArguments(ConverterInterface $converter, ArgumentList $argumentList, array $arguments): array
+    private function convertArguments(ConverterInterface $converter, ArgumentList $argumentList, array $arguments): array
     {
         $ret = [];
 
@@ -111,7 +111,7 @@ final class FormattedQuery
                     $arguments = $queryArguments->getAll();
                 }
             }
-            return self::convertArguments($converter, $argumentList, $arguments);
+            return $this->convertArguments($converter, $argumentList, $arguments);
         }
 
         return [];

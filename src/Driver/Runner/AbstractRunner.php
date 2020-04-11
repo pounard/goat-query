@@ -128,7 +128,7 @@ abstract class AbstractRunner implements Runner
      */
     public function setConverter(ConverterInterface $converter): void
     {
-        $this->converter = $converter;
+        $this->converter = new RunnerConverter($converter, $this->getPlatform()->getEscaper());
     }
 
     /**

@@ -142,7 +142,7 @@ class TestDriverFactory
         }
     }
 
-    public function getRunner(?callable $initializer): Runner
+    public function getRunner(?callable $initializer = null): Runner
     {
         $runner = $this->getDriver()->getRunner();
 
