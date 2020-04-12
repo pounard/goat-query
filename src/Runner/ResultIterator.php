@@ -12,7 +12,7 @@ use Goat\Runner\Metadata\ResultProfile;
 /**
  * When in use using the iterator, default behavior is to return associative arrays
  */
-interface ResultIterator extends ResultMetadata, \IteratorAggregate, \Countable
+interface ResultIterator extends ResultMetadata, \Traversable, \Countable
 {
     /**
      * Get result profiler data.
@@ -20,21 +20,26 @@ interface ResultIterator extends ResultMetadata, \IteratorAggregate, \Countable
     public function getResultProfile(): ResultProfile;
 
     /**
-     * Set converter
+     * Toggle rewindable feature.
+     */
+    public function setRewindable($rewindable = true): self;
+
+    /**
+     * Set converter.
      *
      * @return $this
      */
-    public function setConverter(ConverterInterface $converter): ResultIterator;
+    public function setConverter(ConverterInterface $converter): self;
 
     /**
-     * Set hydrator
+     * Set hydrator.
      *
      * @return $this
      */
-    public function setHydrator(HydratorInterface $hydrator): ResultIterator;
+    public function setHydrator(HydratorInterface $hydrator): self;
 
     /**
-     * Set column to use as iterator key
+     * Set column to use as iterator key.
      *
      * This will alter results from the iterator, and the fetchColumn() return.
      *
@@ -47,12 +52,12 @@ interface ResultIterator extends ResultMetadata, \IteratorAggregate, \Countable
     public function setKeyColumn(string $name): self;
 
     /**
-     * Toggle debug mode
+     * Toggle debug mode.
      */
     public function setDebug(bool $enable): void;
 
     /**
-     * Set type map for faster hydration
+     * Set type map for faster hydration.
      *
      * @param string[][] $userTypes
      *   Keys are aliases from the result, values are types.
@@ -65,7 +70,7 @@ interface ResultIterator extends ResultMetadata, \IteratorAggregate, \Countable
     public function countRows(): int;
 
     /**
-     * Fetch given column in the first or current row
+     * Fetch given column in the first or current row.
      *
      * @param int|string $name
      *   If none given, just take the first one
@@ -75,7 +80,7 @@ interface ResultIterator extends ResultMetadata, \IteratorAggregate, \Countable
     public function fetchField($name = null);
 
     /**
-     * Fetch column
+     * Fetch column.
      *
      * The result of this method is altered by setKeyColumn(): if you set a key
      * column, its value will be used as keys in the return array, in case you
@@ -91,7 +96,14 @@ interface ResultIterator extends ResultMetadata, \IteratorAggregate, \Countable
     public function fetchColumn($name = null);
 
     /**
-     * Get next element and move forward
+     * Get next element and move forward.
+     *
+     * Fetch usage is discouraged if you have more than one element in the
+     * result because it forces the current implementation to create an
+     * extra internal iterator.
+     *
+     * Whenever you have more than one result, simply use foreach() over
+     * the result, which will be much, much more efficient.
      *
      * @return mixed
      */

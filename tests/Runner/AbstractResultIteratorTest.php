@@ -7,6 +7,7 @@ namespace Goat\Runner\Tests;
 use Goat\Converter\DefaultConverter;
 use Goat\Hydrator\HydratorInterface;
 use Goat\Query\QueryError;
+use Goat\Runner\Metadata\DefaultResultProfile;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -17,7 +18,7 @@ final class AbstractResultIteratorTest extends TestCase
     /**
      * Foo result iterator
      */
-    private function createArrayResultIterator()
+    private function createArrayResultIterator(): ArrayResultIterator
     {
         return new ArrayResultIterator(
             [
@@ -38,6 +39,66 @@ final class AbstractResultIteratorTest extends TestCase
                 ],
             ]
         );
+    }
+
+    public function testCount(): void
+    {
+        $result = $this->createArrayResultIterator();
+
+        self::assertSame(2, $result->count());
+        self::assertSame(2, $result->count());
+        self::assertSame(2, $result->countRows());
+        self::assertSame(2, $result->countRows());
+
+        self::assertSame(1, $result->getFetchRowCountCallCount());
+    }
+
+    public function testRewindableIteratorFetch(): void
+    {
+        $result = $this->createArrayResultIterator()->setRewindable(true);
+
+        self::assertSame(['a' => '1', 'b' => 'foo', 'c' => '1983-03-22'], $result->fetch());
+        self::assertSame(['a' => '2', 'b' => 'bar', 'c' => '2012-01-12'], $result->fetch());
+
+        $result->rewind();
+
+        self::assertSame(['a' => '1', 'b' => 'foo', 'c' => '1983-03-22'], $result->fetch());
+        self::assertSame(['a' => '2', 'b' => 'bar', 'c' => '2012-01-12'], $result->fetch());
+    }
+
+    public function testNonRewindableIteratorFetch(): void
+    {
+        $result = $this->createArrayResultIterator();
+
+        self::assertSame(['a' => '1', 'b' => 'foo', 'c' => '1983-03-22'], $result->fetch());
+        self::assertSame(['a' => '2', 'b' => 'bar', 'c' => '2012-01-12'], $result->fetch());
+    }
+
+    public function testSetDebug(): void
+    {
+        self::expectNotToPerformAssertions();
+
+        $result = $this->createArrayResultIterator();
+        $result->setDebug(true);
+    }
+
+    public function testGetProfileWithoutSetReturnEmpty(): void
+    {
+        $result = $this->createArrayResultIterator();
+        $profile = $result->getResultProfile();
+
+        self::assertSame(-1, $profile->getExecutionTime());
+        self::assertSame(-1, $profile->getPreparationTime());
+    }
+
+    public function testSetProfile(): void
+    {
+        $profile = new DefaultResultProfile();
+
+        $result = $this->createArrayResultIterator();
+        $result->setResultProfile($profile);
+
+        self::assertSame($profile, $result->getResultProfile());
     }
 
     /**
@@ -108,6 +169,7 @@ final class AbstractResultIteratorTest extends TestCase
         });
 
         $row = $result->fetch();
+
         self::assertSame(['baah'], $row);
     }
 
@@ -120,6 +182,7 @@ final class AbstractResultIteratorTest extends TestCase
         $result->setHydrator(null);
 
         $row = $result->fetch();
+
         self::assertIsArray($row);
     }
 
@@ -131,6 +194,7 @@ final class AbstractResultIteratorTest extends TestCase
         $result = $this->createArrayResultIterator();
 
         self::expectException(QueryError::class);
+
         $result->setHydrator('foo');
     }
 
@@ -145,6 +209,7 @@ final class AbstractResultIteratorTest extends TestCase
         $result->fetch();
 
         self::expectException(QueryError::class);
+
         $result->setHydrator(null);
     }
 }

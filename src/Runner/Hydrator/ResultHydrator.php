@@ -11,16 +11,12 @@ final class ResultHydrator
 {
     /** @var bool */
     private $hydratorIsCallable = false;
-
     /** @var null|callable|HydratorInterface */
     private $hydrator;
-
     /** @var null|string */
     private $separator;
-
     /** @var string[][] */
     private $groupCache = [];
-
     /** @var bool */
     private $doDropNullArrays = true;
 

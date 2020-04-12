@@ -30,7 +30,7 @@ class ExtPgSQLResultIterator extends AbstractResultIterator
     /**
      * {@inheritdoc}
      */
-    protected function getColumnInfoFromDriver(int $index): array
+    protected function doFetchColumnInfoFromDriver(int $index): array
     {
         $type = \pg_field_type($this->connection, $index);
         if (false === $type) {
@@ -48,42 +48,45 @@ class ExtPgSQLResultIterator extends AbstractResultIterator
     /**
      * {@inheritdoc}
      */
-    protected function countColumnsFromDriver(): int
+    protected function doFetchColumnsCountFromDriver(): int
     {
         $columnCount = \pg_num_fields($this->connection);
         if (false === $columnCount) {
             $this->resultError($this->connection);
+
+            return 0;
         }
+
         return $columnCount;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function getIterator()
+    protected function doFetchNextRowFromDriver(): ?array
     {
-        while ($row = \pg_fetch_assoc($this->connection)) {
-            if ($this->columnKey) {
-                yield $row[$this->columnKey] => $this->hydrate($row);
-            } else {
-                yield $this->hydrate($row);
-            }
-        }
+        $row = \pg_fetch_assoc($this->connection);
 
         if (false === $row) {
             $this->resultError($this->connection);
+
+            return null;
         }
+
+        return $row;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function countRows() : int
+    protected function doFetchRowCountFromDriver() : int
     {
         $ret = \pg_num_rows($this->connection);
 
         if (-1 === $ret) {
             $this->resultError($this->connection);
+
+            return 0;
         }
 
         return $ret;
@@ -119,8 +122,6 @@ class ExtPgSQLResultIterator extends AbstractResultIterator
 
     /**
      * {@inheritdoc}
-     *
-     * @todo could this be improved if fetchColumn() returned an iterator instead of an array?
      */
     public function fetchColumn($name = 0)
     {
@@ -147,21 +148,5 @@ class ExtPgSQLResultIterator extends AbstractResultIterator
         }
 
         return $ret;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function fetch()
-    {
-        $row = \pg_fetch_assoc($this->connection);
-
-        if (false === $row) {
-            $this->resultError($this->connection);
-        }
-
-        if ($row) {
-            return $this->hydrate($row);
-        }
     }
 }

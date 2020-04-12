@@ -9,7 +9,7 @@ use Goat\Hydrator\HydratorInterface;
 use Goat\Runner\Metadata\ResultMetadata;
 use Goat\Runner\Metadata\ResultProfile;
 
-abstract class AbstractResultIteratorProxy implements ResultIterator
+abstract class AbstractResultIteratorProxy implements ResultIterator, \IteratorAggregate
 {
     private $count;
 
@@ -39,6 +39,16 @@ abstract class AbstractResultIteratorProxy implements ResultIterator
     public function setDebug(bool $enable): void
     {
         $this->getResult()->setDebug($enable);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    final public function setRewindable($rewindable = true): ResultIterator
+    {
+        $this->getResult()->setRewindable(true);
+
+        return $this;
     }
 
     /**

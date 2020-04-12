@@ -12,34 +12,43 @@ use Goat\Runner\Metadata\DefaultResultProfile;
 use Goat\Runner\Metadata\ResultMetadata;
 use Goat\Runner\Metadata\ResultProfile;
 
-abstract class AbstractResultIterator implements ResultIterator
+abstract class AbstractResultIterator implements ResultIterator, \Iterator
 {
-    /** @var ?int */
-    private $columnCount;
-
+    /** @var null|int */
+    private $columnCount = null;
+    /** @var null|int */
+    private $rowCount = null;
     /** @var bool */
     private $iterationStarted = false;
-
+    /** @var bool */
+    private $iterationCompleted = false;
     /** @var bool */
     private $debug = false;
-
-    /** @var ResultMetadata */
-    private $metadata;
-
+    /** @var null|ResultMetadata */
+    private $metadata = null;
     /** @var string[] */
     private $userTypeMap = [];
-
-    /** @var ResultProfile */
-    private $profile;
-
+    /** @var null|ResultProfile */
+    private $profile = null;
     /** @var null|ResultHydrator */
-    private $hydrator;
-
-    /** @var ?string */
-    protected $columnKey;
-
+    private $hydrator = null;
+    /** @var bool */
+    private $rewindable = false;
+    /** @var null|array */
+    private $expandedResult = null;
+    /** @var null|mixed */
+    private $currentValue = null;
+    /** @var null|int|string */
+    private $currentKey = null;
+    /** @var int */
+    private $currentIndex = -1;
+    /** @var null|string */
+    protected $columnKey = null;
     /** @var null|ConverterInterface */
-    protected $converter;
+    protected $converter = null;
+
+    /** @todo ugly fix. */
+    private $justRewinded = false;
 
     /**
      * Implementation of both getColumnType() and getColumnName().
@@ -49,28 +58,56 @@ abstract class AbstractResultIterator implements ResultIterator
      * @return string[]
      *   First value must be column name, second column type
      */
-    abstract protected function getColumnInfoFromDriver(int $index): array;
+    abstract protected function doFetchColumnInfoFromDriver(int $index): array;
 
     /**
      * Real implementation of getColumnName().
      */
-    abstract protected function countColumnsFromDriver(): int;
+    abstract protected function doFetchColumnsCountFromDriver(): int;
 
     /**
-     * Collect all column names, this to be called only when necessary.
-     *
-     * Using PDO, for example, it will do an extra round trip with the server per column.
+     * Get the driver result iterator, it must iterate over array of string values.
      */
-    private function collectAllColumnInfo()
+    abstract protected function doFetchNextRowFromDriver(): ?array;
+
+    /**
+     * Fetch row count from driver result.
+     */
+    abstract protected function doFetchRowCountFromDriver(): int;
+
+    /**
+     * Collect all column names.
+     *
+     * Tthis to be called only when necessary. Using PDO, for example, it will
+     * do an extra round trip with the server per column for which we want to
+     * fetch metadata (it's even worse when using pdo-pgsql because it will
+     * extensively SELECT in pgsql information schema tables).
+     *
+     * In all cases, I deeple recommend using ext-pgsql implementation instead
+     * which is much, much more efficient.
+     */
+    private function createMetadata(): ResultMetadata
     {
-        if (!$this->metadata) {
-            $this->metadata = new DefaultResultMetadata([], []);
-            $count = $this->countColumns();
-            for ($i = 0; $i < $count; ++$i) {
-                list($name, $type) = $this->getColumnInfoFromDriver($i);
-                $this->metadata->setColumnInformation($i, $name, $type);
-            }
+        $ret = new DefaultResultMetadata([], []);
+
+        $count = $this->countColumns();
+
+        for ($i = 0; $i < $count; ++$i) {
+            list($name, $type) = $this->doFetchColumnInfoFromDriver($i);
+            $ret->setColumnInformation($i, $name, $type);
         }
+
+        return $ret;
+    }
+
+    /**
+     * Get metadata instance.
+     */
+    final protected function getMetadata(): ResultMetadata
+    {
+        return $this->metadata ?? (
+            $this->metadata = $this->createMetadata()
+        );
     }
 
     /**
@@ -108,6 +145,19 @@ abstract class AbstractResultIterator implements ResultIterator
     /**
      * {@inheritdoc}
      */
+    public function setRewindable($rewindable = true): ResultIterator
+    {
+        if ($this->iterationStarted) {
+            throw new LockedResultError();
+        }
+        $this->rewindable = true;
+
+        return $this;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function setConverter(ConverterInterface $converter): ResultIterator
     {
         $this->converter = $converter;
@@ -121,7 +171,7 @@ abstract class AbstractResultIterator implements ResultIterator
     final public function setHydrator($hydrator): ResultIterator
     {
         if ($this->iterationStarted) {
-            throw new QueryError(\sprintf("You cannot change the hydrator once iteration has started."));
+            throw new LockedResultError();
         }
         if (!$hydrator instanceof ResultHydrator) {
             $hydrator = new ResultHydrator($hydrator);
@@ -161,10 +211,6 @@ abstract class AbstractResultIterator implements ResultIterator
      */
     final protected function hydrate(array $row)
     {
-        if (!$this->iterationStarted) {
-            $this->iterationStarted = true;
-        }
-
         $ret = [];
         if ($this->converter) {
             foreach ($row as $name => $value) {
@@ -191,15 +237,167 @@ abstract class AbstractResultIterator implements ResultIterator
     /**
      * {@inheritdoc}
      */
-    public function countColumns(): int
+    public function current()
     {
-        return $this->columnCount ?? ($this->columnCount = $this->countColumnsFromDriver());
+        return $this->currentValue;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function setKeyColumn(string $name): ResultIterator
+    public function next(): void
+    {
+        if (!$this->iterationStarted) {
+            $this->iterationStarted = true;
+        }
+
+        if (0 === $this->countRows()) {
+            return;
+        }
+
+        ++$this->currentIndex;
+
+        if ($this->rewindable) {
+            // Iterator could have been rewinded before we reached the end
+            // of the result, allow resuming from already expanded result
+            // in order to ensure we will return the same hydrated object
+            // instances, instead of creating new ones.
+            $expanded = $this->expandedResult[$this->currentIndex] ?? null;
+
+            if ($expanded) {
+                $this->currentKey = $expanded->key;
+                $this->currentValue = $expanded->value;
+
+                return;
+            }
+
+            // If we completed iteration at least once, and current position
+            // expanded result does not exists, then we reached the end, just
+            // return;
+            if ($this->iterationCompleted) {
+                $this->currentKey = null;
+                $this->currentValue = null;
+
+                return;
+            }
+        }
+
+        $row = $this->doFetchNextRowFromDriver();
+
+        if (null === $row) {
+            $this->iterationCompleted = true;
+            $this->currentKey = null;
+            $this->currentValue = null;
+
+            return;
+        }
+
+        if ($this->columnKey) {
+            $key = $row[$this->columnKey];
+        } else {
+            $key = $this->currentIndex;
+        }
+
+        $this->currentKey = $key;
+        $this->currentValue = $this->hydrate($row);
+
+        if ($this->rewindable) {
+            // While iterating, we store key with the value, and not as being
+            // an array key, because it's possible for us to iterate more than
+            // once using the key, if there are same values in SQL result.
+            $this->expandedResult[$this->currentIndex] = new class ($this->currentKey, $this->currentValue) {
+                public $key;
+                public $value;
+
+                public function __construct($key, $value)
+                {
+                    $this->key = $key;
+                    $this->value = $value;
+                }
+            };
+        }
+
+        if ($this->currentIndex === $this->countRows() - 1) {
+            $this->iterationCompleted = true;
+        }
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function key()
+    {
+        return $this->currentKey;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function valid(): bool
+    {
+        return null !== $this->currentValue;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function rewind(): void
+    {
+        $this->currentIndex = -1;
+        $this->currentKey = null;
+        $this->currentValue = null;
+
+        $this->next();
+
+        $this->justRewinded = true;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    final public function fetchField($name = null)
+    {
+        if (null !== $this->hydrator) {
+            throw new InvalidDataAccessError("You cannot call fetchField() if an hydrator is set.");
+        }
+
+        $this->next();
+
+        $row = $this->current();
+
+        if (null === $row) {
+            return null;
+        }
+
+        if ($name) {
+            if (!\array_key_exists($name, $row)) {
+                throw new QueryError(\sprintf("column '%s' does not exist in result", $name));
+            }
+
+            return $row[$name];
+        }
+
+        return \reset($row);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    final public function fetch()
+    {
+        if ($this->justRewinded) {
+            $this->justRewinded = false;
+        } else {
+            $this->next();
+        }
+
+        return $this->current();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    final public function setKeyColumn(string $name): ResultIterator
     {
         // Let it pass until iteration silently when not in debug mode
         if ($this->debug && !$this->columnExists($name)) {
@@ -214,17 +412,13 @@ abstract class AbstractResultIterator implements ResultIterator
     /**
      * Get column type
      */
-    public function getColumnType(string $name): ?string
+    final public function getColumnType(string $name): ?string
     {
         if (isset($this->userTypeMap[$name])) {
             return $this->userTypeMap[$name];
         }
 
-        if (!$this->metadata) {
-            $this->collectAllColumnInfo();
-        }
-
-        $type = $this->metadata->getColumnType($name);
+        $type = $this->getMetadata()->getColumnType($name);
 
         if (null === $type && $this->debug) {
             throw new QueryError(\sprintf("column '%s' does not exist in result", $name));
@@ -236,11 +430,11 @@ abstract class AbstractResultIterator implements ResultIterator
     /**
      * {@inheritdoc}
      */
-    public function setMetadata(array $userTypes, ?ResultMetadata $metadata = null): ResultIterator
+    final public function setMetadata(array $userTypes, ?ResultMetadata $metadata = null): ResultIterator
     {
         if ($this->metadata) {
             if ($this->debug) {
-                throw new InvalidDataAccessError("Result iterator metadata has already set");
+                throw new InvalidDataAccessError("Result iterator metadata has already set.");
             }
 
             return $this;
@@ -255,89 +449,69 @@ abstract class AbstractResultIterator implements ResultIterator
     /**
      * {@inheritdoc}
      */
-    public function columnExists(string $name): bool
+    final public function columnExists(string $name): bool
     {
         // Avoid metadata collection at all cost.
         if (isset($this->userTypeMap[$name])) {
             return true;
         }
 
-        if (!$this->metadata) {
-            $this->collectAllColumnInfo();
-        }
-
-        return $this->metadata->columnExists($name);
+        return $this->getMetadata()->columnExists($name);
     }
 
     /**
      * {@inheritdoc}
      */
-    public function getColumnNumber(string $name): int
+    final public function getColumnNumber(string $name): int
     {
-        if (!$this->metadata) {
-            $this->collectAllColumnInfo();
-        }
-
-        return $this->metadata->getColumnNumber($name);
+        return $this->getMetadata()->getColumnNumber($name);
     }
 
     /**
      * {@inheritdoc}
      */
-    public function getColumnNames(): array
+    final public function getColumnNames(): array
     {
-        if (!$this->metadata) {
-            $this->collectAllColumnInfo();
-        }
-
-        return $this->metadata->getColumnNames();
+        return $this->getMetadata()->getColumnNames();
     }
 
     /**
      * {@inheritdoc}
      */
-    public function getColumnTypes(): array
+    final public function getColumnTypes(): array
     {
-        if (!$this->metadata) {
-            $this->collectAllColumnInfo();
-        }
-
-        return $this->metadata->getColumnTypes();
+        return $this->getMetadata()->getColumnTypes();
     }
 
     /**
      * {@inheritdoc}
      */
-    public function getColumnName(int $index): string
+    final public function getColumnName(int $index): string
     {
-        if (!$this->metadata) {
-            $this->collectAllColumnInfo();
-        }
-
-        return $this->metadata->getColumnName($index);
+        return $this->getMetadata()->getColumnName($index);
     }
 
     /**
      * {@inheritdoc}
      */
-    public function fetchField($name = null)
+    final public function countColumns(): int
     {
-        foreach ($this as $row) {
-            if ($name) {
-                if (!\array_key_exists($name, $row)) {
-                    throw new QueryError(\sprintf("column '%s' does not exist in result", $name));
-                }
-                return $row[$name];
-            }
-            return \reset($row);
-        }
+        return $this->columnCount ?? ($this->columnCount = $this->doFetchColumnsCountFromDriver());
     }
 
     /**
      * {@inheritdoc}
      */
-    public function count()
+    final public function countRows(): int
     {
-        return $this->countRows();
+        return $this->rowCount ?? ($this->rowCount = $this->doFetchRowCountFromDriver());
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    final public function count()
+    {
+        return $this->rowCount ?? ($this->rowCount = $this->doFetchRowCountFromDriver());
     }
 }

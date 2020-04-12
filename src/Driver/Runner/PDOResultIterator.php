@@ -8,8 +8,8 @@ use Goat\Runner\AbstractResultIterator;
 
 class PDOResultIterator extends AbstractResultIterator
 {
-    protected $statement;
-    protected $columnCount = 0;
+    /** @var \PDOStatement */
+    private $statement;
 
     /**
      * Default constructor
@@ -25,7 +25,7 @@ class PDOResultIterator extends AbstractResultIterator
     /**
      * {@inheritdoc}
      */
-    protected function getColumnInfoFromDriver(int $index): array
+    protected function doFetchColumnInfoFromDriver(int $index): array
     {
         $meta = $this->statement->getColumnMeta($index);
 
@@ -35,19 +35,61 @@ class PDOResultIterator extends AbstractResultIterator
     /**
      * {@inheritdoc}
      */
-    protected function countColumnsFromDriver(): int
+    protected function doFetchColumnsCountFromDriver(): int
     {
         return $this->statement->columnCount();
     }
 
     /**
-     * From metadata-given type, get a valid type name
-     *
-     * @param string $nativeType
-     *
-     * @return string
+     * {@inheritdoc}
      */
-    protected function parseType($nativeType): string
+    protected function doFetchNextRowFromDriver(): ?array
+    {
+        $row = $this->statement->fetch();
+
+        if (false === $row) {
+            return null;
+        }
+
+        return $row;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function doFetchRowCountFromDriver(): int
+    {
+        return $this->statement->rowCount();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function fetchColumn($name = 0)
+    {
+        if (\is_int($name)) {
+            $name = $this->getColumnName($name);
+        }
+
+        $ret = [];
+
+        foreach ($this->statement as $row) {
+            $value = $row[$name];
+
+            if ($this->columnKey) {
+                $ret[$row[$this->columnKey]] = $this->convertValue($name, $value);
+            } else {
+                $ret[] = $this->convertValue($name, $value);
+            }
+        }
+
+        return $ret;
+    }
+
+    /**
+     * PDO metadata is rather inconsistent with types.
+     */
+    private function parseType(string $nativeType): string
     {
         $nativeType = \strtolower($nativeType);
 
@@ -104,62 +146,6 @@ class PDOResultIterator extends AbstractResultIterator
 
             default:
                 return $nativeType;
-        }
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getIterator()
-    {
-        foreach ($this->statement as $row) {
-            if ($this->columnKey) {
-                yield $row[$this->columnKey] => $this->hydrate($row);
-            } else {
-                yield $this->hydrate($row);
-            }
-        }
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function countRows(): int
-    {
-        return $this->statement->rowCount();
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function fetchColumn($name = 0)
-    {
-        if (\is_int($name)) {
-            $name = $this->getColumnName($name);
-        }
-
-        $ret = [];
-
-        foreach ($this as $row) {
-            if ($this->columnKey) {
-                $ret[$row[$this->columnKey]] = $row[$name];
-            } else {
-                $ret[] = $row[$name];
-            }
-        }
-
-        return $ret;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function fetch()
-    {
-        $row = $this->statement->fetch();
-
-        if ($row) {
-            return $this->hydrate($row);
         }
     }
 }

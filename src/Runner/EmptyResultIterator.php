@@ -13,7 +13,7 @@ use Goat\Runner\Metadata\ResultProfile;
 /**
  * Empty iterator for some edge cases results
  */
-final class EmptyResultIterator implements ResultIterator
+final class EmptyResultIterator implements ResultIterator, \IteratorAggregate
 {
     private $affectedRowCount = 0;
 
@@ -48,6 +48,14 @@ final class EmptyResultIterator implements ResultIterator
      */
     public function setDebug(bool $enable): void
     {
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function setRewindable($rewindable = true): ResultIterator
+    {
+        return $this;
     }
 
     /**

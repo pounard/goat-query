@@ -13,9 +13,12 @@ final class ArrayResultIterator extends AbstractResultIterator
 {
     /** @var string[][] */
     private $data;
-
     /** @var string[][] */
     private $definition;
+    /** @var int */
+    private $fetchColumnCountCalls = 0;
+    /** @var int */
+    private $fetchRowCountCalls = 0;
 
     /**
      * Default constructor
@@ -30,10 +33,20 @@ final class ArrayResultIterator extends AbstractResultIterator
         $this->definition = $definition;
     }
 
+    public function getFetchColumnCountCallCount(): int
+    {
+        return $this->fetchColumnCountCalls;
+    }
+
+    public function getFetchRowCountCallCount(): int
+    {
+        return $this->fetchRowCountCalls;
+    }
+
     /**
      * {@inheritdoc}
      */
-    protected function getColumnInfoFromDriver(int $index): array
+    protected function doFetchColumnInfoFromDriver(int $index): array
     {
         return $this->definition[$index];
     }
@@ -41,9 +54,37 @@ final class ArrayResultIterator extends AbstractResultIterator
     /**
      * {@inheritdoc}
      */
-    protected function countColumnsFromDriver(): int
+    protected function doFetchColumnsCountFromDriver(): int
     {
+        ++$this->fetchColumnCountCalls;
+
         return \count($this->definition);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function doFetchNextRowFromDriver(): ?array
+    {
+        $row = \current($this->data);
+
+        if (false === $row && null === \key($this->data)) {
+            return null;
+        }
+
+        \next($this->data);
+
+        return $row;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function doFetchRowCountFromDriver(): int
+    {
+        ++$this->fetchRowCountCalls;
+
+        return \count($this->data);
     }
 
     /**
@@ -61,33 +102,5 @@ final class ArrayResultIterator extends AbstractResultIterator
             },
             $this->data
         );
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getIterator()
-    {
-        foreach ($this->data as $row) {
-            yield $this->hydrate($row);
-        }
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function fetch()
-    {
-        foreach ($this as $row) {
-            return $row;
-        }
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function countRows(): int
-    {
-        return \count($this->data);
     }
 }
