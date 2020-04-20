@@ -70,6 +70,15 @@ interface Escaper
     public function writePlaceholder(int $index): string;
 
     /**
+     * Since that "?" is escaped in our queries by writing "??", this method
+     * is supposed to restore "?" back. But some drivers, such as PDO, will
+     * need to re-escape "?" to "??".
+     *
+     * For PDO, return "??", and all others just "?".
+     */
+    public function unescapePlaceholderChar(): string;
+
+    /**
      * Escape blob properly for driver
      */
     public function escapeBlob(string $word): string;

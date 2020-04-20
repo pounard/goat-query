@@ -69,6 +69,22 @@ an arbitrary raw expression to the where clause:
 Parameter placeholders will be gracefully merged to the others in their
 rightful respective order at execute time.
 
+.. note::
+
+   In order to escape the ``?`` character, double it, hence the following
+   SQL query:
+
+   .. code-block:: sql
+
+      SELECT bar ?? foo WHERE baz = ?;
+
+   will be sent to the driver rewritten as such:
+
+      SELECT bar ? foo WHERE baz = 'your value';
+
+   PDO for PHP 7.4 is supported as well, all ``?`` chars will be sent
+   doubled as well.
+
 Available expressions
 ^^^^^^^^^^^^^^^^^^^^^
 

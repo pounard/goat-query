@@ -15,4 +15,12 @@ class PDOPgSQLEscaper extends AbstractPgSQLEscaper
     {
         return true;
     }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function unescapePlaceholderChar(): string
+    {
+        return '??';
+    }
 }

@@ -15,4 +15,12 @@ class PDOMySQLEscaper extends AbstractMySQLEscaper
     {
         return false;
     }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function unescapePlaceholderChar(): string
+    {
+        return '??';
+    }
 }

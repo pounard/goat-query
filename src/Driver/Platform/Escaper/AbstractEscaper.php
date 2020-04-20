@@ -29,4 +29,12 @@ abstract class AbstractEscaper implements Escaper
     {
         return \addcslashes($string, '\%_');
     }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function unescapePlaceholderChar(): string
+    {
+        return '?';
+    }
 }

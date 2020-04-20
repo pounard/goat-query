@@ -23,7 +23,9 @@ abstract class AbstractSqlWriter implements SqlWriter
      *   - ESCAPE will match all driver-specific string escape sequence,
      *     therefore will prevent any other matches from happening inside,
      *
-     *   - "?::WORD" will superseed "?"
+     *   - "??" will always superseed "?*",
+     *
+     *   - "?::WORD" will superseed "?",
      *
      *   - any "::WORD" sequence, which is a valid SQL cast, will be left
      *     as-is and required no rewrite, but will superseed ":NAME"
@@ -54,6 +56,7 @@ abstract class AbstractSqlWriter implements SqlWriter
 
     const PARAMETER_MATCH = '@
         ESCAPE
+        (\?\?)|
         (\?((\:\:([\w]+))|))|   # Matches ?[::WORD] placeholders
         (\:\:[\w\."]+)|         # Matches valid ::WORD cast
         (\:([\w]+)\:\:([\w]+))| # Matches :NAME::WORD placeholders
@@ -190,6 +193,11 @@ abstract class AbstractSqlWriter implements SqlWriter
             $this->matchParametersRegex,
             function ($matches) use (&$index, $argumentList) {
                 $match  = $matches[0];
+
+                if ('??' === $match) {
+                    return $this->escaper->unescapePlaceholderChar();
+                }
+
                 $isNamed = '?' !== ($first = $match[0]);
 
                 if ($isNamed) {
