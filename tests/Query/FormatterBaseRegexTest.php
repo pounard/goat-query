@@ -29,6 +29,25 @@ SQL
         $this->assertSame(2, $argumentList->count());
     }
 
+    public function testPlaceholderUnescaping(): void
+    {
+        $formatter = new FooFormatter(new NullEscaper(true));
+
+        $prepared = $formatter->prepare(<<<SQL
+select "foo" from "some_table" where "a" ?? "foo" and "b" = ?"
+SQL
+        );
+
+        $argumentList = $prepared->getArgumentList();
+        $this->assertSame(1, $argumentList->count());
+
+        $this->assertSameSql(<<<SQL
+select "foo" from "some_table" where "a" ? "foo" and "b" = #1"
+SQL
+            , $prepared->getRawSQL()
+        );
+    }
+
     /**
      * Simple named parameters test.
      */

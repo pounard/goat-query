@@ -214,6 +214,14 @@ abstract class AbstractPDORunner extends AbstractRunner
     /**
      * {@inheritdoc}
      */
+    public function unescapePlaceholderChar(): string
+    {
+        return '??';
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function escapeLiteral(string $string): string
     {
         return $this->connection->quote($string, \PDO::PARAM_STR);

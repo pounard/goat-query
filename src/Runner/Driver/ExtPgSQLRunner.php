@@ -369,6 +369,14 @@ class ExtPgSQLRunner extends AbstractRunner
     /**
      * {@inheritdoc}
      */
+    public function unescapePlaceholderChar(): string
+    {
+        return '?';
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function escapeIdentifier(string $string): string
     {
         // @todo This should be tested for performance.

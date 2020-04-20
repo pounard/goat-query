@@ -33,6 +33,14 @@ class NullEscaper implements EscaperInterface
     /**
      * {@inheritdoc}
      */
+    public function unescapePlaceholderChar(): string
+    {
+        return '?';
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function escapeIdentifier(string $string) : string
     {
         return '"' . $string . '"';

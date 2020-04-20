@@ -64,6 +64,14 @@ class NullRunner extends AbstractRunner
     /**
      * {@inheritdoc}
      */
+    public function unescapePlaceholderChar(): string
+    {
+        return $this->getEscaper()->unescapePlaceholderChar();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function unescapeBlob($resource): ?string
     {
         return $this->getEscaper()->unescapeBlob($resource);
