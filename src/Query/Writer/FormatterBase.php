@@ -217,11 +217,11 @@ abstract class FormatterBase implements FormatterInterface
                     }
                     // $matches[8] is for ":NAME::TYPE" match
                     // \substr($match, 1) if for ":NAME" only match
-                    $name = empty($matches[8]) ? \substr($match, 1) : $matches[8];
-                    $type = empty($matches[9]) ? null : $matches[9];
+                    $name = empty($matches[9]) ? \substr($match, 1) : $matches[9];
+                    $type = empty($matches[10]) ? null : $matches[10];
                 } else {
                     $name = null;
-                    $type = empty($matches[5]) ? null : $matches[5];
+                    $type = empty($matches[6]) ? null : $matches[6];
                 }
 
                 $argumentList->addParameter($type, $name);

@@ -34,15 +34,17 @@ SQL
         $formatter = new FooFormatter(new NullEscaper(true));
 
         $prepared = $formatter->prepare(<<<SQL
-select "foo" from "some_table" where "a" ?? "foo" and "b" = ?"
+select "foo" from "some_table" where "a" ?? "foo" and "b" = ?::date and "c" = ? and "d" = :foo
 SQL
         );
 
         $argumentList = $prepared->getArgumentList();
-        $this->assertSame(1, $argumentList->count());
+        $this->assertSame(3, $argumentList->count());
+        $this->assertSame('date', $argumentList->getTypeAt(0));
+        $this->assertSame(2, $argumentList->getNameIndex('foo'));
 
         $this->assertSameSql(<<<SQL
-select "foo" from "some_table" where "a" ? "foo" and "b" = #1"
+select "foo" from "some_table" where "a" ? "foo" and "b" = #1 and "c" = #2 and "d" = #3
 SQL
             , $prepared->getRawSQL()
         );
