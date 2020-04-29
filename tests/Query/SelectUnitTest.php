@@ -118,7 +118,7 @@ final class QuerySelectUnitTest extends TestCase
         $select = new SelectQuery('some_table');
 
         $this->expectException(QueryError::class);
-        $this->expectExceptionMessageRegExp('/arguments/');
+        $this->expectExceptionMessageMatches('/arguments/');
 
         $select->columnExpression(ExpressionRaw::create('count(*)'), null, 12);
     }
@@ -128,7 +128,7 @@ final class QuerySelectUnitTest extends TestCase
         $select = new SelectQuery('some_table');
 
         $this->expectException(QueryError::class);
-        $this->expectExceptionMessageRegExp('/Expression cannot be null/');
+        $this->expectExceptionMessageMatches('/Expression cannot be null/');
 
         $select->columnExpression(null);
     }
@@ -138,7 +138,7 @@ final class QuerySelectUnitTest extends TestCase
         $select = new SelectQuery('some_table');
 
         $this->expectException(QueryError::class);
-        $this->expectExceptionMessageRegExp('/Expression cannot be null/');
+        $this->expectExceptionMessageMatches('/Expression cannot be null/');
 
         $select->columnExpression('');
     }
@@ -414,7 +414,7 @@ final class QuerySelectUnitTest extends TestCase
         $select = new SelectQuery('some_table');
 
         $this->expectException(QueryError::class);
-        $this->expectExceptionMessageRegExp('/Expression cannot be null/');
+        $this->expectExceptionMessageMatches('/Expression cannot be null/');
 
         $select->expression(null);
     }
@@ -424,7 +424,7 @@ final class QuerySelectUnitTest extends TestCase
         $select = new SelectQuery('some_table');
 
         $this->expectException(QueryError::class);
-        $this->expectExceptionMessageRegExp('/Expression cannot be null/');
+        $this->expectExceptionMessageMatches('/Expression cannot be null/');
 
         $select->expression('');
     }
@@ -536,7 +536,7 @@ final class QuerySelectUnitTest extends TestCase
         $select = new SelectQuery('some_table');
 
         $this->expectException(QueryError::class);
-        $this->expectExceptionMessageRegExp('/offset must be a positive integer/');
+        $this->expectExceptionMessageMatches('/offset must be a positive integer/');
 
         $select->range(10, -1);
     }
@@ -546,7 +546,7 @@ final class QuerySelectUnitTest extends TestCase
         $select = new SelectQuery('some_table');
 
         $this->expectException(QueryError::class);
-        $this->expectExceptionMessageRegExp('/limit must be a positive integer/');
+        $this->expectExceptionMessageMatches('/limit must be a positive integer/');
 
         $select->range(-1, 10);
     }
@@ -568,7 +568,7 @@ final class QuerySelectUnitTest extends TestCase
         $select = new SelectQuery('some_table');
 
         $this->expectException(QueryError::class);
-        $this->expectExceptionMessageRegExp('/page must be a positive integer/');
+        $this->expectExceptionMessageMatches('/page must be a positive integer/');
 
         $select->page(10, 0);
     }

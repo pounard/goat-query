@@ -62,7 +62,7 @@ class PreparedQueryTest extends DatabaseAwareQueryTest
         );
 
         $this->expectException(QueryError::class);
-        $this->expectExceptionMessageRegExp('/did not return/');
+        $this->expectExceptionMessageMatches('/did not return/');
         $preparedQuery->execute([$this->idAdmin]);
     }
 
@@ -88,7 +88,7 @@ class PreparedQueryTest extends DatabaseAwareQueryTest
         }
 
         $this->expectException(QueryError::class);
-        $this->expectExceptionMessageRegExp('/not fully initialized/');
+        $this->expectExceptionMessageMatches('/not fully initialized/');
         $preparedQuery->execute([$this->idAdmin]);
     }
 
@@ -108,7 +108,7 @@ class PreparedQueryTest extends DatabaseAwareQueryTest
         );
 
         $this->expectException(QueryError::class);
-        $this->expectExceptionMessageRegExp('/cannot nest/');
+        $this->expectExceptionMessageMatches('/cannot nest/');
         $preparedQuery->execute([$this->idAdmin]);
     }
 

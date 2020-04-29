@@ -25,7 +25,7 @@ class ArgumentListTest extends TestCase
         $argumentList->addParameter(null, 'foo');
 
         $this->expectException(QueryError::class);
-        $this->expectExceptionMessageRegExp('/name is already in use/');
+        $this->expectExceptionMessageMatches('/name is already in use/');
         $argumentList->addParameter(null, 'foo');
     }
 
@@ -39,7 +39,7 @@ class ArgumentListTest extends TestCase
         $this->assertSame(1, $argumentList->getNameIndex('foo'));
 
         $this->expectException(QueryError::class);
-        $this->expectExceptionMessageRegExp('/bar argument name/');
+        $this->expectExceptionMessageMatches('/bar argument name/');
         $argumentList->getNameIndex('bar');
     }
 
@@ -53,7 +53,7 @@ class ArgumentListTest extends TestCase
         $other->addParameter();
 
         $this->expectException(QueryError::class);
-        $this->expectExceptionMessageRegExp('/Length mismatch, awaiting 2 arguments, got 1/');
+        $this->expectExceptionMessageMatches('/Length mismatch, awaiting 2 arguments, got 1/');
         $argumentList->withTypesOf($other);
     }
 

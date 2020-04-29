@@ -46,7 +46,7 @@ class ExpressionTest extends TestCase
     public function testExpressionFactoryWithColumnRaiseErrorIfNotScalar()
     {
         self::expectException(QueryError::class);
-        self::expectExceptionMessageRegExp('/column reference must be a string or an instance/');
+        self::expectExceptionMessageMatches('/column reference must be a string or an instance/');
 
         ExpressionFactory::column(new \DateTime());
     }
@@ -61,7 +61,7 @@ class ExpressionTest extends TestCase
     public function testExpressionFactoryWithExpressionRaiseErrorIfNotScalar()
     {
         self::expectException(QueryError::class);
-        self::expectExceptionMessageRegExp('/raw expression must be a scalar or an instance/');
+        self::expectExceptionMessageMatches('/raw expression must be a scalar or an instance/');
 
         ExpressionFactory::raw(new \DateTime());
     }
@@ -69,7 +69,7 @@ class ExpressionTest extends TestCase
     public function testExpressionFactoryWithExpressionRaiseErrorIfArguments()
     {
         self::expectException(QueryError::class);
-        self::expectExceptionMessageRegExp('/instance and arguments along/');
+        self::expectExceptionMessageMatches('/instance and arguments along/');
 
         ExpressionFactory::raw(ExpressionRaw::create('foo'), ['a']);
     }

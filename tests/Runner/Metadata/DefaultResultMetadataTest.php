@@ -32,7 +32,7 @@ class DefaultResultMetadataTest extends TestCase
     public function testConstructRaiseErrorOnCountMismatch()
     {
         $this->expectException(InvalidDataAccessError::class);
-        $this->expectExceptionMessageRegExp('/column.*count.*mismatch/');
+        $this->expectExceptionMessageMatches('/column.*count.*mismatch/');
 
         new DefaultResultMetadata(['a', 'bar', 'baz'], [], 4);
     }
@@ -42,7 +42,7 @@ class DefaultResultMetadataTest extends TestCase
         $metadata = new DefaultResultMetadata(['a', 'bar', 'baz'], ['int', 'varchar', null]);
 
         $this->expectException(InvalidDataAccessError::class);
-        $this->expectExceptionMessageRegExp('/column count start with/');
+        $this->expectExceptionMessageMatches('/column count start with/');
 
         $metadata->getColumnName(-1);
     }
@@ -52,7 +52,7 @@ class DefaultResultMetadataTest extends TestCase
         $metadata = new DefaultResultMetadata(['a', 'bar', 'baz'], ['int', 'varchar', null]);
 
         $this->expectException(InvalidDataAccessError::class);
-        $this->expectExceptionMessageRegExp('/column count is/');
+        $this->expectExceptionMessageMatches('/column count is/');
 
         $metadata->getColumnName(10);
     }
