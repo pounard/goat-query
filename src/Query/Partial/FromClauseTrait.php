@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Goat\Query\Partial;
 
 use Goat\Query\ExpressionRaw;
+use Goat\Query\Join;
 use Goat\Query\Query;
-use Goat\Query\QueryError;
 use Goat\Query\Where;
 
 /**
@@ -21,6 +21,7 @@ trait FromClauseTrait
 {
     use AliasHolderTrait;
 
+    /** @var Join[] */
     private $joins = [];
 
     /**
@@ -45,17 +46,7 @@ trait FromClauseTrait
     {
         $relation = $this->normalizeRelation($relation, $alias);
 
-        if (null === $condition) {
-            $condition = new Where();
-        } else if (\is_string($condition) || $condition instanceof ExpressionRaw) {
-            $condition = (new Where())->expression($condition);
-        } else {
-            if (!$condition instanceof Where) {
-                throw new QueryError(\sprintf("condition must be either a string or an instance of %s", Where::class));
-            }
-        }
-
-        $this->joins[] = [$relation, $condition, $mode];
+        $this->joins[] = new Join($relation, $condition, $mode);
 
         return $this;
     }
@@ -71,7 +62,7 @@ trait FromClauseTrait
     {
         $relation = $this->normalizeRelation($relation, $alias);
 
-        $this->joins[] = [$relation, $condition = new Where(), $mode];
+        $this->joins[] = new Join($relation, $condition = new Where(), $mode);
 
         return $condition;
     }
@@ -132,8 +123,7 @@ trait FromClauseTrait
     protected function cloneJoins()
     {
         foreach ($this->joins as $index => $join) {
-            $this->joins[$index][0] = clone $join[0];
-            $this->joins[$index][1] = clone $join[1];
+            $this->joins[$index] = clone $join;
         }
     }
 }

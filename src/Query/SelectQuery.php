@@ -448,12 +448,8 @@ final class SelectQuery extends AbstractQuery implements Expression
 
         // JOIN
         foreach ($this->joins as $join) {
-            if ($join[0] instanceof Statement) {
-                $arguments->append($join[0]->getArguments());
-            }
-            if ($join[1] instanceof Statement) {
-                $arguments->append($join[1]->getArguments());
-            }
+            $arguments->append($join->relation->getArguments());
+            $arguments->append($join->condition->getArguments());
         }
 
         // WHERE

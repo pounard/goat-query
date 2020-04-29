@@ -13,6 +13,7 @@ use Goat\Query\ExpressionRelation;
 use Goat\Query\ExpressionValue;
 use Goat\Query\InsertQueryQuery;
 use Goat\Query\InsertValuesQuery;
+use Goat\Query\Join;
 use Goat\Query\Query;
 use Goat\Query\QueryError;
 use Goat\Query\SelectQuery;
@@ -258,9 +259,9 @@ class DefaultSqlWriter extends AbstractSqlWriter
      *
      * @return string
      */
-    protected function formatJoinItem(ExpressionRelation $relation, Where $condition, int $mode) : string
+    protected function formatJoinItem(Join $join) : string
     {
-        switch ($mode) {
+        switch ($join->mode) {
 
             case Query::JOIN_NATURAL:
                 $prefix = 'natural join';
@@ -282,17 +283,19 @@ class DefaultSqlWriter extends AbstractSqlWriter
                 break;
         }
 
+        $condition = $join->condition;
+
         if ($condition->isEmpty()) {
             return \sprintf(
                 "%s %s",
                 $prefix,
-                $this->formatExpressionRelation($relation)
+                $this->formatExpressionRelation($join->relation)
             );
         } else {
             return \sprintf(
                 "%s %s on (%s)",
                 $prefix,
-                $this->formatExpressionRelation($relation),
+                $this->formatExpressionRelation($join->relation),
                 $this->formatWhere($condition)
             );
         }
@@ -301,12 +304,7 @@ class DefaultSqlWriter extends AbstractSqlWriter
     /**
      * Format all join statements
      *
-     * @param array $joins
-     *   Each join is an array that must contain:
-     *     - key must be the relation alias
-     *     - 0: ExpressionRelation relation name
-     *     - 1: Where or null condition
-     *     - 2: Query::JOIN_* constant
+     * @param Join[] $joins
      *
      * @return string
      */
@@ -319,7 +317,7 @@ class DefaultSqlWriter extends AbstractSqlWriter
         $output = [];
 
         foreach ($joins as $join) {
-            $output[] = $this->formatJoinItem(...$join);
+            $output[] = $this->formatJoinItem($join);
         }
 
         return \implode("\n", $output);
@@ -347,23 +345,24 @@ class DefaultSqlWriter extends AbstractSqlWriter
         $output = [];
 
         $first = \array_shift($joins);
+        \assert($first instanceof Join);
 
         // First join must be an inner join, there is no choice, and first join
         // condition will become a where clause in the global query instead
-        if (!\in_array($first[2], [Query::JOIN_INNER, Query::JOIN_NATURAL])) {
+        if (!\in_array($first->mode, [Query::JOIN_INNER, Query::JOIN_NATURAL])) {
             throw new QueryError("first join in an update query must be inner or natural, it will serve as the first from table");
         }
 
-        $output[] = \sprintf("from %s", $this->formatExpressionRelation($first[0]));
-        if ($first[1] && !$first[1]->isEmpty()) {
-            $query->getWhere()->expression($first[1]);
+        $output[] = \sprintf("from %s", $this->formatExpressionRelation($first->relation));
+        if (!$first->condition->isEmpty()) {
+            $query->getWhere()->expression($first->condition);
         }
 
         // Format remaining joins normally, most database servers can do that
         // at least PostgreSQL and SQLServer do
         if ($joins) {
             foreach ($joins as $join) {
-                $output[] = $this->formatJoinItem(...$join);
+                $output[] = $this->formatJoinItem($join);
             }
         }
 
@@ -392,23 +391,24 @@ class DefaultSqlWriter extends AbstractSqlWriter
         $output = [];
 
         $first = \array_shift($joins);
+        \assert($first instanceof Join);
 
         // First join must be an inner join, there is no choice, and first join
         // condition will become a where clause in the global query instead
-        if (!\in_array($first[2], [Query::JOIN_INNER, Query::JOIN_NATURAL])) {
+        if (!\in_array($first->mode, [Query::JOIN_INNER, Query::JOIN_NATURAL])) {
             throw new QueryError("first join in an delete query must be inner or natural, it will serve as the first using table");
         }
 
-        $output[] = \sprintf("using %s", $this->formatExpressionRelation($first[0]));
-        if ($first[1] && !$first[1]->isEmpty()) {
-            $query->getWhere()->expression($first[1]);
+        $output[] = \sprintf("using %s", $this->formatExpressionRelation($first->relation));
+        if (!$first->condition->isEmpty()) {
+            $query->getWhere()->expression($first->condition);
         }
 
         // Format remaining joins normally, most database servers can do that
         // at least PostgreSQL and SQLServer do
         if ($joins) {
             foreach ($joins as $join) {
-                $output[] = $this->formatJoinItem(...$join);
+                $output[] = $this->formatJoinItem($join);
             }
         }
 

@@ -81,7 +81,8 @@ final class DeleteQuery extends AbstractQuery
         }
 
         foreach ($this->joins as $join) {
-            $arguments->append($join[1]->getArguments());
+            $arguments->append($join->relation->getArguments());
+            $arguments->append($join->condition->getArguments());
         }
 
         if (!$this->where->isEmpty()) {
