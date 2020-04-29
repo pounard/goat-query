@@ -2,7 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Goat\Query;
+namespace Goat\Query\Partial;
+
+use Goat\Query\ExpressionRaw;
+use Goat\Query\ExpressionRelation;
+use Goat\Query\Query;
+use Goat\Query\QueryError;
+use Goat\Query\Statement;
+use Goat\Query\Where;
 
 final class Join
 {

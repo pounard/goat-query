@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Goat\Query\Partial;
 
 use Goat\Query\ExpressionRaw;
-use Goat\Query\Join;
 use Goat\Query\Query;
 use Goat\Query\Where;
 

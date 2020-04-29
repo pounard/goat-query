@@ -13,13 +13,13 @@ use Goat\Query\ExpressionRelation;
 use Goat\Query\ExpressionValue;
 use Goat\Query\InsertQueryQuery;
 use Goat\Query\InsertValuesQuery;
-use Goat\Query\Join;
 use Goat\Query\Query;
 use Goat\Query\QueryError;
 use Goat\Query\SelectQuery;
 use Goat\Query\Statement;
 use Goat\Query\UpdateQuery;
 use Goat\Query\Where;
+use Goat\Query\Partial\Join;
 
 /**
  * Standard SQL query formatter: this implementation conforms as much as it
