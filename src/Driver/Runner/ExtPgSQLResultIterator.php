@@ -6,6 +6,7 @@ namespace Goat\Driver\Runner;
 
 use Goat\Query\QueryError;
 use Goat\Runner\AbstractResultIterator;
+use Goat\Runner\InvalidDataAccessError;
 
 class ExtPgSQLResultIterator extends AbstractResultIterator
 {
@@ -65,6 +66,12 @@ class ExtPgSQLResultIterator extends AbstractResultIterator
      */
     protected function doFetchNextRowFromDriver(): ?array
     {
+        if (null === $this->connection) {
+            // Result was freed previously, which means we already completed
+            // the iteration at least once.
+            return null;
+        }
+
         $row = \pg_fetch_assoc($this->connection);
 
         if (false === $row) {
@@ -81,6 +88,12 @@ class ExtPgSQLResultIterator extends AbstractResultIterator
      */
     protected function doFetchRowCountFromDriver() : int
     {
+        if (null === $this->connection) {
+            // Result was freed previously, which means we already completed
+            // the iteration at least once.
+            return 0;
+        }
+
         $ret = \pg_num_rows($this->connection);
 
         if (-1 === $ret) {
@@ -93,10 +106,34 @@ class ExtPgSQLResultIterator extends AbstractResultIterator
     }
 
     /**
+     * {@inheritdoc}
+     */
+    protected function doFreeResult(): void
+    {
+        if (null !== $this->connection) {
+            \pg_free_result($this->connection);
+
+            $this->connection = null;
+        }
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function wasResultFreed(): bool
+    {
+        return null === $this->connection;
+    }
+
+    /**
      * fetchColumn() implementation that returns a keyed array
      */
     protected function fetchColumnWithKey(string $name, int $index, string $columnKeyName)
     {
+        if (null === $this->connection) {
+            throw new InvalidDataAccessError("Result was closed");
+        }
+
         $keyIndex = $this->getColumnNumber($columnKeyName);
 
         // @todo this is not scalable, but fetchColumn() signature isn't as well
@@ -125,6 +162,10 @@ class ExtPgSQLResultIterator extends AbstractResultIterator
      */
     public function fetchColumn($name = 0)
     {
+        if (null === $this->connection) {
+            throw new InvalidDataAccessError("Result was closed");
+        }
+
         if (\is_string($name)) {
             $index = $this->getColumnNumber($name);
         } else {

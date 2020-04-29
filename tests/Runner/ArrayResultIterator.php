@@ -90,6 +90,22 @@ final class ArrayResultIterator extends AbstractResultIterator
     /**
      * {@inheritdoc}
      */
+    protected function doFreeResult(): void
+    {
+        $this->data = null;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function wasResultFreed(): bool
+    {
+        return null === $this->data;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function fetchColumn($name = 0)
     {
         if (\is_int($name)) {

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Goat\Driver\Runner;
 
 use Goat\Runner\AbstractResultIterator;
+use Goat\Runner\InvalidDataAccessError;
 
 class PDOResultIterator extends AbstractResultIterator
 {
@@ -27,6 +28,10 @@ class PDOResultIterator extends AbstractResultIterator
      */
     protected function doFetchColumnInfoFromDriver(int $index): array
     {
+        if (null === $this->statement) {
+            throw new InvalidDataAccessError("Result was closed");
+        }
+
         $meta = $this->statement->getColumnMeta($index);
 
         return [$meta['name'], $this->parseType($meta['native_type'] ?? 'string')];
@@ -45,6 +50,12 @@ class PDOResultIterator extends AbstractResultIterator
      */
     protected function doFetchNextRowFromDriver(): ?array
     {
+        if (null === $this->statement) {
+            // Result was freed previously, which means we already completed
+            // the iteration at least once.
+            return null;
+        }
+
         $row = $this->statement->fetch();
 
         if (false === $row) {
@@ -59,7 +70,33 @@ class PDOResultIterator extends AbstractResultIterator
      */
     protected function doFetchRowCountFromDriver(): int
     {
+        if (null === $this->statement) {
+            // Result was freed previously, which means we already completed
+            // the iteration at least once.
+            return 0;
+        }
+
         return $this->statement->rowCount();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function doFreeResult(): void
+    {
+        if (null === $this->statement) {
+            $this->statement->closeCursor();
+
+            $this->statement = null;
+        }
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function wasResultFreed(): bool
+    {
+        return null === $this->statement;
     }
 
     /**
@@ -67,6 +104,10 @@ class PDOResultIterator extends AbstractResultIterator
      */
     public function fetchColumn($name = 0)
     {
+        if (null === $this->statement) {
+            throw new InvalidDataAccessError("Result was closed");
+        }
+
         if (\is_int($name)) {
             $name = $this->getColumnName($name);
         }

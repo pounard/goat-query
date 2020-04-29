@@ -34,7 +34,7 @@ abstract class AbstractResultIterator implements ResultIterator, \Iterator
     private $hydrator = null;
     /** @var bool */
     private $rewindable = false;
-    /** @var null|array */
+    /** @var null|array|ResultIteratorItem[] */
     private $expandedResult = null;
     /** @var null|mixed */
     private $currentValue = null;
@@ -74,6 +74,24 @@ abstract class AbstractResultIterator implements ResultIterator, \Iterator
      * Fetch row count from driver result.
      */
     abstract protected function doFetchRowCountFromDriver(): int;
+
+    /**
+     * Free driver result if any left in memory.
+     */
+    abstract protected function doFreeResult(): void;
+
+    /**
+     * Was result previously free'd?
+     */
+    abstract protected function wasResultFreed(): bool;
+
+    /**
+     * Destruct result upon free.
+     */
+    public function __destruct()
+    {
+        $this->doFreeResult();
+    }
 
     /**
      * Collect all column names.
@@ -280,6 +298,15 @@ abstract class AbstractResultIterator implements ResultIterator, \Iterator
 
                 return;
             }
+        } else if ($this->iterationCompleted) {
+            // Avoid fetch call attempt if we already have fetched everything.
+            // This is in order to avoid trying to call fetch() with a free'ed
+            // result, this means that we do trust the underlaying connector
+            // to give a coherent row count.
+            $this->currentKey = null;
+            $this->currentValue = null;
+
+            return;
         }
 
         $row = $this->doFetchNextRowFromDriver();
@@ -305,19 +332,11 @@ abstract class AbstractResultIterator implements ResultIterator, \Iterator
             // While iterating, we store key with the value, and not as being
             // an array key, because it's possible for us to iterate more than
             // once using the key, if there are same values in SQL result.
-            $this->expandedResult[$this->currentIndex] = new class ($this->currentKey, $this->currentValue) {
-                public $key;
-                public $value;
-
-                public function __construct($key, $value)
-                {
-                    $this->key = $key;
-                    $this->value = $value;
-                }
-            };
+            $this->expandedResult[$this->currentIndex] = new ResultIteratorItem($this->currentKey, $this->currentValue);
         }
 
         if ($this->currentIndex === $this->countRows() - 1) {
+            $this->doFreeResult();
             $this->iterationCompleted = true;
         }
     }
@@ -399,7 +418,7 @@ abstract class AbstractResultIterator implements ResultIterator, \Iterator
      */
     final public function setKeyColumn(string $name): ResultIterator
     {
-        // Let it pass until iteration silently when not in debug mode
+        // Let it pass until iteration silently when not in debug mode.
         if ($this->debug && !$this->columnExists($name)) {
             throw new QueryError(\sprintf("column '%s' does not exist in result", $name));
         }
@@ -515,3 +534,19 @@ abstract class AbstractResultIterator implements ResultIterator, \Iterator
         return $this->rowCount ?? ($this->rowCount = $this->doFetchRowCountFromDriver());
     }
 }
+
+/**
+ * @internal
+ */
+final class ResultIteratorItem
+{
+    public $key;
+    public $value;
+
+    public function __construct($key, $value)
+    {
+        $this->key = $key;
+        $this->value = $value;
+    }
+}
+
