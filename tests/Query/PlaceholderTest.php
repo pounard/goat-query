@@ -130,8 +130,8 @@ class PlaceholderTest extends TestCase
         $formatter = new FooSqlWriter(new NullEscaper(true));
 
         $builder = new SelectQuery('some_table');
-        $builder->condition('foo', 7);
-        $builder->expression('bar = ?', "12");
+        $builder->where('foo', 7);
+        $builder->whereExpression('bar = ?', "12");
 
         $query = $formatter->prepare($builder);
         $this->assertSameSql('select * from "some_table" where "foo" = #1 and bar = #2', $query->getRawSQL());
@@ -145,8 +145,8 @@ class PlaceholderTest extends TestCase
         $formatter = new FooSqlWriter(new NullEscaper(true));
 
         $builder = new SelectQuery('some_table');
-        $builder->condition('foo', 7);
-        $builder->expression('bar = ?', 12);
+        $builder->where('foo', 7);
+        $builder->whereExpression('bar = ?', 12);
 
         $query = $formatter->prepare($builder);
 
@@ -161,8 +161,8 @@ class PlaceholderTest extends TestCase
 
         // Query builder in parameters escaping
         $builder = new SelectQuery('some_table');
-        $builder->condition('foo', 'pouet ?');
-        $builder->condition('bar ?', 12);
+        $builder->where('foo', 'pouet ?');
+        $builder->where('bar ?', 12);
 
         $query = $formatter->prepare($builder);
         $this->assertSameSql('select * from "some_table" where "foo" = #1 and "bar ?" = #2', $query->getRawSQL());

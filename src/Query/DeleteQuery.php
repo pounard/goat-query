@@ -6,6 +6,7 @@ namespace Goat\Query;
 
 use Goat\Query\Partial\FromClauseTrait;
 use Goat\Query\Partial\ReturningQueryTrait;
+use Goat\Query\Partial\WhereClauseTrait;
 
 /**
  * Represents an DELETE query
@@ -14,8 +15,7 @@ final class DeleteQuery extends AbstractQuery
 {
     use FromClauseTrait;
     use ReturningQueryTrait;
-
-    private $where;
+    use WhereClauseTrait;
 
     /**
      * Build a new query
@@ -30,43 +30,6 @@ final class DeleteQuery extends AbstractQuery
         parent::__construct($relation, $alias);
 
         $this->where = new Where();
-    }
-
-    /**
-     * Add a condition in the where clause
-     *
-     * @param string $columnName
-     * @param mixed $value
-     * @param string $operator
-     */
-    public function condition(string $column, $value, ?string $operator = Where::EQUAL): self
-    {
-        $this->where->condition($column, $value, $operator);
-
-        return $this;
-    }
-
-    /**
-     * Add an abitrary statement to the where clause
-     *
-     * @param string $statement
-     *   SQL string, which may contain parameters
-     * @param mixed[] $arguments
-     *   Parameters for the arbitrary SQL
-     */
-    public function expression($statement, $arguments = []): self
-    {
-        $this->where->expression($statement, $arguments);
-
-        return $this;
-    }
-
-    /**
-     * Get where statement
-     */
-    public function getWhere(): Where
-    {
-        return $this->where;
     }
 
     /**

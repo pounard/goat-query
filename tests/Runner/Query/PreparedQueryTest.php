@@ -124,7 +124,7 @@ class PreparedQueryTest extends DatabaseAwareQueryTest
                 return $builder
                     ->select('some_table')
                     ->column('*')
-                    ->condition('id_user', ExpressionValue::create(null, 'int'))
+                    ->where('id_user', ExpressionValue::create(null, 'int'))
                     ->orderBy('bar', Query::ORDER_DESC)
                 ;
             }

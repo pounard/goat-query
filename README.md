@@ -53,7 +53,7 @@ if ($platform->supportsReturning()) {
 
     $result = $queryBuilder
         ->select('users')
-        ->condition('id', [1, 2])
+        ->where('id', [1, 2])
         ->setOption('class', \App\Domain\Model\User::class)
         ->execute()
 }

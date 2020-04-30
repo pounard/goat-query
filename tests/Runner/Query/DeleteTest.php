@@ -88,7 +88,7 @@ class DeleteTest extends DatabaseAwareQueryTest
         $result = $runner
             ->getQueryBuilder()
             ->delete('some_table', 't')
-            ->condition('t.id_user', self::ID_JEAN)
+            ->where('t.id_user', self::ID_JEAN)
             ->execute()
         ;
         $this->assertSame(2, $result->countRows());
@@ -98,7 +98,7 @@ class DeleteTest extends DatabaseAwareQueryTest
         $result = $runner
             ->getQueryBuilder()
             ->delete('some_table')
-            ->condition('bar', 'a')
+            ->where('bar', 'a')
             ->execute()
         ;
         $this->assertSame(1, $result->countRows());
@@ -140,13 +140,13 @@ class DeleteTest extends DatabaseAwareQueryTest
             ->getQueryBuilder()
             ->select('users')
             ->column('id')
-            ->condition('name', 'jean')
+            ->where('name', 'jean')
         ;
 
         $result = $runner
             ->getQueryBuilder()
             ->delete('some_table')
-            ->condition('id_user', $whereInSelect)
+            ->where('id_user', $whereInSelect)
             ->execute()
         ;
         $this->assertSame(2, $result->countRows());
@@ -170,7 +170,7 @@ class DeleteTest extends DatabaseAwareQueryTest
             ->getQueryBuilder()
             ->delete('some_table', 't')
             ->join('users', 'u.id = t.id_user', 'u')
-            ->condition('u.id', self::ID_JEAN)
+            ->where('u.id', self::ID_JEAN)
             ->execute()
         ;
         $this->assertSame(2, $result->countRows());
@@ -198,7 +198,7 @@ class DeleteTest extends DatabaseAwareQueryTest
             ->getQueryBuilder()
             ->delete('some_table', 't')
             ->join('users', 'u.id = t.id_user', 'u')
-            ->condition('u.id', self::ID_JEAN)
+            ->where('u.id', self::ID_JEAN)
             ->returning('t.id')
             ->returning('t.id_user')
             ->returning('u.name')
@@ -237,7 +237,7 @@ class DeleteTest extends DatabaseAwareQueryTest
             ->getQueryBuilder()
             ->delete('some_table', 't')
             ->join('users', 'u.id = t.id_user', 'u')
-            ->condition('u.id', self::ID_JEAN)
+            ->where('u.id', self::ID_JEAN)
             ->returning('t.id')
             ->returning('t.id_user', 'userId')
             ->returning('u.name')
@@ -274,7 +274,7 @@ class DeleteTest extends DatabaseAwareQueryTest
             ->delete('some_table', 't')
             ->join('users', 'u.id = t.id_user', 'u')
             ->join('users_status', 'u.id = st.id_user', 'st')
-            ->condition('st.status', 5) // Does nothing
+            ->where('st.status', 5) // Does nothing
             ->execute()
         ;
 
@@ -287,7 +287,7 @@ class DeleteTest extends DatabaseAwareQueryTest
             ->delete('some_table', 't')
             ->join('users', 'u.id = t.id_user', 'u')
             ->join('users_status', 'u.id = st.id_user', 'st')
-            ->condition('st.status', 11) // Removes jean
+            ->where('st.status', 11) // Removes jean
             ->execute()
         ;
 

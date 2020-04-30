@@ -22,7 +22,7 @@ SELECT query with any values:
        ->getQueryBuilder()
        ->select('some_table', 't')
        ->column('a')
-       ->condition('b', 12)
+       ->where('b', 12)
    ;
 
 Is equivalent to:
@@ -47,7 +47,7 @@ Example using the ``$operator`` argument:
        ->getQueryBuilder()
        ->select('some_table', 't')
        ->column('a')
-       ->condition('some_date', new \DateTime(), '<')
+       ->where('some_date', new \DateTime(), '<')
    ;
 
 Is equivalent to:
@@ -73,7 +73,7 @@ conditions there:
    $select = $runner
        ->getQueryBuilder()
        ->select('some_table', 't')
-       ->condition(function (\Goat\Query\Where $where) {
+       ->where(function (\Goat\Query\Where $where) {
            $where
                ->isEqual('some_table.id', 12)
                ->isGreaterOrEqual('some_table.birthdate', new \DateTimeImmutable('2019-09-24'))
@@ -117,7 +117,7 @@ WHERE .. [NOT] IN (..)
        ->getQueryBuilder()
        ->select('some_table', 't')
        ->column('a')
-       ->condition('b', [1, 2, 3])
+       ->where('b', [1, 2, 3])
    ;
 
 Is equivalent to:
@@ -141,7 +141,7 @@ Is equivalent to:
        ->getQueryBuilder()
        ->select('some_table', 't')
        ->column('a')
-       ->condition('b', [1, 2, 3], 'NOT IN')
+       ->where('b', [1, 2, 3], 'NOT IN')
    ;
 
    // Or
@@ -150,7 +150,7 @@ Is equivalent to:
        ->getQueryBuilder()
        ->select('some_table', 't')
        ->column('a')
-       ->condition('b', [1, 2, 3], \Goat\Query\Where::NOT_IN)
+       ->where('b', [1, 2, 3], \Goat\Query\Where::NOT_IN)
    ;
 
 Are both equivalent equivalent to:
@@ -183,14 +183,14 @@ WHERE .. [NOT] IN (SELECT ..)
        ->getQueryBuilder()
        ->select('other_table')
        ->column('foo')
-       ->condition('type', 'bar')
+       ->where('type', 'bar')
    ;
 
    $select = $runner
        ->getQueryBuilder()
        ->select('some_table')
        ->column('a')
-       ->condition('b', $inSelect)
+       ->where('b', $inSelect)
    ;
 
 Is equivalent to:
@@ -213,7 +213,7 @@ Is equivalent to:
 
    $inSelect = $runner
        ->getQueryBuilder()
-       ->select('other_table')->column('foo')->condition('type', 'bar')
+       ->select('other_table')->column('foo')->where('type', 'bar')
    ;
 
    // ...
@@ -222,7 +222,7 @@ Is equivalent to:
        ->getQueryBuilder()
        ->select('some_table')
        ->column('a')
-       ->condition('b', $inSelect, 'NOT IN')
+       ->where('b', $inSelect, 'NOT IN')
    ;
 
    // Or
@@ -231,7 +231,7 @@ Is equivalent to:
        ->getQueryBuilder()
        ->select('some_table')
        ->column('a')
-       ->condition('b', $inSelect, \Goat\Query\Where::NOT_IN)
+       ->where('b', $inSelect, \Goat\Query\Where::NOT_IN)
    ;
 
 Are both equivalent to:
@@ -266,7 +266,7 @@ in the ``WHERE`` clause:
        ->getQueryBuilder()
        ->select('some_table')
        ->column('a')
-       ->expression('1')
+       ->whereExpression('1')
    ;
 
 Is equivalent to:
@@ -286,7 +286,7 @@ the expression:
        ->getQueryBuilder()
        ->select('some_table')
        ->column('a')
-       ->expression(function () {
+       ->whereExpression(function () {
            return '1';
        })
    ;
@@ -302,7 +302,7 @@ You may as well return any ``Expression`` instance, including ``ExpressionColumn
        ->getQueryBuilder()
        ->select('some_table')
        ->column('a')
-       ->expression(function () {
+       ->whereExpression(function () {
            return ExpressionRaw::create('1');
        })
    ;
@@ -318,7 +318,7 @@ which is the main query where, in this case, you don't need to return a value:
        ->getQueryBuilder()
        ->select('some_table')
        ->column('a')
-       ->expression(function (\Goat\Query\Where $where) {
+       ->whereExpression(function (\Goat\Query\Where $where) {
            $where->expression('1');
        })
    ;

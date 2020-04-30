@@ -194,8 +194,8 @@ EOT;
             ->orderBy('task_note.type')
             ->orderByExpression('count(task_note.nid)', Query::ORDER_DESC)
             ->range(7, 42)
-            ->condition('task.user_id', 12)
-            ->expression('task.deadline < now()')
+            ->where('task.user_id', 12)
+            ->whereExpression('task.deadline < now()')
             ->havingExpression('count(task_note.nid) < ?', 3)
         ;
 
@@ -258,7 +258,7 @@ EOT;
         // Most basic way
         $query = (new SelectQuery('test1'))
             ->column('foo')
-            ->condition('a',
+            ->where('a',
                 (new SelectQuery('test2'))
                   ->column('b')
             )

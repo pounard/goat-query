@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Goat\Query;
 
 use Goat\Query\Partial\FromClauseTrait;
+use Goat\Query\Partial\HavingClauseTrait;
+use Goat\Query\Partial\WhereClauseTrait;
 
 /**
  * Represents a SELECT query
@@ -16,18 +18,18 @@ use Goat\Query\Partial\FromClauseTrait;
 final class SelectQuery extends AbstractQuery implements Expression
 {
     use FromClauseTrait;
+    use HavingClauseTrait;
+    use WhereClauseTrait;
 
     private $columns = [];
     private $forUpdate = false;
     private $groups = [];
-    private $having;
     private $limit = 0;
     private $offset = 0;
     private $orders = [];
     private $performOnly = false;
     private $relation;
     private $relationAlias;
-    private $where;
 
     /**
      * Build a new query
@@ -226,105 +228,6 @@ final class SelectQuery extends AbstractQuery implements Expression
     public function getRange(): array
     {
         return [$this->limit, $this->offset];
-    }
-
-    /**
-     * Add a condition in the where clause
-     *
-     * @param string|ExpressionColumn $column
-     * @param mixed $value
-     * @param string $operator
-     */
-    public function condition($column, $value = null, string $operator = Where::EQUAL): self
-    {
-        if ($column instanceof Where) {
-            if (null !== $value) {
-                throw new QueryError(\sprintf("You cannot pass a %d instance to condition() method with a value", Where::class));
-            }
-            $this->where->expression($column);
-
-            return $this;
-        }
-
-        $this->where->condition($column, $value, $operator);
-
-        return $this;
-    }
-
-    /**
-     * Add an abitrary statement to the where clause
-     *
-     * @param string|Expression $statement
-     *   SQL string, which may contain parameters
-     * @param mixed[] $arguments
-     *   Parameters for the arbitrary SQL
-     */
-    public function expression($statement, $arguments = []): self
-    {
-        $this->where->expression($statement, $arguments);
-
-        return $this;
-    }
-
-    /**
-     * Alias of ::having()
-     *
-     * @codeCoverageIgnore
-     * @deprecated
-     *   Use self::having() instead
-     */
-    public function havingCondition($column, $value, string $operator = Where::EQUAL): self
-    {
-        \trigger_error(\sprintf("%s::%s is deprecated, use %s::having() instead", __CLASS__, __METHOD__, __CLASS__), E_USER_DEPRECATED);
-
-        $this->having->condition($column, $value, $operator);
-
-        return $this;
-    }
-
-    /**
-     * Add a condition in the having clause
-     *
-     * @param string|ExpressionColumn $column
-     * @param mixed $value
-     * @param string $operator
-     */
-    public function having($column, $value, string $operator = Where::EQUAL): self
-    {
-        $this->having->condition($column, $value, $operator);
-
-        return $this;
-    }
-
-    /**
-     * Add an abitrary statement to the having clause
-     *
-     * @param string|Expression $statement
-     *   SQL string, which may contain parameters
-     * @param mixed[] $arguments
-     *   Parameters for the arbitrary SQL
-     */
-    public function havingExpression($statement, $arguments = []): self
-    {
-        $this->having->expression($statement, $arguments);
-
-        return $this;
-    }
-
-    /**
-     * Get where statement
-     */
-    public function getWhere(): Where
-    {
-        return $this->where;
-    }
-
-    /**
-     * Get having statement
-     */
-    public function getHaving(): Where
-    {
-        return $this->having;
     }
 
     /**
