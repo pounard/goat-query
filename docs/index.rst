@@ -19,9 +19,9 @@ Goat is an SQL toolbox built around a powerful SQL query builder.
 It covers the following basic needs:
 
  * it provides a **database driver connector abstraction**, as of now supporting
-   **MySQL 5x**, **PostgreSQL 9.x and 10.x**,
+   **MySQL 5.7**, **PostgreSQL from 9.x to current**,
 
- * it provides a **complete and easy-to-use query builder**,
+ * it provides a **complete, powerful and easy-to-use query builder**,
 
  * **it converts selected data to PHP native types using typing information**
    **from the database** and allows you to extend this convertion mechanism,
@@ -29,8 +29,8 @@ It covers the following basic needs:
  * it **hydrates database row on arbitrary user given classes**, and allows
    **hierarchical hydration** (nesting objects),
 
- * it provides a very basic ORM-like data mapping layer, along with basic
-   CRUD functionality.
+ * it **supports advanced modern SQL features** such as **CTE** among other
+   things.
 
 **More generally, this connector was built for speed and efficient object**
 **hydration with a strong emphasis on correct data typing.**
@@ -41,31 +41,20 @@ Principle
 It aims to cover the same areas as most ORM will do, with a different
 software design and approach:
 
- *  **TL;DR: if you love your ORM, don't use Goat.**
+ * **it does not replace and ORM, but more likely could be used as the**
+   **SQL query builder for it,**
 
- * you shall not map relations onto objects: objects are a mutable data
-   representation in memory while relations are a mathematical concept,
-   both do not play well together;
+ * result set are immutable, readonly, iterable only once per default,
+   in order to work on data stream and never consume more memory than
+   necessary,
 
- * selecting data is projecting a unique and restricted set of data at a
-   specific point in time: selected data is not the truth, it's only a
-   representation of it;
-
- * selected data should always remain immutable, you need it for viewing or
-   displaying purpose; since it only represents a degraded, altered
-   projection of your data at a specific point in time, you should never
-   modify it; as soon as you did selected data, someone else probably already
-   modified it!
-
- * selected data will always be typed, never cast strings ever again! Your
-   database knows better than you the data types it carries, why not trust it
-   and let you enjoy what the database really gives to you?
-
- * data alteration (insertion, update, merge and deletion) can not happen using
-   entity objects, you can not alter something that's already outdated;
+ * types are important, this query builder focuses on validating and converting
+   data types from PHP to SQL as well as from SQL to PHP,
 
  * everyone needs a query builder; but everyone needs to be able to write real
-   SQL queries too; nothing will prevent you from customazing your SQL. 
+   SQL queries too; nothing will prevent you from customizing your SQL: as such
+   almost every parameter you can send to query builder methods can be replaced
+   by raw arbitrary SQL expressions.
 
 What it doesn't do (but might someday)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
