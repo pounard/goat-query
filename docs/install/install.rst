@@ -25,7 +25,26 @@ Standalone setup
 
 2. instanciate it:
 
-   With PDO, via a TCP connection:
+   Using a database URI:
+
+   .. code-block:: php
+
+      <?php
+
+      use Goat\Driver\Goat\Driver\DriverFactory;
+
+      $driver = DriverFactory::fromUri('pdo-mysql://username:password@hostname:port/database?option1=foo&option2=bar');
+      $runner = $driver->getRunner();
+
+   Supported drivers when using an URI scheme are:
+
+    - ``ext-pgsql``: PgSQL driver using ``ext-pgsql`` PHP core extension,
+    - ``pdo-pgsql``: PgSQL driver using ``PDO``,
+    - ``pdo-mysql``: MySQL driver using ``PDO``,
+    - ``pgsql``: generic PostGreSQL, attempt using known drivers in order: ``ext-pgsql``, ``pdo-pgsql``,
+    - ``mysql``: generic MySQL, attempt using known drivers in order: ``pdo-mysql``.
+
+   With PDO, via a TCP connection using option array:
 
    .. code-block:: php
 
