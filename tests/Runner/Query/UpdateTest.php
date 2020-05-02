@@ -370,7 +370,7 @@ class UpdateTest extends DatabaseAwareQueryTest
             ->update('some_table')
             ->set('foo', new ExpressionRaw('id_user * 2'))
             ->join('users', 'u.id = id_user', 'u')
-            ->condition('id_user', self::ID_JEAN)
+            ->where('id_user', self::ID_JEAN)
             ->perform()
         ;
 
