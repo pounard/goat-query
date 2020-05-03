@@ -2,7 +2,7 @@ Goat
 ====
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Contents:
 
    install/install
@@ -14,9 +14,10 @@ Goat
 Introduction
 ^^^^^^^^^^^^
 
-Goat is an SQL toolbox built around a powerful SQL query builder.
+Goat is an SQL connector along with a powerful SQL query builder and efficient,
+type-safe, stream-based result iterators able to hydrate objects.
 
-It covers the following basic needs:
+Top features are:
 
  * it provides a **database driver connector abstraction**, as of now supporting
    **MySQL 5.7**, **PostgreSQL from 9.x to current**,
@@ -35,9 +36,6 @@ It covers the following basic needs:
 **More generally, this connector was built for speed and efficient object**
 **hydration with a strong emphasis on correct data typing.**
 
-Principle
-^^^^^^^^^
-
 It aims to cover the same areas as most ORM will do, with a different
 software design and approach:
 
@@ -49,21 +47,33 @@ software design and approach:
    necessary,
 
  * types are important, this query builder focuses on validating and converting
-   data types from PHP to SQL as well as from SQL to PHP,
+   data types from PHP to SQL as well as from SQL to PHP.
 
- * everyone needs a query builder; but everyone needs to be able to write real
-   SQL queries too; nothing will prevent you from customizing your SQL: as such
-   almost every parameter you can send to query builder methods can be replaced
-   by raw arbitrary SQL expressions.
+Future plans
+^^^^^^^^^^^^
 
-What it doesn't do (but might someday)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+API is mostly stable, in use in production projects. 1.x version will continue
+to be maintained for bugfixes and maintenance only, while 2.x provides new
+features and some minimal API changes (for most users those changes will be
+completely transparent).
 
-This connector does not provide:
+2.x focuses on various visible and less visible improvements:
 
- * a schema API, for manipulating the database schema, we believe that
-   developers should always write manually their schema according to the
-   database features they will use.
+ - query builder public API method names are more coherent with each other,
+
+ - driver and platform API aren't tied together anymore, SQL writer
+   implementations become driver agnostic and re-usable,
+
+ - direct optional dependency to ocramius/generated-hydrator will be added for
+   having a much cleaner and more direct result hydration,
+
+ - some basic schema introspection API will be added in a near future,
+
+ - result iterators can be explicitely set as being rewindable, which consumes
+   more memory when done, but allow them to be rewinded and re-iterated,
+
+ - API drops internal array usage and replaces them by properly typed objets
+   when applicable.
 
 Current driver support
 ^^^^^^^^^^^^^^^^^^^^^^
