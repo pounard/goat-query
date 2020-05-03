@@ -20,7 +20,7 @@ final class InsertQueryUnitTest extends TestCase
 
         $select = new SelectQuery('other_table');
         $select->columns(['foo', 'bar']);
-        $select->condition('baz', true);
+        $select->where('baz', true);
 
         $insert->query($select);
 

@@ -268,7 +268,7 @@ final class QuerySelectUnitTest extends TestCase
     {
         $select = new SelectQuery('some_table');
 
-        $select->condition('foo', 12);
+        $select->where('foo', 12);
 
         self::assertSameSql(
             'select * from "some_table" where "foo" = ?',
@@ -280,7 +280,7 @@ final class QuerySelectUnitTest extends TestCase
     {
         $select = new SelectQuery('some_table');
 
-        $select->condition('bar', ExpressionRaw::create('12'));
+        $select->where('bar', ExpressionRaw::create('12'));
 
         self::assertSameSql(
             'select * from "some_table" where "bar" = 12',
@@ -292,7 +292,7 @@ final class QuerySelectUnitTest extends TestCase
     {
         $select = new SelectQuery('some_table');
 
-        $select->condition('baz', ExpressionValue::create(12, 'json'));
+        $select->where('baz', ExpressionValue::create(12, 'json'));
 
         self::assertSameSql(
             'select * from "some_table" where "baz" = ?::json',
@@ -304,7 +304,7 @@ final class QuerySelectUnitTest extends TestCase
     {
         $select = new SelectQuery('some_table');
 
-        $select->condition('boo', function () {
+        $select->where('boo', function () {
             return '12';
         });
 
@@ -318,7 +318,7 @@ final class QuerySelectUnitTest extends TestCase
     {
         $select = new SelectQuery('some_table');
 
-        $select->condition((new Where(Where::OR))
+        $select->where((new Where(Where::OR))
             ->isNull('foo')
             ->isNull('bar')
         );
@@ -334,14 +334,14 @@ final class QuerySelectUnitTest extends TestCase
         $select = new SelectQuery('some_table');
 
         self::expectException(QueryError::class);
-        $select->condition(new Where(Where::OR), 'foo');
+        $select->where(new Where(Where::OR), 'foo');
     }
 
     public function testExpressionWithWhereInstance()
     {
         $select = new SelectQuery('some_table');
 
-        $select->expression((new Where(Where::OR))
+        $select->where((new Where(Where::OR))
             ->isNull('foo')
             ->isNull('bar')
         );
@@ -356,7 +356,7 @@ final class QuerySelectUnitTest extends TestCase
     {
         $select = new SelectQuery('some_table');
 
-        $select->condition('baa', function () {
+        $select->where('baa', function () {
             return ExpressionRaw::create('now()');
         }, '<');
 
@@ -370,7 +370,7 @@ final class QuerySelectUnitTest extends TestCase
     {
         $select = new SelectQuery('some_table');
 
-        $select->condition(function (\Goat\Query\Where $where) {
+        $select->where(function (\Goat\Query\Where $where) {
             $where
                 ->isEqual('id', 12)
                 ->isGreaterOrEqual('birthdate', new \DateTimeImmutable('2019-09-24'))
@@ -387,7 +387,7 @@ final class QuerySelectUnitTest extends TestCase
     {
         $select = new SelectQuery('some_table');
 
-        $select->expression('a < b');
+        $select->whereExpression('a < b');
 
         self::assertSameSql(
             'select * from "some_table" where a < b',
@@ -399,7 +399,7 @@ final class QuerySelectUnitTest extends TestCase
     {
         $select = new SelectQuery('some_table');
 
-        $select->expression(function (Where $where) {
+        $select->where(function (Where $where) {
             $where->condition('a', 56);
         });
 
@@ -416,7 +416,7 @@ final class QuerySelectUnitTest extends TestCase
         $this->expectException(QueryError::class);
         $this->expectExceptionMessageRegExp('/Expression cannot be null/');
 
-        $select->expression(null);
+        $select->where(null);
     }
 
     public function testExpressionWithEmptyStringRaiseError()
@@ -426,7 +426,7 @@ final class QuerySelectUnitTest extends TestCase
         $this->expectException(QueryError::class);
         $this->expectExceptionMessageRegExp('/Expression cannot be null/');
 
-        $select->expression('');
+        $select->where('');
     }
 
     public function testHaving()

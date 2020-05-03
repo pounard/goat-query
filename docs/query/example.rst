@@ -116,8 +116,8 @@ One way to build this query would be:
        ->orderBy('task_note.type')
        ->orderByExpression('count(task_note.nid)', Query::ORDER_DESC)
        ->range(7, 42)
-       ->condition('task.user_id', 12)
-       ->expression('task.deadline < now()')
+       ->where('task.user_id', 12)
+       ->whereExpression('task.deadline < now()')
        ->havingExpression('count(task_note.nid) < ?', 3)
    ;
 

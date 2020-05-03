@@ -450,7 +450,7 @@ final class TransactionTest extends DatabaseAwareQueryTest
             ->getQueryBuilder()
             ->update('transaction_test')
             ->set('bar', 'z')
-            ->condition('foo', 1)
+            ->where('foo', 1)
             ->execute()
         ;
 
@@ -460,7 +460,7 @@ final class TransactionTest extends DatabaseAwareQueryTest
             ->getQueryBuilder()
             ->update('transaction_test')
             ->set('bar', 'y')
-            ->condition('foo', 2)
+            ->where('foo', 2)
             ->execute()
         ;
 
@@ -471,7 +471,7 @@ final class TransactionTest extends DatabaseAwareQueryTest
             ->getQueryBuilder()
             ->select('transaction_test')
             ->column('bar')
-            ->condition('foo', 1)
+            ->where('foo', 1)
             ->execute()
             ->fetchField()
         ;
@@ -482,7 +482,7 @@ final class TransactionTest extends DatabaseAwareQueryTest
             ->getQueryBuilder()
             ->select('transaction_test')
             ->column('bar')
-            ->condition('foo', 2)
+            ->where('foo', 2)
             ->execute()
             ->fetchField()
         ;

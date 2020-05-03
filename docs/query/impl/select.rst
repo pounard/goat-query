@@ -326,7 +326,7 @@ GROUPing BY is as easy as:
    $select = $runner
        ->getQueryBuilder()
        ->select('some_table', 't')
-       ->expression('SUM(t.a)')
+       ->whereExpression('SUM(t.a)')
        ->groupBy('t.b')
    ;
 
@@ -476,7 +476,7 @@ As a brief example:
    $select = $runner
        ->getQueryBuilder()
        ->select('some_table')
-       ->condition('a', 1)
+       ->where('a', 1)
        ->groupBy('c')
        ->having('b', 2)
        ->havingExpression('COUNT(a) = ?', 3)
@@ -509,7 +509,7 @@ Simply call the ``forUpdate()`` method:
        ->select('some_table')
        ->forUpdate()
        ->columns(['a', 'b', 'c'])
-       ->condition('a', 42)
+       ->where('a', 42)
    ;
 
 Is equivalent to:
@@ -531,7 +531,7 @@ Moreover, if you do not wish to fetch the result, you may also call the ``perfor
        ->forUpdate()
        ->performOnly()
        ->columns(['a', 'b', 'c'])
-       ->condition('a', 42)
+       ->where('a', 42)
    ;
 
 Is equivalent to (when driver supports it, such as PostgreSQL):

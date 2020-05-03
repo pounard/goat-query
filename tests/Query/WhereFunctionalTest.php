@@ -19,7 +19,7 @@ class WhereFunctionalTest extends TestCase
 
         $select = new SelectQuery('the_universe', 'u');
         $select->column('id');
-        $select->condition('id', new ExpressionColumn('parent.id'));
+        $select->where('id', new ExpressionColumn('parent.id'));
 
         $where = (new Where())
             // Simple '<>' operator

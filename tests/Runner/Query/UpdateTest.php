@@ -82,7 +82,7 @@ class UpdateTest extends DatabaseAwareQueryTest
     {
         $result = $runner
             ->update('some_table')
-            ->condition('foo', 42)
+            ->where('foo', 42)
             ->set('foo', 43)
             ->execute()
         ;
@@ -91,7 +91,7 @@ class UpdateTest extends DatabaseAwareQueryTest
 
         $result = $runner
             ->select('some_table')
-            ->condition('foo', 43)
+            ->where('foo', 43)
             ->execute()
         ;
 
@@ -126,7 +126,7 @@ class UpdateTest extends DatabaseAwareQueryTest
             ->update('some_table', 't')
             ->set('foo', 127)
             ->join('users', "u.id = t.id_user", 'u')
-            ->condition('u.name', 'admin')
+            ->where('u.name', 'admin')
             ->execute()
         ;
 
@@ -136,7 +136,7 @@ class UpdateTest extends DatabaseAwareQueryTest
         $result = $runner
             ->select('some_table', 'roger')
             ->join('users', 'john.id = roger.id_user', 'john')
-            ->condition('john.name', 'admin')
+            ->where('john.name', 'admin')
             ->execute()
         ;
 
@@ -147,7 +147,7 @@ class UpdateTest extends DatabaseAwareQueryTest
 
         $result = $runner
             ->select('some_table')
-            ->condition('foo', 127)
+            ->where('foo', 127)
             ->execute()
         ;
 
@@ -164,13 +164,13 @@ class UpdateTest extends DatabaseAwareQueryTest
         $selectInQuery = $runner
             ->select('users')
             ->column('id')
-            ->condition('name', 'admin')
+            ->where('name', 'admin')
         ;
 
         $result = $runner
             ->update('some_table', 't')
             ->set('foo', 127)
-            ->condition('t.id_user', $selectInQuery)
+            ->where('t.id_user', $selectInQuery)
             ->execute()
         ;
 
@@ -180,7 +180,7 @@ class UpdateTest extends DatabaseAwareQueryTest
         $result = $runner
             ->select('some_table', 'roger')
             ->join('users', 'john.id = roger.id_user', 'john')
-            ->condition('john.name', 'admin')
+            ->where('john.name', 'admin')
             ->execute()
         ;
 
@@ -191,7 +191,7 @@ class UpdateTest extends DatabaseAwareQueryTest
 
         $result = $runner
             ->select('some_table')
-            ->condition('foo', 127)
+            ->where('foo', 127)
             ->execute()
         ;
 
@@ -213,7 +213,7 @@ class UpdateTest extends DatabaseAwareQueryTest
             ->update('some_table', 't')
             ->set('foo', 127)
             ->join('users', "u.id = t.id_user", 'u')
-            ->condition('u.name', 'admin')
+            ->where('u.name', 'admin')
             ->returning(new ExpressionRaw('*'))
             ->execute()
         ;
@@ -236,7 +236,7 @@ class UpdateTest extends DatabaseAwareQueryTest
             ->update('some_table', 't')
             ->set('foo', new ExpressionColumn('u.id'))
             ->join('users', "u.id = t.id_user", 'u')
-            ->condition('u.name', 'admin')
+            ->where('u.name', 'admin')
             ->execute()
         ;
 
@@ -247,7 +247,7 @@ class UpdateTest extends DatabaseAwareQueryTest
             ->select('some_table', 't')
             ->columns(['t.foo', 't.id_user'])
             ->join('users', 'u.id = t.id_user', 'u')
-            ->condition('u.name', 'admin')
+            ->where('u.name', 'admin')
             ->execute()
         ;
 
@@ -268,7 +268,7 @@ class UpdateTest extends DatabaseAwareQueryTest
             ->update('some_table', 't')
             ->set('foo', new ExpressionRaw('u.id'))
             ->join('users', "u.id = t.id_user", 'u')
-            ->condition('u.name', 'admin')
+            ->where('u.name', 'admin')
             ->execute()
         ;
 
@@ -279,7 +279,7 @@ class UpdateTest extends DatabaseAwareQueryTest
             ->select('some_table', 't')
             ->columns(['t.foo', 't.id_user'])
             ->join('users', 'u.id = t.id_user', 'u')
-            ->condition('u.name', 'admin')
+            ->where('u.name', 'admin')
             ->execute()
         ;
 
@@ -299,13 +299,13 @@ class UpdateTest extends DatabaseAwareQueryTest
         $selectValueQuery = $runner
             ->select('users', 'z')
             ->columnExpression('z.id + 7')
-            ->expression('z.id = id_user')
+            ->whereExpression('z.id = id_user')
         ;
 
         $result = $runner
             ->update('some_table')
             ->set('foo', $selectValueQuery)
-            ->condition('id_user', $this->idJean)
+            ->where('id_user', $this->idJean)
             ->execute()
         ;
 
@@ -313,7 +313,7 @@ class UpdateTest extends DatabaseAwareQueryTest
 
         $result = $runner
             ->select('some_table')
-            ->condition('id_user', $this->idJean)
+            ->where('id_user', $this->idJean)
             ->execute()
         ;
         foreach ($result as $row) {
@@ -322,7 +322,7 @@ class UpdateTest extends DatabaseAwareQueryTest
 
         $result = $runner
             ->select('some_table')
-            ->condition('id_user', $this->idAdmin)
+            ->where('id_user', $this->idAdmin)
             ->execute()
         ;
         foreach ($result as $row) {
@@ -341,7 +341,7 @@ class UpdateTest extends DatabaseAwareQueryTest
             ->update('some_table')
             ->set('foo', new ExpressionRaw('id_user * 2'))
             ->join('users', 'u.id = id_user', 'u')
-            ->condition('id_user', $this->idJean)
+            ->where('id_user', $this->idJean)
             ->execute()
         ;
 

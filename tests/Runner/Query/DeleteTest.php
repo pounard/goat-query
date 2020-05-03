@@ -98,7 +98,7 @@ class DeleteTest extends DatabaseAwareQueryTest
 
         $result = $runner
             ->delete('some_table', 't')
-            ->condition('t.id_user', $this->idJean)
+            ->where('t.id_user', $this->idJean)
             ->execute()
         ;
         $this->assertSame(2, $result->countRows());
@@ -107,7 +107,7 @@ class DeleteTest extends DatabaseAwareQueryTest
 
         $result = $runner
             ->delete('some_table')
-            ->condition('bar', 'a')
+            ->where('bar', 'a')
             ->execute()
         ;
         $this->assertSame(1, $result->countRows());
@@ -118,7 +118,7 @@ class DeleteTest extends DatabaseAwareQueryTest
         // For fun, test with a named parameter
         $result = $runner
             ->delete('some_table')
-            ->condition('bar', ':bar::varchar')
+            ->where('bar', ':bar::varchar')
             ->execute([
                 'bar' => 'e',
             ])
@@ -157,12 +157,12 @@ class DeleteTest extends DatabaseAwareQueryTest
         $whereInSelect = $runner
             ->select('users')
             ->column('id')
-            ->condition('name', 'jean')
+            ->where('name', 'jean')
         ;
 
         $result = $runner
             ->delete('some_table')
-            ->condition('id_user', $whereInSelect)
+            ->where('id_user', $whereInSelect)
             ->execute()
         ;
         $this->assertSame(2, $result->countRows());
@@ -183,7 +183,7 @@ class DeleteTest extends DatabaseAwareQueryTest
         $result = $runner
             ->delete('some_table', 't')
             ->join('users', 'u.id = t.id_user', 'u')
-            ->condition('u.id', $this->idJean)
+            ->where('u.id', $this->idJean)
             ->execute()
         ;
         $this->assertSame(2, $result->countRows());
@@ -208,7 +208,7 @@ class DeleteTest extends DatabaseAwareQueryTest
         $result = $runner
             ->delete('some_table', 't')
             ->join('users', 'u.id = t.id_user', 'u')
-            ->condition('u.id', $this->idJean)
+            ->where('u.id', $this->idJean)
             ->returning('t.id')
             ->returning('t.id_user')
             ->returning('u.name')
@@ -244,7 +244,7 @@ class DeleteTest extends DatabaseAwareQueryTest
         $result = $runner
             ->delete('some_table', 't')
             ->join('users', 'u.id = t.id_user', 'u')
-            ->condition('u.id', $this->idJean)
+            ->where('u.id', $this->idJean)
             ->returning('t.id')
             ->returning('t.id_user', 'userId')
             ->returning('u.name')
@@ -278,7 +278,7 @@ class DeleteTest extends DatabaseAwareQueryTest
             ->delete('some_table', 't')
             ->join('users', 'u.id = t.id_user', 'u')
             ->join('users_status', 'u.id = st.id_user', 'st')
-            ->condition('st.status', 5) // Does nothing
+            ->where('st.status', 5) // Does nothing
             ->execute()
         ;
 
@@ -290,7 +290,7 @@ class DeleteTest extends DatabaseAwareQueryTest
             ->delete('some_table', 't')
             ->join('users', 'u.id = t.id_user', 'u')
             ->join('users_status', 'u.id = st.id_user', 'st')
-            ->condition('st.status', 11) // Removes jean
+            ->where('st.status', 11) // Removes jean
             ->execute()
         ;
 

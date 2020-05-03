@@ -63,7 +63,7 @@ Can be written in two different ways, the first one using the ``with()`` method:
        ->getQueryBuilder()
        ->select('orders')
        ->columns(['region', 'product'])
-       ->expression("total_sales > (SELECT SUM(total_sales)/10 FROM regional_sales)")
+       ->whereExpression("total_sales > (SELECT SUM(total_sales)/10 FROM regional_sales)")
    ;
 
    $select = $runner
@@ -74,7 +74,7 @@ Can be written in two different ways, the first one using the ``with()`` method:
        ->columns(['region', 'product'])
        ->columnExpression("SUM(quantity)", 'product_units')
        ->columnExpression("SUM(amount)", 'product_sales')
-       ->expression("region IN (SELECT region FROM top_regions)")
+       ->whereExpression("region IN (SELECT region FROM top_regions)")
        ->groupBy('region')
        ->groupBy('product')
    ;
@@ -97,14 +97,14 @@ Or using the ``createWith()`` method:
    $select
        ->createWith('top_regions', 'orders')
        ->columns(['region', 'product'])
-       ->expression("total_sales > (SELECT SUM(total_sales)/10 FROM regional_sales)")
+       ->whereExpression("total_sales > (SELECT SUM(total_sales)/10 FROM regional_sales)")
    ;
 
    $select
       ->columns(['region', 'product'])
       ->columnExpression("SUM(quantity)", 'product_units')
       ->columnExpression("SUM(amount)", 'product_sales')
-      ->expression("region IN (SELECT region FROM top_regions)")
+      ->whereExpression("region IN (SELECT region FROM top_regions)")
       ->groupBy('region')
       ->groupBy('product')
    ;

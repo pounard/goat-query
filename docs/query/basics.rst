@@ -64,7 +64,7 @@ an arbitrary raw expression to the where clause:
    <?php
 
    // WHERE COUNT(comment) > 5
-   $select->expression('COUNT(comment) > ?', [5]);
+   $select->whereExpression('COUNT(comment) > ?', [5]);
 
 Parameter placeholders will be gracefully merged to the others in their
 rightful respective order at execute time.

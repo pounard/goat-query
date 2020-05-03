@@ -34,7 +34,7 @@ final class DeleteUnitTest extends TestCase
     {
         $delete = new DeleteQuery('some_table');
 
-        $delete->condition('a', 12);
+        $delete->where('a', 12);
 
         self::assertSameSql(
             'delete from "some_table" where "a" = ?',
@@ -46,7 +46,7 @@ final class DeleteUnitTest extends TestCase
     {
         $delete = new DeleteQuery('some_table');
 
-        $delete->expression('true');
+        $delete->whereExpression('true');
 
         self::assertSameSql(
             'delete from "some_table" where true',
