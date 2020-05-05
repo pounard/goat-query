@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Goat\Query\Partial;
 
-use Goat\Query\ExpressionColumn;
+use Goat\Query\ExpressionRaw;
 use Goat\Query\QueryError;
 
 /**
@@ -12,16 +12,13 @@ use Goat\Query\QueryError;
  */
 trait ReturningQueryTrait
 {
+    /** @var Column[] */
     private $return = [];
 
     /**
      * Get select columns array
      *
-     * @return string[][]
-     *   Values are arrays which contain:
-     *     - first value: the column identifier (may contain the table alias
-     *       or name with dot notation)
-     *     - second value: the alias if any, or null
+     * @return Column[]
      */
     public function getAllReturn(): array
     {
@@ -29,7 +26,7 @@ trait ReturningQueryTrait
     }
 
     /**
-     * Remove everything from the current SELECT clause
+     * Remove everything from the current RETURNING clause
      */
     public function removeAllReturn(): self
     {
@@ -39,7 +36,7 @@ trait ReturningQueryTrait
     }
 
     /**
-     * Set or replace a column with a content.
+     * Add a column to RETURNING clause.
      *
      * @param string|\Goat\Query\Expression $expression
      *   SQL select column
@@ -49,18 +46,28 @@ trait ReturningQueryTrait
     public function returning($expression = null, ?string $alias = null): self
     {
         if (!$expression) {
-            $expression = '*';
-        }
-        if (!$alias) {
-            if (!\is_string($expression) && !$expression instanceof ExpressionColumn) {
-                throw new QueryError("RETURNING values can only be column names or expressions using them from the previous statement");
+            if ($alias) {
+                throw new QueryError("RETURNING * cannot be aliased.");
             }
-            if (\is_string($expression)) {
-                $expression = new ExpressionColumn($expression);
-            }
+            $expression = ExpressionRaw::create('*');
         }
 
-        $this->return[] = [$expression, $alias];
+        $this->return[] = Column::name($expression, $alias);
+
+        return $this;
+    }
+
+    /**
+     * Add an expression to RETURNING clause.
+     *
+     * @param string|\Goat\Query\Expression $expression
+     *   SQL select column
+     * @param string $alias
+     *   If alias to be different from the column
+     */
+    public function returningExpression($expression, ?string $alias = null): self
+    {
+        $this->return[] = Column::expression($expression, $alias);
 
         return $this;
     }
@@ -73,10 +80,12 @@ trait ReturningQueryTrait
     private function findReturnIndex(string $alias): ?string
     {
         foreach ($this->return as $index => $data) {
-            if ($data[1] === $alias) {
+            if ($data->alias === $alias) {
                 return $index;
             }
         }
+
+        return null;
     }
 
     /**

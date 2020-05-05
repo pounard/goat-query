@@ -19,6 +19,7 @@ use Goat\Query\SelectQuery;
 use Goat\Query\Statement;
 use Goat\Query\UpdateQuery;
 use Goat\Query\Where;
+use Goat\Query\Partial\Column;
 use Goat\Query\Partial\Join;
 
 /**
@@ -84,17 +85,14 @@ class DefaultSqlWriter extends AbstractSqlWriter
      *
      * @return string
      */
-    protected function formatSelectItem($expression, $alias = null) : string
+    protected function formatSelectItem(Column $column) : string
     {
-        if (\is_string($expression)) {
-            $expression = new ExpressionColumn($expression);
-        }
-
-        $output = $this->format($expression);
+        $output = $this->format($column->expression);
 
         // We cannot alias columns with a numeric identifier;
         // aliasing with the same string as the column name
         // makes no sense either.
+        $alias = $column->alias;
         if ($alias && !\is_numeric($alias)) {
             $alias = $this->escaper->escapeIdentifier($alias);
             if ($alias !== $output) {
@@ -124,7 +122,7 @@ class DefaultSqlWriter extends AbstractSqlWriter
         $output = [];
 
         foreach ($columns as $column) {
-            $output[] = $this->formatSelectItem(...$column);
+            $output[] = $this->formatSelectItem($column);
         }
 
         return \implode(",\n", $output);
@@ -138,9 +136,9 @@ class DefaultSqlWriter extends AbstractSqlWriter
      *
      * @return string
      */
-    protected function formatReturningItem($expression, $alias = null) : string
+    protected function formatReturningItem(Column $column) : string
     {
-        return $this->formatSelectItem($expression, $alias);
+        return $this->formatSelectItem($column->expression, $column->alias);
     }
 
     /**
@@ -639,9 +637,12 @@ class DefaultSqlWriter extends AbstractSqlWriter
             if ($columns) {
                 $output[] = \sprintf(
                     "(%s) values",
-                    \implode(', ', \array_map(function ($column) use ($escaper) {
-                        return $escaper->escapeIdentifier($column);
-                    }, $columns))
+                    \implode(', ', \array_map(
+                        static function ($column) use ($escaper) {
+                            return $escaper->escapeIdentifier($column);
+                        },
+                        $columns
+                    ))
                 );
             }
 
@@ -692,9 +693,12 @@ class DefaultSqlWriter extends AbstractSqlWriter
         if ($columns) {
             $output[] = \sprintf(
                 "(%s)",
-                \implode(', ', \array_map(function ($column) use ($escaper) {
-                    return $escaper->escapeIdentifier($column);
-                }, $columns))
+                \implode(', ', \array_map(
+                    static function ($column) use ($escaper) {
+                        return $escaper->escapeIdentifier($column);
+                    },
+                    $columns
+                ))
             );
         }
 

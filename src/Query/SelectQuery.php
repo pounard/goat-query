@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Goat\Query;
 
+use Goat\Query\Partial\Column;
 use Goat\Query\Partial\FromClauseTrait;
 use Goat\Query\Partial\HavingClauseTrait;
 use Goat\Query\Partial\WhereClauseTrait;
@@ -21,6 +22,7 @@ final class SelectQuery extends AbstractQuery implements Expression
     use HavingClauseTrait;
     use WhereClauseTrait;
 
+    /** @var Column[] */
     private $columns = [];
     private $forUpdate = false;
     private $groups = [];
@@ -77,6 +79,8 @@ final class SelectQuery extends AbstractQuery implements Expression
 
     /**
      * Get select columns array
+     *
+     * @return Column[]
      */
     public function getAllColumns(): array
     {
@@ -115,7 +119,7 @@ final class SelectQuery extends AbstractQuery implements Expression
      */
     public function column($expression, ?string $alias = null): self
     {
-        $this->columns[] = [ExpressionFactory::column($expression), $alias];
+        $this->columns[] = Column::name($expression, $alias);
 
         return $this;
     }
@@ -132,18 +136,7 @@ final class SelectQuery extends AbstractQuery implements Expression
      */
     public function columnExpression($expression, ?string $alias = null, $arguments = []): self
     {
-        if ($expression instanceof Expression) {
-            if ($arguments) {
-                throw new QueryError(\sprintf("you cannot call %s::columnExpression() and pass arguments if the given expression is not a string", __CLASS__));
-            }
-        } else {
-            if ($arguments && !\is_array($arguments)) {
-                $arguments = [$arguments];
-            }
-            $expression = ExpressionFactory::raw($expression, $arguments ?? []);
-        }
-
-        $this->columns[] = [$expression, $alias];
+        $this->columns[] = Column::expression($expression, $alias, $arguments);
 
         return $this;
     }
@@ -172,13 +165,15 @@ final class SelectQuery extends AbstractQuery implements Expression
     /**
      * Find column index for given alias
      */
-    private function findColumnIndex(string $alias): int
+    private function findColumnIndex(string $alias): ?int
     {
         foreach ($this->columns as $index => $data) {
-            if ($data[1] === $alias) {
+            if ($data->alias === $alias) {
                 return $index;
             }
         }
+
+        return null;
     }
 
     /**
@@ -344,9 +339,7 @@ final class SelectQuery extends AbstractQuery implements Expression
 
         // SELECT
         foreach ($this->columns as $column) {
-            if ($column[0] instanceof Statement) {
-                $arguments->append($column[0]->getArguments());
-            }
+            $arguments->append($column->expression->getArguments());
         }
 
         // JOIN
@@ -415,7 +408,7 @@ final class SelectQuery extends AbstractQuery implements Expression
         $this->cloneJoins();
 
         foreach ($this->columns as $index => $column) {
-            $this->columns[$index][0] = clone $column[0];
+            $this->columns[$index] = clone $column;
         }
 
         foreach ($this->orders as $index => $order) {
