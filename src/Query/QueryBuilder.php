@@ -29,7 +29,7 @@ interface QueryBuilder
     public function prepare(callable $callback, ?string $identifier = null): Query;
 
     /**
-     * Create a select query builder
+     * Create a SELECT query builder
      *
      * @param null|string|ExpressionRelation $relation
      *   SQL from statement relation name
@@ -39,7 +39,7 @@ interface QueryBuilder
     public function select($relation = null, ?string $alias = null): SelectQuery;
 
     /**
-     * Create an update query builder
+     * Create an UPDATE query builder
      *
      * @param string|ExpressionRelation $relation
      *   SQL from statement relation name
@@ -49,7 +49,7 @@ interface QueryBuilder
     public function update($relation, ?string $alias = null): UpdateQuery;
 
     /**
-     * Create an insert query builder
+     * Create an INSERT (...) VALUES (...), ... query builder
      *
      * @param string|ExpressionRelation $relation
      *   SQL from statement relation name
@@ -57,7 +57,7 @@ interface QueryBuilder
     public function insertValues($relation): InsertValuesQuery;
 
     /**
-     * Create an insert with query builder
+     * Create an INSERT (...) SELECT ... query builder
      *
      * @param string|ExpressionRelation $relation
      *   SQL from statement relation name
@@ -65,7 +65,7 @@ interface QueryBuilder
     public function insertQuery($relation): InsertQueryQuery;
 
     /**
-     * Create a delete query builder
+     * Create a DELETE query builder
      *
      * @param string|ExpressionRelation $relation
      *   SQL from statement relation name
