@@ -10,7 +10,7 @@ Basics
 
    <?php
 
-   $insert = $runner->getQueryBuilder()->insertValues('some_table');
+   $insert = $runner->getQueryBuilder()->insert('some_table');
 
 Is equivalent to:
 
@@ -35,7 +35,7 @@ In order to insert values from an array, you may just write:
 
    $runner
        ->getQueryBuilder()
-       ->insertValues('some_table')
+       ->insert('some_table')
        ->values([
            'a' => 1,
            'b' => 'foo',
@@ -69,7 +69,7 @@ You may write something such as:
 
    $runner
        ->getQueryBuilder()
-       ->insertValues('some_table')
+       ->insert('some_table')
        ->values([
            'a' => 1,
            'b' => 'foo',
@@ -112,7 +112,7 @@ array keys:
 
    $runner
        ->getQueryBuilder()
-       ->insertValues('some_table')
+       ->insert('some_table')
        ->columns(['a', 'b'])
        ->values([1, 'foo'])
        ->values([2, 'bar'])
@@ -150,7 +150,7 @@ You can use PostgreSQL ``RETURNING`` statement with INSERT queries:
 
    $result = $runner
        ->getQueryBuilder()
-       ->insertValues('some_table')
+       ->insert('some_table')
        ->values(['a' => 1, 'b' => 'foo'])
        ->values(['a' => 2, 'b' => 'bar'])
        ->returning('a')

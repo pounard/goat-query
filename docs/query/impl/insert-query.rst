@@ -18,7 +18,7 @@ Basics
 
    $runner
        ->getQueryBuilder()
-       ->insertQuery('some_table')
+       ->insert('some_table')
        ->columns(['a', 'b'])
        ->query($select)
        ->execute()
@@ -50,7 +50,7 @@ You can use PostgreSQL ``RETURNING`` statement with INSERT queries:
 
    $result = $runner
        ->getQueryBuilder()
-       ->insertQuery('some_table')
+       ->insert('some_table')
        ->columns(['a', 'b'])
        ->query($select)
        ->returning('a')

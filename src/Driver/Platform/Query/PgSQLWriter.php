@@ -89,7 +89,7 @@ class PgSQLWriter extends DefaultSqlWriter
                 break;
 
             default:
-                throw new QueryError(\sprintf("Unsupport upsert conflict mode: %s", (string) $mode));
+                throw new QueryError(\sprintf("Unsupported merge conflict mode: %s", (string) $mode));
         }
 
         $return = $query->getAllReturn();

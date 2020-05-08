@@ -49,38 +49,45 @@ interface QueryBuilder
     public function update($relation, ?string $alias = null): UpdateQuery;
 
     /**
-     * Create an INSERT (...) VALUES (...), ... query builder
+     * Create an INSERT query builder
      *
      * @param string|ExpressionRelation $relation
      *   SQL from statement relation name
      */
-    public function insertValues($relation): InsertValuesQuery;
+    public function insert($relation): InsertQuery;
 
     /**
-     * Create an INSERT (...) SELECT ... query builder
-     *
-     * @param string|ExpressionRelation $relation
-     *   SQL from statement relation name
+     * @deprecated
+     * @see self::insert()
      */
-    public function insertQuery($relation): InsertQueryQuery;
+    public function insertValues($relation): InsertQuery;
 
     /**
-     * Create an UPDATE ... ON CONFLICT DO ... or MERGE ... query builder which
+     * @deprecated
+     * @see self::insert()
+     */
+    public function insertQuery($relation): InsertQuery;
+
+    /**
+     * Create an INSERT ... ON CONFLICT DO ... or MERGE ... query builder which
      * uses a constant table expression (i.e. VALUES (...), ...) as source.
      *
      * @param string|ExpressionRelation $relation
      *   SQL from statement relation name
      */
-    public function upsertValues($relation): UpsertValuesQuery;
+    public function merge($relation): MergeQuery;
 
     /**
-     * Create an UPDATE ... ON CONFLICT DO ... or MERGE ... query builder which
-     * uses a nested query as source.
-     *
-     * @param string|ExpressionRelation $relation
-     *   SQL from statement relation name
+     * @deprecated
+     * @see self::insert()
      */
-    public function upsertQuery($relation): UpsertQueryQuery;
+    public function upsertValues($relation): MergeQuery;
+
+    /**
+     * @deprecated
+     * @see self::insert()
+     */
+    public function upsertQuery($relation): MergeQuery;
 
     /**
      * Create a DELETE query builder

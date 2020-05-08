@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Goat\Query;
 
 use Goat\Query\Partial\InsertTrait;
+use Goat\Query\Partial\MergeTrait;
 use Goat\Query\Partial\ReturningQueryTrait;
-use Goat\Query\Partial\UpsertTrait;
 
 /**
  * Represent either one of UPDATE .. ON CONFLICT DO .. or MERGE .. queries
@@ -15,7 +15,7 @@ use Goat\Query\Partial\UpsertTrait;
 class MergeQuery extends AbstractQuery
 {
     use InsertTrait;
-    use UpsertTrait;
+    use MergeTrait;
     use ReturningQueryTrait;
 
     /**

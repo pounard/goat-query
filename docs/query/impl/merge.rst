@@ -52,16 +52,13 @@ Where ``table_reference`` in the ``USING`` clause can be either one of:
    at the ``USING`` level, but consider you always will work with tables
    **primary or unique keys** instead.
 
-Because we do not fully implement the ``MERGE`` clause, this API calls these
-``upsert`` queries instead.
-
-When writing an ``upsert`` query, you will have the choice between only two
+When writing an ``MERGE`` query, you will have the choice between only two
 ``on [conflict | duplicate]`` behaviours:
 
  - do nothing (do not insert or update the conflicting rows),
  - do update.
 
-PostgreSQL is able to target the conflicting keys, that why the upsert object
+PostgreSQL is able to target the conflicting keys, that why the ``MERGE`` object
 will give you the possibility to explicitely expose the key columns you wish
 to target.
 
@@ -84,7 +81,7 @@ The following query:
 
    $runner
        ->getQueryBuilder()
-       ->upsertValues('table1')
+       ->merge('table1')
        ->columns(['foo', 'bar', 'fizz', 'buzz'])
        ->values([1, 2, 3, 4])
        ->values([5, 6, 7, 8])
@@ -154,7 +151,7 @@ The following query:
 
    $runner
        ->getQueryBuilder()
-       ->upsertValues('table1')
+       ->merge('table1')
        ->columns(['foo', 'bar', 'fizz', 'buzz'])
        ->values([1, 2, 3, 4])
        ->values([5, 6, 7, 8])
@@ -242,7 +239,7 @@ it will behave the same amonst all RDBMS. Using the previous example:
 
    $runner
        ->getQueryBuilder()
-       ->upsertValues('table1')
+       ->merge('table1')
        ->setKey(['foo', 'bar'])
        ->columns(['foo', 'bar', 'fizz', 'buzz'])
        ->values([1, 2, 3, 4])
@@ -328,8 +325,7 @@ Using a nested query in USING clause
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 You can use a nested sub-query or raw expression in place of the USING clause,
-everthing documented above works the same. You just need to use
-``->upsertQuery()`` in place of ``->upsertValues()`` and call ``->query()``
+everthing documented above works the same. You just need to call ``->query()``
 instead of ``->columns()`` and ``->values()``.
 
 The following query:
@@ -349,7 +345,7 @@ The following query:
 
    $runner
        ->getQueryBuilder()
-       ->upsertQuery('table1')
+       ->merge('table1')
        ->setKey(['foo', 'bar'])
        ->query($using);
        ->onConflictUpdate()
@@ -420,7 +416,7 @@ supports it:
 
    $runner
        ->getQueryBuilder()
-       ->upsertValues('table1')
+       ->merge('table1')
        ->setKey(['foo', 'bar'])
        ->columns(['foo', 'bar', 'fizz', 'buzz'])
        ->values([1, 2, 3, 4])

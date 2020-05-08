@@ -606,7 +606,7 @@ class DefaultSqlWriter extends AbstractSqlWriter
         $output = [];
 
         if (!$relation = $query->getRelation()) {
-            throw new QueryError("Upsert query must have a relation.");
+            throw new QueryError("Merge query must have a relation.");
         }
 
         $columns = $query->getAllColumns();
@@ -653,7 +653,7 @@ class DefaultSqlWriter extends AbstractSqlWriter
                 break;
 
             default:
-                throw new QueryError(\sprintf("Unsupport upsert conflict mode: %s", (string) $mode));
+                throw new QueryError(\sprintf("Unsupport merge conflict mode: %s", (string) $mode));
         }
 
         // WHEN NOT MATCHED THEN

@@ -5,15 +5,13 @@ declare(strict_types=1);
 namespace Goat\Runner;
 
 use Goat\Query\DeleteQuery;
-use Goat\Query\InsertQueryQuery;
-use Goat\Query\InsertValuesQuery;
+use Goat\Query\InsertQuery;
+use Goat\Query\MergeQuery;
 use Goat\Query\PreparedQuery;
 use Goat\Query\Query;
 use Goat\Query\QueryBuilder;
 use Goat\Query\SelectQuery;
 use Goat\Query\UpdateQuery;
-use Goat\Query\UpsertQueryQuery;
-use Goat\Query\UpsertValuesQuery;
 
 class DefaultQueryBuilder implements QueryBuilder
 {
@@ -65,33 +63,65 @@ class DefaultQueryBuilder implements QueryBuilder
     /**
      * {@inheritdoc}
      */
-    final public function insertQuery($relation): InsertQueryQuery
+    public function insert($relation): InsertQuery
     {
-        return $this->setQueryRunner(new InsertQueryQuery($relation));
+        return $this->setQueryRunner(new InsertQuery($relation));
+    }
+
+    /**
+     * {@inheritdoc}
+     *
+     * @deprecated
+     * @see self::insert()
+     * @todo trigger deprecation notice
+     */
+    final public function insertQuery($relation): InsertQuery
+    {
+        return $this->insert($relation);
+    }
+
+    /**
+     * {@inheritdoc}
+     *
+     * @deprecated
+     * @see self::insert()
+     * @todo trigger deprecation notice
+     */
+    final public function insertValues($relation): InsertQuery
+    {
+        return $this->insert($relation);
     }
 
     /**
      * {@inheritdoc}
      */
-    final public function insertValues($relation): InsertValuesQuery
+    public function merge($relation): MergeQuery
     {
-        return $this->setQueryRunner(new InsertValuesQuery($relation));
+        return $this->setQueryRunner(new MergeQuery($relation));
     }
 
     /**
      * {@inheritdoc}
+     *
+     * @deprecated
+     * @see self::insert()
+     * @todo trigger deprecation notice
      */
-    public function upsertValues($relation): UpsertValuesQuery
+    public function upsertValues($relation): MergeQuery
     {
-        return $this->setQueryRunner(new UpsertValuesQuery($relation));
+        return $this->merge($relation);
     }
 
     /**
      * {@inheritdoc}
+     *
+     * @deprecated
+     * @see self::insert()
+     * @todo trigger deprecation notice
      */
-    public function upsertQuery($relation): UpsertQueryQuery
+    public function upsertQuery($relation): MergeQuery
     {
-        return $this->setQueryRunner(new UpsertQueryQuery($relation));
+        return $this->merge($relation);
     }
 
     /**

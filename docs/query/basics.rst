@@ -16,9 +16,7 @@ A query created from its runner:
 
       $update = $runner->getQueryBuilder()->update($relation, $alias);
 
-      $insertValues = $runner->getQueryBuilder()->insertValues($relation);
-
-      $insertQuery = $runner->getQueryBuilder()->insertQuery($relation);
+      $merge = $runner->getQueryBuilder()->merge($relation);
 
       $delete = $runner->getQueryBuilder()->delete($relation, $alias);
 

@@ -10,7 +10,7 @@ use Goat\Query\QueryError;
 /**
  * Common data for INSERT ON CONCLIT or MERGE queries.
  */
-trait UpsertTrait
+trait MergeTrait
 {
     private $conflictBehaviour = Query::CONFLICT_UPDATE;
     private $primaryKey = [];
@@ -37,13 +37,13 @@ trait UpsertTrait
     }
 
     /**
-     * Set upsert key (primary key for matching for conflict).
+     * Set merge key (primary key for matching for conflict).
      */
     public function setKey(array $columnNames): self
     {
         foreach ($columnNames as $columnName) {
             if (!\is_string($columnName) || false !== \strpos($columnName, '.')) {
-                throw new QueryError("column names in the primary key of an upsert query can only be a column name, without table prefix");
+                throw new QueryError("column names in the primary key of an merge query can only be a column name, without table prefix");
             }
         }
 
@@ -53,7 +53,7 @@ trait UpsertTrait
     }
 
     /**
-     * Get upsert key (primary key for matching for conflict).
+     * Get merge key (primary key for matching for conflict).
      */
     public function getKey(): array
     {
