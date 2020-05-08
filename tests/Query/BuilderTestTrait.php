@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Goat\Query\Tests;
 
+use Goat\Query\Impl\PgSQLFormatter;
 use Goat\Query\Writer\DefaultFormatter;
 use Goat\Runner\Testing\NullEscaper;
 
@@ -33,6 +34,11 @@ trait BuilderTestTrait
             self::normalize($expected),
             self::normalize($actual)
         );
+    }
+
+    protected static function createPgSQLFormatter()
+    {
+        return new PgSQLFormatter(new NullEscaper());
     }
 
     protected static function createStandardFormatter()

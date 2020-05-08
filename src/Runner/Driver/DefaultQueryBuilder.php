@@ -12,6 +12,8 @@ use Goat\Query\Query;
 use Goat\Query\QueryBuilder;
 use Goat\Query\SelectQuery;
 use Goat\Query\UpdateQuery;
+use Goat\Query\UpsertQueryQuery;
+use Goat\Query\UpsertValuesQuery;
 use Goat\Runner\Runner;
 
 class DefaultQueryBuilder implements QueryBuilder
@@ -75,6 +77,22 @@ class DefaultQueryBuilder implements QueryBuilder
     final public function insertValues($relation): InsertValuesQuery
     {
         return $this->setQueryRunner(new InsertValuesQuery($relation));
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function upsertValues($relation): UpsertValuesQuery
+    {
+        return $this->setQueryRunner(new UpsertValuesQuery($relation));
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function upsertQuery($relation): UpsertQueryQuery
+    {
+        return $this->setQueryRunner(new UpsertQueryQuery($relation));
     }
 
     /**

@@ -65,6 +65,24 @@ interface QueryBuilder
     public function insertQuery($relation): InsertQueryQuery;
 
     /**
+     * Create an UPDATE ... ON CONFLICT DO ... or MERGE ... query builder which
+     * uses a constant table expression (i.e. VALUES (...), ...) as source.
+     *
+     * @param string|ExpressionRelation $relation
+     *   SQL from statement relation name
+     */
+    public function upsertValues($relation): UpsertValuesQuery;
+
+    /**
+     * Create an UPDATE ... ON CONFLICT DO ... or MERGE ... query builder which
+     * uses a nested query as source.
+     *
+     * @param string|ExpressionRelation $relation
+     *   SQL from statement relation name
+     */
+    public function upsertQuery($relation): UpsertQueryQuery;
+
+    /**
      * Create a DELETE query builder
      *
      * @param string|ExpressionRelation $relation
