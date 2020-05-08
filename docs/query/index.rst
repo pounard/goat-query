@@ -14,5 +14,6 @@ The query builder
    impl/insert-query
    impl/update
    impl/delete
+   impl/merge
    impl/where
    impl/with
