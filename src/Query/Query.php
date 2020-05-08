@@ -20,6 +20,8 @@ interface Query extends Statement
     const NULL_LAST = 1;
     const ORDER_ASC = 1;
     const ORDER_DESC = 2;
+    const CONFLICT_IGNORE = 1;
+    const CONFLICT_UPDATE = 2;
 
     /**
      * Set runner

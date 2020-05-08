@@ -18,6 +18,8 @@ use Goat\Query\QueryError;
 use Goat\Query\SelectQuery;
 use Goat\Query\Statement;
 use Goat\Query\UpdateQuery;
+use Goat\Query\UpsertQueryQuery;
+use Goat\Query\UpsertValuesQuery;
 use Goat\Query\Where;
 use Goat\Query\Partial\Column;
 use Goat\Query\Partial\Join;
@@ -606,6 +608,146 @@ class DefaultSqlWriter extends AbstractSqlWriter
     }
 
     /**
+     * @param UpsertQueryQuery|UpsertValuesQuery $query
+     */
+    private function doFormatUpsertWhen(
+        $query,
+        $escapedInsertRelation,
+        $escapedUsingAlias
+    ): string {
+        $columns = $query->getAllColumns();
+
+        // Build USING columns map.
+        $usingColumnMap = [];
+        foreach ($columns as $column) {
+            $usingColumnMap[$column] = $escapedUsingAlias . "." . $this->escaper->escapeIdentifier($column);
+        }
+
+        // WHEN MATCHED THEN
+        switch ($mode = $query->getConflictBehaviour()) {
+
+            case Query::CONFLICT_IGNORE:
+                // Do nothing.
+                break;
+
+            case Query::CONFLICT_UPDATE:
+                // Exclude primary key from the UPDATE statement.
+                $key = $query->getKey();
+                $setColumnMap = [];
+                foreach ($usingColumnMap as $column => $usingColumnExpression) {
+                    if (!\in_array($column, $key)) {
+                        $setColumnMap[$column] = ExpressionRaw::create($usingColumnExpression);
+                    }
+                }
+                $output[] = "when matched then update set";
+                $output[] = $this->formatUpdateSet($setColumnMap);
+                break;
+
+            default:
+                throw new QueryError(\sprintf("Unsupport upsert conflict mode: %s", (string) $mode));
+        }
+
+        // WHEN NOT MATCHED THEN
+        $output[] = \sprintf(
+            "when not matched then insert into %s (%s)",
+            $escapedInsertRelation,
+            \implode(
+                ', ',
+                \array_map(
+                    function ($column) {
+                        return $this->escaper->escapeIdentifier($column);
+                    },
+                    $columns
+                )
+            )
+        );
+        $output[] = \sprintf("values (%s)", \implode(', ', $usingColumnMap));
+
+        // RETURNING
+        $return = $query->getAllReturn();
+        if ($return) {
+            $output[] = \sprintf("returning %s", $this->formatReturning($return));
+        }
+
+        return \implode("\n", $output);
+    }
+
+    /**
+     * Format given merge query.
+     */
+    protected function formatQueryUpsertValues(UpsertValuesQuery $query) : string
+    {
+        $output = [];
+
+        if (!$valueCount = $query->getValueCount()) {
+            throw new QueryError("Cannot upsert default values.");
+        }
+        if (!$relation = $query->getRelation()) {
+            throw new QueryError("Upsert query must have a relation.");
+        }
+
+        $columns = $query->getAllColumns();
+        $escapedInsertRelation = $this->escaper->escapeIdentifier($relation->getName());
+        $escapedUsingAlias = $this->escaper->escapeIdentifier($query->getUsingRelationAlias());
+
+        $output[] = $this->formatWith($query->getAllWith());
+
+        // From SQL:2003 standard, MERGE queries don't have table alias.
+        $output[] = "merge into " . $escapedInsertRelation;
+
+        // USING
+        $output[] = "using values";
+        $values = [];
+        for ($i = 0; $i < $valueCount; ++$i) {
+            $values[] = \sprintf(
+                "(%s)",
+                \implode(', ', \array_fill(0, \count($columns), '?'))
+            );
+        }
+        $output[] = \implode(', ', $values);
+        $output[] = "as " . $escapedUsingAlias;
+
+        $output[] = $this->doFormatUpsertWhen($query, $escapedInsertRelation, $escapedUsingAlias);
+
+        return \implode("\n", $output);
+    }
+
+    /**
+     * Format given merge query.
+     *
+     * @param InsertQueryQuery $query
+     *
+     * @return string
+     */
+    protected function formatQueryUpsertQuery(UpsertQueryQuery $query) : string
+    {
+        $output = [];
+
+        if (!$relation = $query->getRelation()) {
+            throw new QueryError("Upsert query must have a relation.");
+        }
+
+        $escapedInsertRelation = $this->escaper->escapeIdentifier($relation->getName());
+        $escapedUsingAlias = $this->escaper->escapeIdentifier($query->getUsingRelationAlias());
+
+        $output[] = $this->formatWith($query->getAllWith());
+
+        // From SQL:2003 standard, MERGE queries don't have table alias.
+        $output[] = "merge into " . $escapedInsertRelation;
+
+        // USING
+        $output[] = \sprintf(
+            "using (%s) as %s",
+            $this->format($query->getQuery()),
+            $escapedUsingAlias
+        );
+
+        $output[] = $this->doFormatUpsertWhen($query, $escapedInsertRelation, $escapedUsingAlias);
+
+        return \implode("\n", $output);
+    }
+
+    /**
      * Format given insert query
      */
     protected function formatQueryInsertValues(InsertValuesQuery $query) : string
@@ -989,18 +1131,22 @@ class DefaultSqlWriter extends AbstractSqlWriter
             return $this->formatExpressionValue($query);
         } else if ($query instanceof ExpressionLike) {
             return $this->formatExpressionLike($query);
+        } else if ($query instanceof Where) {
+            return $this->formatWhere($query);
         } else if ($query instanceof DeleteQuery) {
             return $this->formatQueryDelete($query);
         } else if ($query instanceof SelectQuery) {
             return $this->formatQuerySelect($query);
+        } else if ($query instanceof UpsertValuesQuery) {
+            return $this->formatQueryUpsertValues($query);
+        } else if ($query instanceof UpsertQueryQuery) {
+            return $this->formatQueryUpsertQuery($query);
         } else if ($query instanceof InsertQueryQuery) {
             return $this->formatQueryInsertFrom($query);
         } else if ($query instanceof InsertValuesQuery) {
             return $this->formatQueryInsertValues($query);
         } else if ($query instanceof UpdateQuery) {
             return $this->formatQueryUpdate($query);
-        } else if ($query instanceof Where) {
-            return $this->formatWhere($query);
         }
 
         throw new \InvalidArgumentException();

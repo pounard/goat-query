@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Goat\Query\Tests;
 
+use Goat\Driver\Platform\Query\PgSQLWriter;
 use Goat\Driver\Query\DefaultSqlWriter;
 use Goat\Runner\Testing\NullEscaper;
 
@@ -33,6 +34,11 @@ trait BuilderTestTrait
             self::normalize($expected),
             self::normalize($actual)
         );
+    }
+
+    protected static function createPgSQLWriter()
+    {
+        return new PgSQLWriter(new NullEscaper());
     }
 
     protected static function createStandardSqlWriter()
