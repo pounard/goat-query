@@ -7,19 +7,18 @@ namespace Goat\Driver\Query;
 use Goat\Query\DeleteQuery;
 use Goat\Query\Expression;
 use Goat\Query\ExpressionColumn;
+use Goat\Query\ExpressionConstantTable;
 use Goat\Query\ExpressionLike;
 use Goat\Query\ExpressionRaw;
 use Goat\Query\ExpressionRelation;
 use Goat\Query\ExpressionValue;
-use Goat\Query\InsertQueryQuery;
-use Goat\Query\InsertValuesQuery;
+use Goat\Query\InsertQuery;
+use Goat\Query\MergeQuery;
 use Goat\Query\Query;
 use Goat\Query\QueryError;
 use Goat\Query\SelectQuery;
 use Goat\Query\Statement;
 use Goat\Query\UpdateQuery;
-use Goat\Query\UpsertQueryQuery;
-use Goat\Query\UpsertValuesQuery;
 use Goat\Query\Where;
 use Goat\Query\Partial\Column;
 use Goat\Query\Partial\Join;
@@ -42,14 +41,12 @@ use Goat\Query\Partial\Join;
 class DefaultSqlWriter extends AbstractSqlWriter
 {
     /**
-     * Format a single set clause (update queries)
+     * Format a single set clause (update queries).
      *
      * @param string $columnName
      * @param string|Expression $expression
-     *
-     * @return string
      */
-    protected function formatUpdateSetItem(string $columnName, $expression) : string
+    protected function formatUpdateSetItem(string $columnName, $expression): string
     {
         $columnString = $this->escaper->escapeIdentifier($columnName);
 
@@ -63,12 +60,12 @@ class DefaultSqlWriter extends AbstractSqlWriter
     }
 
     /**
-     * Format all set clauses (update queries)
+     * Format all set clauses (update queries).
      *
      * @param string[]|Expression[] $columns
      *   Keys are column names, values are strings or Expression instances
      */
-    protected function formatUpdateSet(array $columns) : string
+    protected function formatUpdateSet(array $columns): string
     {
         $output = [];
 
@@ -80,14 +77,9 @@ class DefaultSqlWriter extends AbstractSqlWriter
     }
 
     /**
-     * Format projection for a single select column or statement
-     *
-     * @param string|Expression $statement
-     * @param string $alias
-     *
-     * @return string
+     * Format projection for a single select column or statement.
      */
-    protected function formatSelectItem(Column $column) : string
+    protected function formatSelectItem(Column $column): string
     {
         $output = $this->format($column->expression);
 
@@ -106,16 +98,14 @@ class DefaultSqlWriter extends AbstractSqlWriter
     }
 
     /**
-     * Format the whole projection
+     * Format the whole projection.
      *
      * @param array $columns
      *   Each column is an array that must contain:
      *     - 0: string or Statement: column name or SQL statement
      *     - 1: column alias, can be empty or null for no aliasing
-     *
-     * @return string
      */
-    protected function formatSelect(array $columns) : string
+    protected function formatSelect(array $columns): string
     {
         if (!$columns) {
             return '*';
@@ -131,35 +121,28 @@ class DefaultSqlWriter extends AbstractSqlWriter
     }
 
     /**
-     * Format projection for a single returning column or statement
-     *
-     * @param string|Expression $statement
-     * @param string $alias
-     *
-     * @return string
+     * Format projection for a single returning column or statement.
      */
-    protected function formatReturningItem(Column $column) : string
+    protected function formatReturningItem(Column $column): string
     {
         return $this->formatSelectItem($column->expression, $column->alias);
     }
 
     /**
-     * Format the whole projection
+     * Format the whole projection.
      *
      * @param array $return
      *   Each column is an array that must contain:
      *     - 0: string or Statement: column name or SQL statement
      *     - 1: column alias, can be empty or null for no aliasing
-     *
-     * @return string
      */
-    protected function formatReturning(array $return) : string
+    protected function formatReturning(array $return): string
     {
         return $this->formatSelect($return);
     }
 
     /**
-     * Format a single order by
+     * Format a single order by.
      *
      * @param string|Expression $column
      * @param int $order
@@ -167,7 +150,7 @@ class DefaultSqlWriter extends AbstractSqlWriter
      * @param int $null
      *   Query::NULL_* constant
      */
-    protected function formatOrderByItem($column, int $order, int $null) : string
+    protected function formatOrderByItem($column, int $order, int $null): string
     {
         $column = $this->format($column);
 
@@ -197,17 +180,15 @@ class DefaultSqlWriter extends AbstractSqlWriter
     }
 
     /**
-     * Format the whole order by clause
+     * Format the whole order by clause.
      *
      * @param array $orders
      *   Each order is an array that must contain:
      *     - 0: Expression
      *     - 1: Query::ORDER_* constant
      *     - 2: Query::NULL_* constant
-     *
-     * @return string
      */
-    protected function formatOrderBy(array $orders) : string
+    protected function formatOrderBy(array $orders): string
     {
         if (!$orders) {
             return '';
@@ -224,14 +205,12 @@ class DefaultSqlWriter extends AbstractSqlWriter
     }
 
     /**
-     * Format the whole group by clause
+     * Format the whole group by clause.
      *
      * @param Expression[] $groups
      *   Array of column names or aliases
-     *
-     * @return string
      */
-    protected function formatGroupBy(array $groups) : string
+    protected function formatGroupBy(array $groups): string
     {
         if (!$groups) {
             return '';
@@ -246,20 +225,9 @@ class DefaultSqlWriter extends AbstractSqlWriter
     }
 
     /**
-     * Format a single join statement
-     *
-     * @param ExpressionRelation $relation
-     *   Relation to join on name
-     * @param Where $condition
-     *   There where condition to join upon, it can be empty or null case in
-     *   which this will leave the SQL engine doing a cartesian product with
-     *   the tables
-     * @param int $mode
-     *   Query::JOIN_* constant
-     *
-     * @return string
+     * Format a single join statement.
      */
-    protected function formatJoinItem(Join $join) : string
+    protected function formatJoinItem(Join $join): string
     {
         switch ($join->mode) {
 
@@ -302,13 +270,11 @@ class DefaultSqlWriter extends AbstractSqlWriter
     }
 
     /**
-     * Format all join statements
+     * Format all join statements.
      *
      * @param Join[] $joins
-     *
-     * @return string
      */
-    protected function formatJoin(array $joins) : string
+    protected function formatJoin(array $joins): string
     {
         if (!$joins) {
             return '';
@@ -324,7 +290,7 @@ class DefaultSqlWriter extends AbstractSqlWriter
     }
 
     /**
-     * Format all update from statement
+     * Format all update from statement.
      *
      * @param UpdateQuery $query
      * @param array $joins
@@ -333,10 +299,8 @@ class DefaultSqlWriter extends AbstractSqlWriter
      *     - 0: ExpressionRelation relation name
      *     - 1: Where or null condition
      *     - 2: Query::JOIN_* constant
-     *
-     * @return string
      */
-    protected function formatUpdateFrom(UpdateQuery $query, array $joins) : string
+    protected function formatUpdateFrom(UpdateQuery $query, array $joins): string
     {
         if (!$joins) {
             return '';
@@ -370,7 +334,7 @@ class DefaultSqlWriter extends AbstractSqlWriter
     }
 
     /**
-     * Format all delete using statement
+     * Format all delete using statement.
      *
      * @param DeleteQuery $query
      * @param array $joins
@@ -379,10 +343,8 @@ class DefaultSqlWriter extends AbstractSqlWriter
      *     - 0: ExpressionRelation relation name
      *     - 1: Where or null condition
      *     - 2: Query::JOIN_* constant
-     *
-     * @return string
      */
-    protected function formatDeleteUsing(DeleteQuery $query, array $joins) : string
+    protected function formatDeleteUsing(DeleteQuery $query, array $joins): string
     {
         if (!$joins) {
             return '';
@@ -416,16 +378,14 @@ class DefaultSqlWriter extends AbstractSqlWriter
     }
 
     /**
-     * Format range statement
+     * Format range statement.
      *
      * @param int $limit
      *   O means no limit
      * @param int $offset
      *   0 means default offset
-     *
-     * @return string
      */
-    protected function formatRange(int $limit = 0, int $offset = 0) : string
+    protected function formatRange(int $limit = 0, int $offset = 0): string
     {
         if ($limit) {
             return \sprintf('limit %d offset %d', $limit, $offset);
@@ -437,16 +397,14 @@ class DefaultSqlWriter extends AbstractSqlWriter
     }
 
     /**
-     * Format value list
+     * Format value list.
      *
      * @param mixed[] $arguments
      *   Arbitrary arguments
      * @param string $type = null
      *   Data type of arguments
-     *
-     * @return string
      */
-    protected function formatValueList(array $arguments) : string
+    protected function formatValueList(array $arguments): string
     {
         return \implode(
             ', ',
@@ -464,25 +422,19 @@ class DefaultSqlWriter extends AbstractSqlWriter
     }
 
     /**
-     * Format placeholder for a single value
+     * Format placeholder for a single value.
      *
      * @param mixed $argument
-     *
-     * @return string
      */
-    protected function formatPlaceholder($argument) : string
+    protected function formatPlaceholder($argument): string
     {
         return '?';
     }
 
     /**
-     * Format where instance
-     *
-     * @param Where $where
-     *
-     * @return string
+     * Format where instance.
      */
-    protected function formatWhere(Where $where) : string
+    protected function formatWhere(Where $where): string
     {
         if ($where->isEmpty()) {
             // Definitely legit (except for pgsql which awaits a bool)
@@ -565,15 +517,15 @@ class DefaultSqlWriter extends AbstractSqlWriter
     }
 
     /**
-     * When no values are set in an insert query, what should we write ?
+     * When no values are set in an insert query, what should we write?
      */
-    protected function formatInsertNoValuesStatement() : string
+    protected function formatInsertNoValuesStatement(): string
     {
         return "DEFAULT VALUES";
     }
 
     /**
-     * Format array of with statements
+     * Format array of with statements.
      *
      * @param array $withs
      *   Each join is an array that must contain:
@@ -581,10 +533,8 @@ class DefaultSqlWriter extends AbstractSqlWriter
      *     - 0: string temporary table alias
      *     - 1: SelectQuery
      *     - 2: bool is recursive or not
-     *
-     * @return string
      */
-    protected function formatWith(array $withs) : string
+    protected function formatWith(array $withs): string
     {
         if (!$withs) {
             return '';
@@ -608,14 +558,73 @@ class DefaultSqlWriter extends AbstractSqlWriter
     }
 
     /**
-     * @param UpsertQueryQuery|UpsertValuesQuery $query
+     * Format a constant table expression.
      */
-    private function doFormatUpsertWhen(
-        $query,
-        $escapedInsertRelation,
-        $escapedUsingAlias
-    ): string {
+    protected function formatExpressionConstantTable(ExpressionConstantTable $constantTable): string
+    {
+        $valueCount = $constantTable->getValueCount();
+        $columnCount = $constantTable->getColumnCount();
+
+        if (!$valueCount) {
+            return "values ()";
+        }
+
+        $output = [];
+
+        // @todo support raw expressions within
+        for ($i = 0; $i < $valueCount; ++$i) {
+            $output[] = \sprintf(
+                "(%s)",
+                \implode(', ', \array_fill(0, $columnCount, '?'))
+            );
+        }
+
+        return "values " . \implode(", ", $output);
+    }
+
+    /**
+     * Format a column name list.
+     */
+    protected function formatColumnNameList(array $columnNames): string
+    {
+        return \implode(
+            ', ',
+            \array_map(
+                function ($column) {
+                    return $this->escaper->escapeIdentifier($column);
+                },
+                $columnNames
+            )
+        );
+    }
+
+    /**
+     * Format given merge query.
+     */
+    protected function formatQueryMerge(MergeQuery $query): string
+    {
+        $output = [];
+
+        if (!$relation = $query->getRelation()) {
+            throw new QueryError("Upsert query must have a relation.");
+        }
+
         $columns = $query->getAllColumns();
+        $escapedInsertRelation = $this->escaper->escapeIdentifier($relation->getName());
+        $escapedUsingAlias = $this->escaper->escapeIdentifier($query->getUsingRelationAlias());
+
+        $output[] = $this->formatWith($query->getAllWith());
+
+        // From SQL:2003 standard, MERGE queries don't have table alias.
+        $output[] = "merge into " . $escapedInsertRelation;
+
+        // USING
+        $using = $query->getQuery();
+        if ($using instanceof ExpressionConstantTable) {
+            $output[] = \sprintf("using %s as %s", $this->format($using), $escapedUsingAlias);
+        } else {
+            $output[] = \sprintf("using (%s) as %s", $this->format($using), $escapedUsingAlias);
+        }
 
         // Build USING columns map.
         $usingColumnMap = [];
@@ -651,15 +660,7 @@ class DefaultSqlWriter extends AbstractSqlWriter
         $output[] = \sprintf(
             "when not matched then insert into %s (%s)",
             $escapedInsertRelation,
-            \implode(
-                ', ',
-                \array_map(
-                    function ($column) {
-                        return $this->escaper->escapeIdentifier($column);
-                    },
-                    $columns
-                )
-            )
+            $this->formatColumnNameList($columns)
         );
         $output[] = \sprintf("values (%s)", \implode(', ', $usingColumnMap));
 
@@ -673,93 +674,16 @@ class DefaultSqlWriter extends AbstractSqlWriter
     }
 
     /**
-     * Format given merge query.
-     */
-    protected function formatQueryUpsertValues(UpsertValuesQuery $query) : string
-    {
-        $output = [];
-
-        if (!$valueCount = $query->getValueCount()) {
-            throw new QueryError("Cannot upsert default values.");
-        }
-        if (!$relation = $query->getRelation()) {
-            throw new QueryError("Upsert query must have a relation.");
-        }
-
-        $columns = $query->getAllColumns();
-        $escapedInsertRelation = $this->escaper->escapeIdentifier($relation->getName());
-        $escapedUsingAlias = $this->escaper->escapeIdentifier($query->getUsingRelationAlias());
-
-        $output[] = $this->formatWith($query->getAllWith());
-
-        // From SQL:2003 standard, MERGE queries don't have table alias.
-        $output[] = "merge into " . $escapedInsertRelation;
-
-        // USING
-        $output[] = "using values";
-        $values = [];
-        for ($i = 0; $i < $valueCount; ++$i) {
-            $values[] = \sprintf(
-                "(%s)",
-                \implode(', ', \array_fill(0, \count($columns), '?'))
-            );
-        }
-        $output[] = \implode(', ', $values);
-        $output[] = "as " . $escapedUsingAlias;
-
-        $output[] = $this->doFormatUpsertWhen($query, $escapedInsertRelation, $escapedUsingAlias);
-
-        return \implode("\n", $output);
-    }
-
-    /**
-     * Format given merge query.
-     *
-     * @param InsertQueryQuery $query
-     *
-     * @return string
-     */
-    protected function formatQueryUpsertQuery(UpsertQueryQuery $query) : string
-    {
-        $output = [];
-
-        if (!$relation = $query->getRelation()) {
-            throw new QueryError("Upsert query must have a relation.");
-        }
-
-        $escapedInsertRelation = $this->escaper->escapeIdentifier($relation->getName());
-        $escapedUsingAlias = $this->escaper->escapeIdentifier($query->getUsingRelationAlias());
-
-        $output[] = $this->formatWith($query->getAllWith());
-
-        // From SQL:2003 standard, MERGE queries don't have table alias.
-        $output[] = "merge into " . $escapedInsertRelation;
-
-        // USING
-        $output[] = \sprintf(
-            "using (%s) as %s",
-            $this->format($query->getQuery()),
-            $escapedUsingAlias
-        );
-
-        $output[] = $this->doFormatUpsertWhen($query, $escapedInsertRelation, $escapedUsingAlias);
-
-        return \implode("\n", $output);
-    }
-
-    /**
      * Format given insert query
      */
-    protected function formatQueryInsertValues(InsertValuesQuery $query) : string
+    protected function formatQueryInsert(InsertQuery $query): string
     {
         $output = [];
 
-        $escaper = $this->escaper;
         $columns = $query->getAllColumns();
-        $valueCount = $query->getValueCount();
 
         if (!$relation = $query->getRelation()) {
-            throw new QueryError("insert query must have a relation");
+            throw new QueryError("Insert query must target a table.");
         }
 
         $output[] = $this->formatWith($query->getAllWith());
@@ -769,82 +693,24 @@ class DefaultSqlWriter extends AbstractSqlWriter
             $this->escaper->escapeIdentifier($relation->getName())
         );
 
-        if (!$valueCount) {
-            // Assume there is no specific values, for PostgreSQL, we need to set
-            // "DEFAULT VALUES" explicitely, for MySQL "() VALUES ()" will do the
-            // trick
-            $output[] = $this->formatInsertNoValuesStatement();
-
-        } else {
-            if ($columns) {
-                $output[] = \sprintf(
-                    "(%s) values",
-                    \implode(', ', \array_map(
-                        static function ($column) use ($escaper) {
-                            return $escaper->escapeIdentifier($column);
-                        },
-                        $columns
-                    ))
-                );
-            }
-
-            $values = [];
-            for ($i = 0; $i < $valueCount; ++$i) {
-                $values[] = \sprintf(
-                    "(%s)",
-                    \implode(', ', \array_fill(0, \count($columns), '?'))
-                );
-            }
-            $output[] = \implode(', ', $values);
-        }
-
-        $return = $query->getAllReturn();
-        if ($return) {
-            $output[] = \sprintf("returning %s", $this->formatReturning($return));
-        }
-
-        return \implode("\n", $output);
-    }
-
-    /**
-     * Format given insert query
-     *
-     * @param InsertQueryQuery $query
-     *
-     * @return string
-     */
-    protected function formatQueryInsertFrom(InsertQueryQuery $query) : string
-    {
-        $output = [];
-
-        $escaper = $this->escaper;
-        $columns = $query->getAllColumns();
-        $subQuery = $query->getQuery();
-
-        if (!$relation = $query->getRelation()) {
-            throw new QueryError("insert query must have a relation");
-        }
-
-        $output[] = $this->formatWith($query->getAllWith());
-        $output[] = \sprintf(
-            "insert into %s",
-            // From SQL 92 standard, INSERT queries don't have table alias
-            $this->escaper->escapeIdentifier($relation->getName())
-        );
-
+        // Columns.
         if ($columns) {
-            $output[] = \sprintf(
-                "(%s)",
-                \implode(', ', \array_map(
-                    static function ($column) use ($escaper) {
-                        return $escaper->escapeIdentifier($column);
-                    },
-                    $columns
-                ))
-            );
+            $output[] = \sprintf("(%s)", $this->formatColumnNameList($columns));
         }
 
-        $output[] = $this->format($subQuery);
+        $using = $query->getQuery();
+        if ($using instanceof ExpressionConstantTable) {
+            if (\count($columns)) {
+                $output[] = $this->format($using);
+            } else {
+                // Assume there is no specific values, for PostgreSQL, we need to set
+                // "DEFAULT VALUES" explicitely, for MySQL "() VALUES ()" will do the
+                // trick
+                $output[] = $this->formatInsertNoValuesStatement();
+            }
+        } else {
+            $output[] = $this->format($using);
+        }
 
         $return = $query->getAllReturn();
         if ($return) {
@@ -855,18 +721,14 @@ class DefaultSqlWriter extends AbstractSqlWriter
     }
 
     /**
-     * Format given delete query
-     *
-     * @param DeleteQuery $query
-     *
-     * @return string
+     * Format given delete query.
      */
-    protected function formatQueryDelete(DeleteQuery $query) : string
+    protected function formatQueryDelete(DeleteQuery $query): string
     {
         $output = [];
 
         if (!$relation = $query->getRelation()) {
-            throw new QueryError("delete query must have a relation");
+            throw new QueryError("Delete query must target a table");
         }
 
         $output[] = $this->formatWith($query->getAllWith());
@@ -896,19 +758,15 @@ class DefaultSqlWriter extends AbstractSqlWriter
     }
 
     /**
-     * Format given update query
-     *
-     * @param UpdateQuery $query
-     *
-     * @return string
+     * Format given update query.
      */
-    protected function formatQueryUpdate(UpdateQuery $query) : string
+    protected function formatQueryUpdate(UpdateQuery $query): string
     {
         $output = [];
 
         $columns = $query->getUpdatedColumns();
         if (empty($columns)) {
-            throw new QueryError("cannot run an update query without any columns to update");
+            throw new QueryError("Cannot run an update query without any columns to update.");
         }
 
         if (!$relation = $query->getRelation()) {
@@ -943,13 +801,9 @@ class DefaultSqlWriter extends AbstractSqlWriter
     }
 
     /**
-     * Format given select query
-     *
-     * @param SelectQuery $query
-     *
-     * @return string
+     * Format given select query.
      */
-    protected function formatQuerySelect(SelectQuery $query) : string
+    protected function formatQuerySelect(SelectQuery $query): string
     {
         $output = [];
         $output[] = $this->formatWith($query->getAllWith());
@@ -991,25 +845,17 @@ class DefaultSqlWriter extends AbstractSqlWriter
     }
 
     /**
-     * Format value expression
-     *
-     * @param ExpressionValue $value
-     *
-     * @return string
+     * Format value expression.
      */
-    protected function formatExpressionRaw(ExpressionRaw $expression) : string
+    protected function formatExpressionRaw(ExpressionRaw $expression): string
     {
         return $expression->getString();
     }
 
     /**
-     * Format value expression
-     *
-     * @param ExpressionValue $value
-     *
-     * @return string
+     * Format value expression.
      */
-    protected function formatExpressionColumn(ExpressionColumn $column) : string
+    protected function formatExpressionColumn(ExpressionColumn $column): string
     {
         // Allow selection such as "table".*
         if ('*' !== ($target = $column->getName())) {
@@ -1028,13 +874,9 @@ class DefaultSqlWriter extends AbstractSqlWriter
     }
 
     /**
-     * Format relation expression
-     *
-     * @param ExpressionRelation $value
-     *
-     * @return string
+     * Format relation expression.
      */
-    protected function formatExpressionRelation(ExpressionRelation $relation) : string
+    protected function formatExpressionRelation(ExpressionRelation $relation): string
     {
         $table  = $relation->getName();
         $schema = $relation->getSchema();
@@ -1072,13 +914,9 @@ class DefaultSqlWriter extends AbstractSqlWriter
     }
 
     /**
-     * Format value expression
-     *
-     * @param ExpressionValue $value
-     *
-     * @return string
+     * Format value expression.
      */
-    protected function formatExpressionValue(ExpressionValue $value) : string
+    protected function formatExpressionValue(ExpressionValue $value): string
     {
         if ($type = $value->getType()) {
             return \sprintf(
@@ -1091,13 +929,9 @@ class DefaultSqlWriter extends AbstractSqlWriter
     }
 
     /**
-     * Format like expression
-     *
-     * @param ExpressionLike $value
-     *
-     * @return string
+     * Format like expression.
      */
-    protected function formatExpressionLike(ExpressionLike $value) : string
+    protected function formatExpressionLike(ExpressionLike $value): string
     {
         if ($value->hasValue()) {
             $pattern = $value->getPattern(
@@ -1119,7 +953,7 @@ class DefaultSqlWriter extends AbstractSqlWriter
     /**
      * {@inheritdoc}
      */
-    public function format(Statement $query) : string
+    public function format(Statement $query): string
     {
         if ($query instanceof ExpressionColumn) {
             return $this->formatExpressionColumn($query);
@@ -1131,20 +965,18 @@ class DefaultSqlWriter extends AbstractSqlWriter
             return $this->formatExpressionValue($query);
         } else if ($query instanceof ExpressionLike) {
             return $this->formatExpressionLike($query);
+        } else if ($query instanceof ExpressionConstantTable) {
+            return $this->formatExpressionConstantTable($query);
         } else if ($query instanceof Where) {
             return $this->formatWhere($query);
         } else if ($query instanceof DeleteQuery) {
             return $this->formatQueryDelete($query);
         } else if ($query instanceof SelectQuery) {
             return $this->formatQuerySelect($query);
-        } else if ($query instanceof UpsertValuesQuery) {
-            return $this->formatQueryUpsertValues($query);
-        } else if ($query instanceof UpsertQueryQuery) {
-            return $this->formatQueryUpsertQuery($query);
-        } else if ($query instanceof InsertQueryQuery) {
-            return $this->formatQueryInsertFrom($query);
-        } else if ($query instanceof InsertValuesQuery) {
-            return $this->formatQueryInsertValues($query);
+        } else if ($query instanceof MergeQuery) {
+            return $this->formatQueryMerge($query);
+        } else if ($query instanceof InsertQuery) {
+            return $this->formatQueryInsert($query);
         } else if ($query instanceof UpdateQuery) {
             return $this->formatQueryUpdate($query);
         }

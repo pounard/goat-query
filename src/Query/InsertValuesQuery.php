@@ -4,30 +4,22 @@ declare(strict_types=1);
 
 namespace Goat\Query;
 
-use Goat\Query\Partial\InsertValuesTrait;
-use Goat\Query\Partial\ReturningQueryTrait;
-
 /**
- * Represents an INSERT INTO table (...) VALUES (...) [, (...)] query
+ * @deprecated
+ *   Use InsertQuery directly instead.
+ * @todo
+ *   Add deprecation messages.
  */
-final class InsertValuesQuery extends AbstractQuery
+final class InsertValuesQuery extends InsertQuery
 {
-    use InsertValuesTrait;
-    use ReturningQueryTrait;
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getArguments(): ArgumentBag
+    public function getValueCount(): int
     {
-        $arguments = new ArgumentBag();
+        $query = $this->getQuery();
 
-        foreach ($this->getAllWith() as $selectQuery) {
-            $arguments->append($selectQuery[1]->getArguments());
+        if ($query instanceof ExpressionConstantTable) {
+            return $query->getValueCount();
         }
 
-        $arguments->append($this->arguments);
-
-        return $arguments;
+        return 0;
     }
 }

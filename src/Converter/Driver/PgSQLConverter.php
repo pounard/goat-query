@@ -8,8 +8,6 @@ use Goat\Converter\TypeConversionError;
 
 /**
  * PostgreSQL all versions converter.
- *
- * @todo move this into the Goat\Runner\Driver namespace
  */
 class PgSQLConverter implements ConverterInterface
 {

@@ -4,30 +4,12 @@ declare(strict_types=1);
 
 namespace Goat\Query;
 
-use Goat\Query\Partial\InsertQueryTrait;
-use Goat\Query\Partial\ReturningQueryTrait;
-
 /**
- * Represents an INSERT INTO table SELECT ... query
+ * @deprecated
+ *   Use InsertQuery directly instead.
+ * @todo
+ *   Add deprecation messages.
  */
-final class InsertQueryQuery extends AbstractQuery
+final class InsertQueryQuery extends InsertQuery
 {
-    use InsertQueryTrait;
-    use ReturningQueryTrait;
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getArguments(): ArgumentBag
-    {
-        $arguments = new ArgumentBag();
-
-        foreach ($this->getAllWith() as $selectQuery) {
-            $arguments->append($selectQuery[1]->getArguments());
-        }
-
-        $arguments->append($this->query->getArguments());
-
-        return $arguments;
-    }
 }
