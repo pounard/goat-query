@@ -10,14 +10,6 @@ use PHPUnit\Framework\TestCase;
 abstract class DatabaseAwareQueryTest extends TestCase
 {
     /**
-     * {@inheritdoc}
-     */
-    protected function tearDown(): void
-    {
-        \gc_collect_cycles();
-    }
-
-    /**
      * Data provider for using drivers.
      */
     public function driverDataProvider(): iterable
@@ -31,10 +23,6 @@ abstract class DatabaseAwareQueryTest extends TestCase
 
     /**
      * Data provider for using runners.
-     *
-     * During this generator execution, $this->runner and $this->driver will
-     * be set, hopefully they will be properly closed during teardown, which
-     * should happen after every test.
      */
     public function runnerDataProvider(): iterable
     {
@@ -71,6 +59,10 @@ abstract class DatabaseAwareQueryTest extends TestCase
 
     /**
      * Override this method to create your test data.
+     *
+     * Be careful, when executing this method, $this context is a temporary
+     * object used by the data provider to create the data, which means that
+     * it will NOT be your own test class instance.
      */
     protected function createTestData(Runner $runner, ?string $schema): void
     {
