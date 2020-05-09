@@ -24,6 +24,20 @@ final class PgSQLUpsertValuesUnitTest extends TestCase
         self::createStandardFormatter()->format($query);
     }
 
+    public function testKeyIsMandatoryWithOnConflictUpdate(): void
+    {
+        $query = (new UpsertValuesQuery('table1'))
+            ->columns(['foo', 'bar', 'fizz', 'buzz'])
+            ->onConflictUpdate()
+            ->values([1, 2, 3, 4])
+        ;
+
+        self::expectException(QueryError::class);
+        self::expectExceptionMessageMatches('/Key must be specified/');
+
+        self::createPgSQLFormatter()->format($query);
+    }
+
     public function testStringWithDotKeyRaiseError(): void
     {
         $query = new UpsertValuesQuery('table1');
@@ -124,38 +138,10 @@ values (
 ), (
     ?, ?, ?, ?
 )
-on conflict do update set
-    "fizz" = excluded."fizz",
-    "buzz" = excluded."buzz"
-SQL
-            ,
-            self::createPgSQLFormatter()->format($query)
-        );
-    }
-
-    public function testOnConflictUpdateWithoutKey(): void
-    {
-        $query = (new UpsertValuesQuery('table1'))
-            ->columns(['foo', 'bar', 'fizz', 'buzz'])
-            ->onConflictUpdate()
-            ->values([1, 2, 3, 4])
-            ->values([5, 6, 7, 8])
-        ;
-
-        self::assertSameSql(<<<SQL
-insert into "table1" (
-    "foo", "bar", "fizz", "buzz"
-)
-values (
-    ?, ?, ?, ?
-), (
-    ?, ?, ?, ?
-)
-on conflict do update set
-    "foo" = excluded."foo",
-    "bar" = excluded."bar",
-    "fizz" = excluded."fizz",
-    "buzz" = excluded."buzz"
+on conflict ("foo", "bar")
+    do update set
+        "fizz" = excluded."fizz",
+        "buzz" = excluded."buzz"
 SQL
             ,
             self::createPgSQLFormatter()->format($query)

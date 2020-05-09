@@ -97,13 +97,28 @@ class PgSQLFormatter extends DefaultFormatter
             case Query::CONFLICT_UPDATE:
                 // Exclude primary key from the UPDATE statement.
                 $key = $query->getKey();
+                if (!$key) {
+                    throw new QueryError(\sprintf("Key must be specified calling %s::setKey() when on conflict update is set.", \get_class($query)));
+                }
                 $setColumnMap = [];
                 foreach ($columns as $column) {
                     if (!\in_array($column, $key)) {
-                        $setColumnMap[$column] = ExpressionRaw::create("EXCLUDED." . $escaper->escapeIdentifier($column));
+                        $setColumnMap[$column] = ExpressionRaw::create("excluded." . $this->escaper->escapeIdentifier($column));
                     }
                 }
-                $output[] = "on conflict do update set";
+                $output[] = \sprintf(
+                    "on conflict (%s)",
+                    \implode(
+                        ", ",
+                        \array_map(
+                            function ($column) {
+                                return $this->escaper->escapeIdentifier($column);
+                            },
+                            $key
+                        )
+                    )
+                );
+                $output[] = "do update set";
                 $output[] = $this->formatUpdateSet($setColumnMap);
                 break;
 
@@ -166,13 +181,28 @@ class PgSQLFormatter extends DefaultFormatter
             case Query::CONFLICT_UPDATE:
                 // Exclude primary key from the UPDATE statement.
                 $key = $query->getKey();
+                if (!$key) {
+                    throw new QueryError(\sprintf("Key must be specified calling %s::setKey() when on conflict update is set.", \get_class($query)));
+                }
                 $setColumnMap = [];
                 foreach ($columns as $column) {
                     if (!\in_array($column, $key)) {
                         $setColumnMap[$column] = ExpressionRaw::create("EXCLUDED." . $escaper->escapeIdentifier($column));
                     }
                 }
-                $output[] = "on conflict do update set";
+                $output[] = \sprintf(
+                    "on conflict (%s)",
+                    \implode(
+                        ", ",
+                        \array_map(
+                            function ($column) {
+                                return $this->escaper->escapeIdentifier($column);
+                            },
+                            $key
+                        )
+                    )
+                );
+                $output[] = "do update set";
                 $output[] = $this->formatUpdateSet($setColumnMap);
                 break;
 
