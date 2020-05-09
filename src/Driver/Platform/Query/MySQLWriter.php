@@ -6,11 +6,16 @@ namespace Goat\Driver\Platform\Query;
 
 use Goat\Driver\Query\DefaultSqlWriter;
 use Goat\Query\DeleteQuery;
+use Goat\Query\Expression;
+use Goat\Query\ExpressionConstantTable;
+use Goat\Query\ExpressionRaw;
+use Goat\Query\MergeQuery;
+use Goat\Query\Query;
 use Goat\Query\QueryError;
 use Goat\Query\UpdateQuery;
 
 /**
- * MySQL < 8
+ * MySQL <= 5.7
  */
 class MySQLWriter extends DefaultSqlWriter
 {
@@ -49,6 +54,94 @@ class MySQLWriter extends DefaultSqlWriter
     protected function formatInsertNoValuesStatement() : string
     {
         return "() VALUES ()";
+    }
+
+    /**
+     * Format excluded item from INSERT or MERGE values.
+     */
+    protected function doFormatInsertExcludedItem($expression): Expression
+    {
+        if (\is_string($expression)) {
+            // Let pass strings with dot inside, it might already been formatted.
+            if (false !== \strpos($expression, ".")) {
+                return ExpressionRaw::create($expression);
+            }
+            return ExpressionRaw::create("values(" . $this->escaper->escapeIdentifier($expression) . ")");
+        }
+
+        return $expression;
+    }
+
+    /**
+     * This is a copy-paste of formatQueryInsertValues(). In 2.x formatter will
+     * be refactored to avoid such copy/paste.
+     *
+     * {@inheritdoc}
+     */
+    protected function formatQueryMerge(MergeQuery $query) : string
+    {
+        $output = [];
+
+        $columns = $query->getAllColumns();
+        $isIgnore = Query::CONFLICT_IGNORE === $query->getConflictBehaviour();
+
+        if (!$relation = $query->getRelation()) {
+            throw new QueryError("insert query must have a relation");
+        }
+
+        $output[] = $this->formatWith($query->getAllWith());
+        if ($isIgnore) {
+            $output[] = \sprintf(
+                "insert ignore into %s",
+                // From SQL 92 standard, INSERT queries don't have table alias
+                $this->escaper->escapeIdentifier($relation->getName())
+            );
+        } else {
+            $output[] = \sprintf(
+                "insert into %s",
+                // From SQL 92 standard, INSERT queries don't have table alias
+                $this->escaper->escapeIdentifier($relation->getName())
+            );
+        }
+
+        if ($columns) {
+            $output[] = \sprintf("(%s)", $this->formatColumnNameList($columns));
+        }
+
+        $using = $query->getQuery();
+        if ($using instanceof ExpressionConstantTable) {
+            $output[] = $this->format($using);
+        } else {
+            $output[] = $this->format($using);
+        }
+
+        if (!$isIgnore) {
+            switch ($mode = $query->getConflictBehaviour()) {
+    
+                case Query::CONFLICT_UPDATE:
+                    // Exclude primary key from the UPDATE statement.
+                    $key = $query->getKey();
+                    $setColumnMap = [];
+                    foreach ($columns as $column) {
+                        if (!\in_array($column, $key)) {
+                            $setColumnMap[$column] = $this->doFormatInsertExcludedItem($column);
+                        }
+                    }
+                    $output[] = "on duplicate key update";
+                    $output[] = $this->formatUpdateSet($setColumnMap);
+                    break;
+
+                default:
+                    throw new QueryError(\sprintf("Unsupported merge conflict mode: %s", (string) $mode));
+            }
+        }
+
+        $return = $query->getAllReturn();
+        if ($return) {
+            throw new QueryError("MySQL does not support RETURNING SQL clause");
+        }
+
+        return \implode("\n", $output);
     }
 
     /**
