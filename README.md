@@ -67,6 +67,14 @@ foreach ($result as $user) {
 
 For advanced documentation, please see the `./docs/` folder.
 
+# Roadamp
+
+ - 2.0 - will include MERGE query support, functional testing, driver and platform
+   segregation, as well as many fixes, and deprecated some 1.x methods,
+ - 2.1 - will include many minor features additions,
+ - 2.2 - may include a schema introspector,
+ - 3.0 - will raise requirements to PHP 7.4 and drop most of 1.x deprecations.
+
 # Driver organisation
 
 `Driver` instance is responsible of (in order):
