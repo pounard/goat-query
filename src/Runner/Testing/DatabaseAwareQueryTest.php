@@ -22,8 +22,10 @@ abstract class DatabaseAwareQueryTest extends TestCase
      */
     public function driverDataProvider(): iterable
     {
-        foreach (TestDriverFactory::getEnabledDrivers() as $driverName) {
-            yield $driverName => [new TestDriverFactory($driverName)];
+        foreach (TestDriverFactory::getEnabledServers() as $data) {
+            list($driverName, $envVarName) = $data;
+
+            yield $driverName .'_' . $envVarName => [new TestDriverFactory($driverName, $envVarName)];
         }
     }
 
@@ -38,10 +40,13 @@ abstract class DatabaseAwareQueryTest extends TestCase
     {
         $useApcu = TestDriverFactory::isApcuEnabled();
 
-        foreach (TestDriverFactory::getEnabledDrivers() as $driverName) {
-            yield $driverName => [
+        foreach (TestDriverFactory::getEnabledServers() as $data) {
+            list($driverName, $envVarName) = $data;
+
+            yield $driverName .'_' . $envVarName  => [
                 new TestDriverFactory(
                     $driverName,
+                    $envVarName,
                     false,
                     function (Runner $runner, string $schema) {
                        $this->createTestData($runner, $schema);
@@ -50,9 +55,10 @@ abstract class DatabaseAwareQueryTest extends TestCase
             ];
 
             if ($useApcu) {
-                yield $driverName.'_apcu' => [
+                yield $driverName .'_' . $envVarName . '_apcu' => [
                     new TestDriverFactory(
                         $driverName,
+                        $envVarName,
                         true,
                         function (Runner $runner, string $schema) {
                             $this->createTestData($runner, $schema);

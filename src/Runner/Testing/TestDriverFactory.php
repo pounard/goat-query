@@ -4,10 +4,8 @@ namespace Goat\Runner\Testing;
 
 use GeneratedHydrator\Configuration as GeneratedHydratorConfiguration;
 use Goat\Driver\Configuration;
-use Goat\Driver\ConfigurationError;
 use Goat\Driver\Driver;
-use Goat\Driver\ExtPgSQLDriver;
-use Goat\Driver\PDODriver;
+use Goat\Driver\DriverFactory;
 use Goat\Driver\Runner\AbstractRunner;
 use Goat\Hydrator\HydratorMap;
 use Goat\Runner\Runner;
@@ -21,23 +19,22 @@ class TestDriverFactory
 {
     /** @var string */
     private $driverName;
-
+    /** @var string */
+    private $envVarName;
     /** @var bool */
     private $apcuEnabled = false;
-
     /** @var string */
     private $schema;
-
     /** @var callable */
     private $initializer;
-
     /** @var LoggerInterface */
     private $logger;
 
-    public function __construct(string $driverName, bool $apcuEnabled = false, ?callable $initializer = null)
+    public function __construct(string $driverName, string $envVarName, bool $apcuEnabled = false, ?callable $initializer = null)
     {
         $this->apcuEnabled = $apcuEnabled;
         $this->driverName = $driverName;
+        $this->envVarName = $envVarName;
         $this->initializer = $initializer;
         $this->logger = new NullLogger();
         $this->schema = \uniqid('test_schema_');
@@ -53,93 +50,38 @@ class TestDriverFactory
         return $this->logger;
     }
 
-    private function createConfiguration(string $prefix, string $driver): Configuration
-    {
-        if ($hostname = \getenv($prefix.'_HOSTNAME')) {
-            $database = \getenv($prefix.'_DATABASE');
-            $username = \getenv($prefix.'_PASSWORD');
-            $password = \getenv($prefix.'_USERNAME');
-        } else {
-            throw new SkippedTestError(\sprintf("$prefix.'_HOSTNAME' environment variable is missing."));
-        }
-
-        $configuration = new Configuration([
-            'database' => $database,
-            'driver' => $driver,
-            'host' => $hostname,
-            'password' => $password,
-            'username' => $username,
-        ]);
-        $configuration->setLogger($this->logger);
-
-        return $configuration;
-    }
-
-    protected function createExtPgSQLDriver(): ExtPgSQLDriver
-    {
-        $configuration = $this->createConfiguration('PGSQL', 'pgsql');
-
-        $driver = new ExtPgSQLDriver();
-        $driver->setConfiguration($configuration);
-
-        return $driver;
-    }
-
-    protected function createPDOMySQLDriver(): PDODriver
-    {
-        $configuration = $this->createConfiguration('MYSQL', 'mysql');
-
-        $driver = new PDODriver();
-        $driver->setConfiguration($configuration);
-
-        return $driver;
-    }
-
-    protected function createPDOPgSQLDriver(): PDODriver
-    {
-        $configuration = $this->createConfiguration('PGSQL', 'pgsql');
-
-        $driver = new PDODriver();
-        $driver->setConfiguration($configuration);
-
-        return $driver;
-    }
-
     public static function isApcuEnabled(): bool
     {
         return \function_exists('apcu_add') && \getenv('ENABLE_APCU');
     }
 
-    /** @return string[] */
-    public static function getEnabledDrivers(): array
+    /** @return array[] */
+    public static function getEnabledServers(): array
     {
         $ret = [];
+
         if (\getenv('ENABLE_PDO')) {
-            $ret[] = 'pdo_mysql';
-            $ret[] = 'pdo_pgsql';
+            $ret[] = [Configuration::DRIVER_PDO_MYSQL, 'MYSQL_57_URI'];
+            $ret[] = [Configuration::DRIVER_PDO_MYSQL, 'MYSQL_80_URI'];
+            $ret[] = [Configuration::DRIVER_PDO_PGSQL, 'PGSQL_95_URI'];
         }
         if (\getenv('ENABLE_EXT_PGSQL')) {
-            $ret[] = 'ext_pgsql';
+            $ret[] = [Configuration::DRIVER_EXT_PGSQL, 'PGSQL_95_URI'];
         }
+
         return $ret;
     }
 
     public function getDriver(): Driver
     {
-        switch ($this->driverName) {
-
-            case 'pdo_mysql':
-                return $this->createPDOMySQLDriver();
-
-            case 'pdo_pgsql':
-                return $this->createPDOPgSQLDriver();
-
-            case 'ext_pgsql':
-                return $this->createExtPgSQLDriver();
-
-            default:
-                throw new ConfigurationError(\sprintf("Invalid driver name: '%s'", $this->driverName));
+        if (!$uri = \getenv($this->envVarName)) {
+            throw new SkippedTestError(\sprintf("'%s' environment variable is missing.", $this->envVarName));
         }
+
+        $configuration = Configuration::fromString($uri);
+        $configuration->setLogger($this->logger);
+
+        return DriverFactory::fromConfiguration($configuration);
     }
 
     public function getRunner(?callable $initializer = null): Runner

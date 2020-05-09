@@ -52,12 +52,10 @@ final class DriverFactory
     }
 
     /**
-     * Create connection from URI/URL/DSN.
+     * Create connection from configuration.
      */
-    public static function fromUri(string $uri): Driver
+    public static function fromConfiguration(Configuration $configuration): Driver
     {
-        $configuration = Configuration::fromString($uri);
-
         switch ($configuration->getDriver()) {
 
             case Configuration::DRIVER_DEFAULT_MYSQL:
@@ -88,5 +86,13 @@ final class DriverFactory
         $driver->setConfiguration($configuration);
 
         return $driver;
+    }
+
+    /**
+     * Create connection from URI/URL/DSN.
+     */
+    public static function fromUri(string $uri): Driver
+    {
+        return self::fromConfiguration(Configuration::fromString($uri));
     }
 }

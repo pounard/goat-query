@@ -73,10 +73,8 @@ class ExtPgSQLDriver extends AbstractDriver
 
             \pg_query($resource, "SET client_encoding TO ".\pg_escape_literal($configuration->getClientEncoding()));
 
-            // $versionInformation = \pg_version($resource);
-
             $this->escaper = new ExtPgSQLEscaper($this, $this->connection);
-            $this->platform = new PgSQLPlatform($this->escaper);
+            $this->platform = new PgSQLPlatform($this->escaper, $this->getServerVersion());
 
             $runner = new ExtPgSQLRunner($this->platform, $resource);
             $runner->setLogger($configuration->getLogger());
@@ -94,6 +92,19 @@ class ExtPgSQLDriver extends AbstractDriver
             }
             throw $e;
         }
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function doLookupServerVersion(): ?string
+    {
+        if (!$this->connection) {
+            throw new ConfigurationError("Server connection is closed.");
+        }
+
+        // @todo error handling here?
+        return \pg_version($this->connection)['server'];
     }
 
     /**

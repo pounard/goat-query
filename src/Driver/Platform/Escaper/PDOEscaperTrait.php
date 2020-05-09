@@ -43,7 +43,7 @@ trait PDOEscaperTrait /* implements Escaper */
      * never be fixed, it's too much of an edge case:
      *   https://bugs.php.net/bug.php?id=71628
      *
-     * And yet I have absolutely no idea why, but using the pdo_pgsql driver
+     * And yet I have absolutely no idea why, but using the pdo-pgsql driver
      * it does work gracefully, I guess this is because it considers that
      * strings enclosed by using double quote (") are string literals, and
      * this is the right way of escaping identifiers for PosgresSQL so this

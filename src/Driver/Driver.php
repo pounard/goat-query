@@ -35,6 +35,11 @@ interface Driver
     public function connect(): void;
 
     /**
+     * Get server version.
+     */
+    public function getServerVersion(): ?string;
+
+    /**
      * Close connection
      *
      * This method might be honnored, even if connect() was not called and

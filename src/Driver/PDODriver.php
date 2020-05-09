@@ -18,7 +18,6 @@ class PDODriver extends AbstractDriver
 {
     /** @var null|\PDO */
     private $connection;
-
     /** @var null|Escaper */
     private $escaper;
 
@@ -104,12 +103,13 @@ class PDODriver extends AbstractDriver
     private function preparePlatform(): void
     {
         $configuration = $this->getConfiguration();
+        $serverVersion = $this->getServerVersion();
 
         switch ($driver = $configuration->getDriver()) {
 
             case 'mysql':
                 $this->escaper = new PDOMySQLEscaper($this->connection);
-                $this->platform = new MySQLPlatform($this->escaper);
+                $this->platform = new MySQLPlatform($this->escaper, $serverVersion);
 
                 $runner = new PDOMySQLRunner($this->platform, $this->connection);
                 $runner->setLogger($configuration->getLogger());
@@ -118,7 +118,7 @@ class PDODriver extends AbstractDriver
 
             case 'pgsql':
                 $this->escaper = new PDOPgSQLEscaper($this->connection);
-                $this->platform = new PgSQLPlatform($this->escaper);
+                $this->platform = new PgSQLPlatform($this->escaper, $serverVersion);
 
                 $runner = new PDOPgSQLRunner($this->platform, $this->connection);
                 $runner->setLogger($configuration->getLogger());
@@ -154,11 +154,25 @@ class PDODriver extends AbstractDriver
 
         $connection->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
 
+        /*
         foreach ($configuration->getDriverOptions() as $attribute => $value) {
             $connection->setAttribute($attribute, $value);
         }
+         */
 
         $this->preparePlatform();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function doLookupServerVersion(): ?string
+    {
+        if (!$this->connection) {
+            throw new ConfigurationError("Server connection is closed.");
+        }
+
+        return $this->connection->getAttribute(\PDO::ATTR_SERVER_VERSION);
     }
 
     /**

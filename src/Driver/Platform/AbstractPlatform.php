@@ -15,9 +15,13 @@ abstract class AbstractPlatform implements Platform
     /** @var SqlWriter */
     private $writer;
 
-    public function __construct(Escaper $escaper)
+    /** @var null|string */
+    private $serverVersion;
+
+    public function __construct(Escaper $escaper, ?string $serverVersion = null)
     {
         $this->escaper = $escaper;
+        $this->serverVersion = $serverVersion;
         $this->writer = $this->createSqlWriter($escaper);
     }
 
@@ -25,6 +29,14 @@ abstract class AbstractPlatform implements Platform
      * Create a new SQL writer instance
      */
     abstract protected function createSqlWriter(Escaper $escaper): SqlWriter;
+
+    /**
+     * Get server version.
+     */
+    final public function getServerVersion(): ?string
+    {
+        return $this->serverVersion;
+    }
 
     /**
      * {@inheritdoc}

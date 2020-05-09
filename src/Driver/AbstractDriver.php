@@ -11,13 +11,14 @@ abstract class AbstractDriver implements Driver
 {
     /** @var null|Configuration */
     private $configuration;
-
     /** @var bool */
     private $isClosed = true;
-
+    /** @var null|string */
+    private $serverVersion = null;
+    /** @var bool */
+    private $serverVersionLookupDone = false;
     /** @var null|Platform */
     protected $platform;
-
     /** @var null|Runner */
     protected $runner;
 
@@ -49,6 +50,27 @@ abstract class AbstractDriver implements Driver
 
         $this->doConnect();
         $this->isClosed = false;
+    }
+
+    /**
+     * Lookup server version, result will be cached for the connection lifetime.
+     */
+    protected abstract function doLookupServerVersion(): ?string;
+
+    /**
+     * Get server version.
+     */
+    final public function getServerVersion(): ?string
+    {
+        // Server version may have been forced by configuration, in this case
+        // we need to return this one, in case serverVersion is still null or
+        // empty, maybe we could not find it, therefore return the empty
+        // value here as well to avoid multiple roundtrips to the server.
+        if ($this->serverVersionLookupDone || $this->serverVersion) {
+            return $this->serverVersion;
+        }
+
+        return $this->serverVersion = $this->doLookupServerVersion();
     }
 
     /**
@@ -103,6 +125,10 @@ abstract class AbstractDriver implements Driver
             throw new ConfigurationError("Cannot set configuration after connection has been made");
         }
         $this->configuration = $configuration;
+
+        if ($serverVersion = $configuration->getServerVersion()) {
+            $this->serverVersion = $serverVersion;
+        }
     }
 
     /**

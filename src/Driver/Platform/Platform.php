@@ -13,6 +13,11 @@ use Goat\Schema\SchemaIntrospector;
 interface Platform
 {
     /**
+     * Get server version.
+     */
+    public function getServerVersion(): ?string;
+
+    /**
      * Does this platform supports schemas.
      */
     public function supportsSchema(): bool;

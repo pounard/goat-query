@@ -18,7 +18,7 @@ use Goat\Runner\ServerError;
 use Goat\Runner\Metadata\DefaultResultProfile;
 
 /**
- * ext_pgsql connection implementation
+ * ext-pgsql connection implementation
  */
 class ExtPgSQLRunner extends AbstractRunner
 {

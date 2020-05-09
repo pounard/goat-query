@@ -41,6 +41,7 @@ final class Configuration
         'host' => self::DEFAULT_HOST,
         'password' => null,
         'port' => null,
+        'server_version' => null,
         'socket' => null,
         'username' => null,
     ];
@@ -246,6 +247,18 @@ final class Configuration
     public function getClientEncoding(): string
     {
         return $this->options['charset'];
+    }
+
+    /**
+     * Get server version if set.
+     */
+    public function getServerVersion(): ?string
+    {
+        if ($this->options['server_version']) {
+            // Can be parsed as float when found from URL.
+            return (string) $this->options['server_version'];
+        }
+        return null;
     }
 
     /**

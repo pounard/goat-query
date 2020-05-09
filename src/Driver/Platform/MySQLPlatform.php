@@ -6,6 +6,7 @@ namespace Goat\Driver\Platform;
 
 use Goat\Driver\ConfigurationError;
 use Goat\Driver\Platform\Escaper\Escaper;
+use Goat\Driver\Platform\Query\MySQL8Writer;
 use Goat\Driver\Platform\Query\MySQLWriter;
 use Goat\Driver\Platform\Transaction\MySQLTransaction;
 use Goat\Driver\Query\SqlWriter;
@@ -60,7 +61,13 @@ class MySQLPlatform extends AbstractPlatform
      */
     protected function createSqlWriter(Escaper $escaper): SqlWriter
     {
-        return new MySQLWriter($escaper);
+        $serverVersion = $this->getServerVersion();
+
+        if (0 < \version_compare('8', $serverVersion)) {
+            return new MySQLWriter($escaper);
+        }
+
+        return new MySQL8Writer($escaper);
     }
 
     /**
