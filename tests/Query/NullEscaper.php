@@ -22,6 +22,14 @@ class NullEscaper implements Escaper
     /**
      * {@inheritdoc}
      */
+    public function unescapePlaceholderChar(): string
+    {
+        return '?';
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function writePlaceholder(int $index): string
     {
         if ($this->useNumericIndices) {
