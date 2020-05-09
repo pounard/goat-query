@@ -6,14 +6,31 @@ namespace Goat\Runner;
 
 use Goat\Converter\ConverterInterface;
 use Goat\Hydrator\HydratorInterface;
+use Goat\Query\QueryError;
 use Goat\Runner\Metadata\ResultMetadata;
 use Goat\Runner\Metadata\ResultProfile;
 
 abstract class AbstractResultIteratorProxy implements ResultIterator, \IteratorAggregate
 {
-    private $count;
+    /** @var null|ResultIterator */
+    private $decorated = null;
 
-    abstract protected function getResult(): ResultIterator;
+    public function __construct(?ResultIterator $decorated = null)
+    {
+        $this->decorated = $decorated;
+    }
+
+    /**
+     * Override this method if do not use default constructor.
+     */
+    protected function getResult(): ResultIterator
+    {
+        if ($this->decorated) {
+            return $this->decorated;
+        }
+
+        throw new QueryError("Result proxy has no decorated instance set.");
+    }
 
     /**
      * {@inheritdoc}
@@ -94,9 +111,9 @@ abstract class AbstractResultIteratorProxy implements ResultIterator, \IteratorA
     /**
      * {@inheritdoc}
      */
-    final public function count()
+    final public function count(): int
     {
-        return ($this->count ?? ($this->count = $this->getResult()->countRows()));
+        return $this->getResult()->countRows();
     }
 
     /**

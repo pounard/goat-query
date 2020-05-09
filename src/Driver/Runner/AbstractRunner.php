@@ -12,6 +12,7 @@ use Goat\Hydrator\HydratorInterface;
 use Goat\Hydrator\HydratorMap;
 use Goat\Query\QueryBuilder;
 use Goat\Query\QueryError;
+use Goat\Runner\AbstractResultIterator;
 use Goat\Runner\DefaultQueryBuilder;
 use Goat\Runner\ResultIterator;
 use Goat\Runner\Runner;
@@ -22,34 +23,25 @@ use Goat\Runner\Metadata\ResultMetadataCache;
 use Goat\Runner\Metadata\ResultProfile;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
-use Goat\Runner\AbstractResultIterator;
 
 abstract class AbstractRunner implements Runner
 {
     /** @var LoggerInterface */
     private $logger;
-
     /** @var Platform */
     private $platform;
-
     /** @var null|Transaction */
     private $currentTransaction;
-
     /** @var bool */
     private $debug = false;
-
     /** @var HydratorMap */
     private $hydratorMap;
-
     /** @ar QueryBuilder */
     private $queryBuilder;
-
     /** @var ResultMetadataCache */
     private $metadataCache;
-
     /** @var ConverterInterface */
     protected $converter;
-
     /** @var SqlWriter */
     protected $formatter;
 
@@ -84,7 +76,7 @@ abstract class AbstractRunner implements Runner
     }
 
     /**
-     * Toggle debug mode
+     * Toggle debug mode.
      */
     final public function setDebug(bool $value): void
     {
@@ -124,7 +116,11 @@ abstract class AbstractRunner implements Runner
     }
 
     /**
-     * Set converter
+     * Set converter.
+     *
+     * @deprecated
+     * @todo This needs to be sorted out, we need to be able to override
+     *   converted, but properly.
      */
     public function setConverter(ConverterInterface $converter): void
     {
@@ -140,7 +136,11 @@ abstract class AbstractRunner implements Runner
     }
 
     /**
-     * {@inheritdoc}
+     * Set hydrator map.
+     *
+     * @deprecated
+     *   Will use GeneratedHydrator or only callbacks in the future, final
+     *   decision has not been made yet.
      */
     final public function setHydratorMap(HydratorMap $hydratorMap): void
     {
@@ -148,9 +148,13 @@ abstract class AbstractRunner implements Runner
     }
 
     /**
-     * {@inheritdoc}
+     * Get hydrator map.
+     *
+     * @deprecated
+     *   Will use GeneratedHydrator or only callbacks in the future, final
+     *   decision has not been made yet.
      */
-    final public function getHydratorMap(): HydratorMap
+    final protected function getHydratorMap(): HydratorMap
     {
         if (!$this->hydratorMap) {
             throw new \BadMethodCallException("There is no hydrator configured");
@@ -244,7 +248,7 @@ abstract class AbstractRunner implements Runner
     }
 
     /**
-     * Do create iterator
+     * Do create iterator.
      *
      * @param mixed[] $constructorArgs
      *   Driver specific parameters
@@ -252,10 +256,7 @@ abstract class AbstractRunner implements Runner
     abstract protected function doCreateResultIterator(...$constructorArgs) : AbstractResultIterator;
 
     /**
-     * Create the result iterator instance
-     *
-     * @todo THIS BECOMING A GOD METHOD! PLEASE STOP THIS!
-     *   - Yes, I'm talking to myself.
+     * Create the result iterator instance.
      *
      * @param string $identifier
      *   Query identifier

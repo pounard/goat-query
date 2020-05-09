@@ -29,6 +29,14 @@ class NullPlatform implements Platform
     /**
      * {@inheritdoc}
      */
+    public function getServerVersion(): ?string
+    {
+        return null;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function supportsSchema(): bool
     {
         return true;
