@@ -12,7 +12,9 @@ use Goat\Query\Query;
 use Goat\Query\QueryError;
 
 /**
- * PostgreSQL >= 8.4 (untested before, althought it might work)
+ * PostgreSQL >= 8.4.
+ *
+ * Activily tested with versions from 9.5 to 11.
  */
 class PgSQLWriter extends DefaultSqlWriter
 {
@@ -57,6 +59,7 @@ class PgSQLWriter extends DefaultSqlWriter
             $this->escaper->escapeIdentifier($relation->getName())
         );
 
+        // @todo skip column names if numerical
         if ($columns) {
             $output[] = \sprintf("(%s)", $this->formatColumnNameList($columns));
         }
@@ -76,15 +79,20 @@ class PgSQLWriter extends DefaultSqlWriter
                 break;
 
             case Query::CONFLICT_UPDATE:
-                // Exclude primary key from the UPDATE statement.
                 $key = $query->getKey();
+                if (!$key) {
+                    throw new QueryError(\sprintf("Key must be specified calling %s::setKey() when on conflict update is set.", \get_class($query)));
+                }
+
+                // Exclude primary key from the UPDATE statement.
                 $setColumnMap = [];
                 foreach ($columns as $column) {
                     if (!\in_array($column, $key)) {
-                        $setColumnMap[$column] = ExpressionRaw::create("EXCLUDED." . $this->escaper->escapeIdentifier($column));
+                        $setColumnMap[$column] = ExpressionRaw::create("excluded." . $this->escaper->escapeIdentifier($column));
                     }
                 }
-                $output[] = "on conflict do update set";
+                $output[] = \sprintf("on conflict (%s)", $this->formatColumnNameList($key));
+                $output[] = "do update set";
                 $output[] = $this->formatUpdateSet($setColumnMap);
                 break;
 

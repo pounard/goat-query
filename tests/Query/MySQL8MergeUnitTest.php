@@ -10,7 +10,7 @@ use Goat\Query\QueryError;
 use Goat\Query\SelectQuery;
 use PHPUnit\Framework\TestCase;
 
-final class PgSQLUpsertUnitTest extends TestCase
+final class MySQL8MergeUnitTest extends TestCase
 {
     use BuilderTestTrait;
 
@@ -64,7 +64,7 @@ final class PgSQLUpsertUnitTest extends TestCase
         ;
 
         self::assertSameSql(<<<SQL
-insert into "table1" (
+insert ignore into "table1" (
     "foo", "bar", "fizz", "buzz"
 )
 values (
@@ -72,10 +72,9 @@ values (
 ), (
     ?, ?, ?, ?
 )
-on conflict do nothing
 SQL
             ,
-            self::createPgSQLWriter()->format($query)
+            self::createMySQL8Writer()->format($query)
         );
     }
 
@@ -90,7 +89,7 @@ SQL
         ;
 
         self::assertSameSql(<<<SQL
-insert into "table1" (
+insert ignore into "table1" (
     "foo", "bar", "fizz", "buzz"
 )
 values (
@@ -98,10 +97,9 @@ values (
 ), (
     ?, ?, ?, ?
 )
-on conflict do nothing
 SQL
             ,
-            self::createPgSQLWriter()->format($query)
+            self::createMySQL8Writer()->format($query)
         );
     }
 
@@ -124,12 +122,12 @@ values (
 ), (
     ?, ?, ?, ?
 )
-on conflict do update set
-    "fizz" = excluded."fizz",
-    "buzz" = excluded."buzz"
+on duplicate key update
+    "fizz" = new."fizz",
+    "buzz" = new."buzz"
 SQL
             ,
-            self::createPgSQLWriter()->format($query)
+            self::createMySQL8Writer()->format($query)
         );
     }
 
@@ -151,14 +149,14 @@ values (
 ), (
     ?, ?, ?, ?
 )
-on conflict do update set
-    "foo" = excluded."foo",
-    "bar" = excluded."bar",
-    "fizz" = excluded."fizz",
-    "buzz" = excluded."buzz"
+on duplicate key update
+    "foo" = new."foo",
+    "bar" = new."bar",
+    "fizz" = new."fizz",
+    "buzz" = new."buzz"
 SQL
             ,
-            self::createPgSQLWriter()->format($query)
+            self::createMySQL8Writer()->format($query)
         );
     }
 
@@ -173,14 +171,13 @@ SQL
         ;
 
         self::assertSameSql(<<<SQL
-insert into "table1" (
+insert ignore into "table1" (
     "foo", "bar", "fizz", "buzz"
 )
 select "a", "b", "c", "d" from "table2"
-on conflict do nothing
 SQL
             ,
-            self::createPgSQLWriter()->format($query)
+            self::createMySQL8Writer()->format($query)
         );
     }
 
@@ -196,14 +193,13 @@ SQL
         ;
 
         self::assertSameSql(<<<SQL
-insert into "table1" (
+insert ignore into "table1" (
     "foo", "bar", "fizz", "buzz"
 )
 select "a", "b", "c", "d" from "table2"
-on conflict do nothing
 SQL
             ,
-            self::createPgSQLWriter()->format($query)
+            self::createMySQL8Writer()->format($query)
         );
     }
 
@@ -223,12 +219,12 @@ insert into "table1" (
     "foo", "bar", "fizz", "buzz"
 )
 select "a", "b", "c", "d" from "table2"
-on conflict do update set
-    "fizz" = excluded."fizz",
-    "buzz" = excluded."buzz"
+on duplicate key update
+    "fizz" = new."fizz",
+    "buzz" = new."buzz"
 SQL
             ,
-            self::createPgSQLWriter()->format($query)
+            self::createMySQL8Writer()->format($query)
         );
     }
 
@@ -247,14 +243,14 @@ insert into "table1" (
     "foo", "bar", "fizz", "buzz"
 )
 select "a", "b", "c", "d" from "table2"
-on conflict do update set
-    "foo" = excluded."foo",
-    "bar" = excluded."bar",
-    "fizz" = excluded."fizz",
-    "buzz" = excluded."buzz"
+on duplicate key update
+    "foo" = new."foo",
+    "bar" = new."bar",
+    "fizz" = new."fizz",
+    "buzz" = new."buzz"
 SQL
             ,
-            self::createPgSQLWriter()->format($query)
+            self::createMySQL8Writer()->format($query)
         );
     }
 }
