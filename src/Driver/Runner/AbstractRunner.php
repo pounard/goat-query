@@ -6,6 +6,9 @@ namespace Goat\Driver\Runner;
 
 use Goat\Converter\ConverterInterface;
 use Goat\Converter\DefaultConverter;
+use Goat\Driver\Instrumentation\ProfilerAware;
+use Goat\Driver\Instrumentation\ProfilerAwareTrait;
+use Goat\Driver\Instrumentation\QueryResult;
 use Goat\Driver\Platform\Platform;
 use Goat\Driver\Query\SqlWriter;
 use Goat\Hydrator\HydratorInterface;
@@ -20,12 +23,13 @@ use Goat\Runner\Transaction;
 use Goat\Runner\TransactionError;
 use Goat\Runner\Metadata\ArrayResultMetadataCache;
 use Goat\Runner\Metadata\ResultMetadataCache;
-use Goat\Runner\Metadata\ResultProfile;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
-abstract class AbstractRunner implements Runner
+abstract class AbstractRunner implements Runner, ProfilerAware
 {
+    use ProfilerAwareTrait;
+
     /** @var LoggerInterface */
     private $logger;
     /** @var Platform */
@@ -267,11 +271,11 @@ abstract class AbstractRunner implements Runner
      *
      * @return ResultIterator
      */
-    final protected function createResultIterator(string $identifier, ResultProfile $profile, $options = null, ...$constructorArgs): ResultIterator
+    final protected function createResultIterator(string $identifier, QueryResult $profilerResult, $options = null, ...$constructorArgs): ResultIterator
     {
         $result = $this->doCreateResultIterator(...$constructorArgs);
         $result->setConverter($this->converter);
-        $result->setResultProfile($profile);
+        $result->setProfilerResult($profilerResult);
 
         // Normalize options, it might be a string only.
         if ($options) {

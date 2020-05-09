@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Goat\Runner;
 
 use Goat\Converter\ConverterInterface;
+use Goat\Driver\Instrumentation\QueryResult;
 use Goat\Hydrator\HydratorInterface;
 use Goat\Runner\Metadata\ResultMetadata;
-use Goat\Runner\Metadata\ResultProfile;
 
 /**
  * When in use using the iterator, default behavior is to return associative arrays
@@ -17,7 +17,7 @@ interface ResultIterator extends ResultMetadata, \Traversable, \Countable
     /**
      * Get result profiler data.
      */
-    public function getResultProfile(): ResultProfile;
+    public function getProfilerResult(): QueryResult;
 
     /**
      * Toggle rewindable feature.

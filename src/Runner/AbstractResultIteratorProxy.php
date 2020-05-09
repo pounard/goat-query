@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace Goat\Runner;
 
 use Goat\Converter\ConverterInterface;
+use Goat\Driver\Instrumentation\ProfilerResult;
+use Goat\Driver\Instrumentation\QueryResult;
 use Goat\Hydrator\HydratorInterface;
 use Goat\Query\QueryError;
 use Goat\Runner\Metadata\ResultMetadata;
-use Goat\Runner\Metadata\ResultProfile;
 
 abstract class AbstractResultIteratorProxy implements ResultIterator, \IteratorAggregate
 {
@@ -35,9 +36,9 @@ abstract class AbstractResultIteratorProxy implements ResultIterator, \IteratorA
     /**
      * {@inheritdoc}
      */
-    public function getResultProfile(): ResultProfile
+    public function getProfilerResult(): QueryResult
     {
-        return $this->getResult()->getResultProfile();
+        return $this->getResult()->getProfilerResult();
     }
 
     /**
@@ -45,9 +46,9 @@ abstract class AbstractResultIteratorProxy implements ResultIterator, \IteratorA
      *
      * This may break if your result iterator is not an AbstractResultIterator
      */
-    public function setResultProfile(ResultProfile $profile): void
+    public function setProfilerResult(QueryResult $profilerResult): void
     {
-        $this->getResult()->setResultProfile($profile);
+        $this->getResult()->setProfilerResult($profilerResult);
     }
 
     /**

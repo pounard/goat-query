@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Goat\Runner\Tests;
 
 use Goat\Converter\DefaultConverter;
+use Goat\Driver\Instrumentation\QueryResult;
 use Goat\Hydrator\HydratorInterface;
 use Goat\Query\QueryError;
-use Goat\Runner\Metadata\DefaultResultProfile;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -82,23 +82,23 @@ final class AbstractResultIteratorTest extends TestCase
         $result->setDebug(true);
     }
 
-    public function testGetProfileWithoutSetReturnEmpty(): void
+    public function testGetProfilerResultWithoutSetReturnEmpty(): void
     {
         $result = $this->createArrayResultIterator();
-        $profile = $result->getResultProfile();
+        $profilerResult = $result->getProfilerResult();
 
-        self::assertSame(-1, $profile->getExecutionTime());
-        self::assertSame(-1, $profile->getPreparationTime());
+        self::assertSame(0, $profilerResult->getExecutionTime());
+        self::assertSame(0, $profilerResult->getPreparationTime());
     }
 
     public function testSetProfile(): void
     {
-        $profile = new DefaultResultProfile();
+        $profilerResult = QueryResult::empty();
 
         $result = $this->createArrayResultIterator();
-        $result->setResultProfile($profile);
+        $result->setProfilerResult($profilerResult);
 
-        self::assertSame($profile, $result->getResultProfile());
+        self::assertSame($profilerResult, $result->getProfilerResult());
     }
 
     /**

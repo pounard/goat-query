@@ -6,43 +6,49 @@ namespace Goat\Driver\Instrumentation;
 
 use Goat\Query\QueryError;
 
-final class Timer
+final class Timer implements ProfilerResult
 {
-    /** @var float */
-    private $startsAt;
+    private float $startsAt;
+    private ?float $stopsAt = null;
 
-    /** @var null|float */
-    private $stopsAt;
-
+    /**
+     * Start timer.
+     */
     public function __construct()
     {
-        $this->startsAts = \microtime(true);
+        $this->startsAt = \microtime(true);
     }
 
     /**
-     * Stop timer and return total duration
+     * Stop timer and return total duration.
      */
     public function stop(): int
     {
         if (null !== $this->stopsAt) {
-            throw new QueryError("You cannot stop a timer twice");
+            throw new QueryError("You cannot stop a timer twice.");
         }
 
         $this->stopsAt = \microtime(true);
 
-        return $this->getDuration();
+        return $this->getTotalTime();
     }
 
     /**
-     * Get duration in milliseconds.
-     *
-     * If timer was not stopped, this will return the current timing.
+     * {@inheritdoc}
      */
-    public function getDuration(): int
+    public function getTotalTime(): int
     {
         if (null === $this->stopsAt) {
-            return (int)\round((\microtime(true) - $this->startsAt) * 1000);
+            return (int) \round((\microtime(true) - $this->startsAt) * 1000);
         }
-        return (int)\round(($this->stopsAt - $this->startsAt) * 1000);
+        return (int) \round(($this->stopsAt - $this->startsAt) * 1000);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function isError(): bool
+    {
+        return false;
     }
 }

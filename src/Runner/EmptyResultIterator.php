@@ -5,17 +5,18 @@ declare(strict_types=1);
 namespace Goat\Runner;
 
 use Goat\Converter\ConverterInterface;
+use Goat\Driver\Instrumentation\ProfilerResult;
+use Goat\Driver\Instrumentation\QueryResult;
 use Goat\Hydrator\HydratorInterface;
-use Goat\Runner\Metadata\DefaultResultProfile;
 use Goat\Runner\Metadata\ResultMetadata;
-use Goat\Runner\Metadata\ResultProfile;
 
 /**
  * Empty iterator for some edge cases results
  */
 final class EmptyResultIterator implements ResultIterator, \IteratorAggregate
 {
-    private $affectedRowCount = 0;
+    private int $affectedRowCount = 0;
+    private ?QueryResult $profilerResult = null;
 
     /**
      * Default constructor
@@ -30,17 +31,17 @@ final class EmptyResultIterator implements ResultIterator, \IteratorAggregate
     /**
      * {@inheritdoc}
      */
-    public function getResultProfile(): ResultProfile
+    public function getProfilerResult(): QueryResult
     {
-        return $this->profile ?? new DefaultResultProfile();
+        return $this->profilerResult ?? QueryResult::empty();
     }
 
     /**
      * @internal
      */
-    public function setResultProfile(ResultProfile $profile): void
+    public function setProfilerResult(QueryResult $profilerResult): void
     {
-        $this->profile = $profile;
+        $this->profilerResult = $profilerResult;
     }
 
     /**

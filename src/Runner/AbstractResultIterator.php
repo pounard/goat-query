@@ -5,50 +5,45 @@ declare(strict_types=1);
 namespace Goat\Runner;
 
 use Goat\Converter\ConverterInterface;
+use Goat\Driver\Instrumentation\ProfilerResult;
+use Goat\Driver\Instrumentation\QueryResult;
 use Goat\Query\QueryError;
 use Goat\Runner\Hydrator\ResultHydrator;
 use Goat\Runner\Metadata\DefaultResultMetadata;
-use Goat\Runner\Metadata\DefaultResultProfile;
 use Goat\Runner\Metadata\ResultMetadata;
-use Goat\Runner\Metadata\ResultProfile;
 
 abstract class AbstractResultIterator implements ResultIterator, \Iterator
 {
-    /** @var null|int */
-    private $columnCount = null;
-    /** @var null|int */
-    private $rowCount = null;
-    /** @var bool */
-    private $iterationStarted = false;
-    /** @var bool */
-    private $iterationCompleted = false;
-    /** @var bool */
-    private $debug = false;
-    /** @var null|ResultMetadata */
-    private $metadata = null;
+    // Result information and configuration.
+    private ?int $columnCount = null;
+    private ?int $rowCount = null;
+    private bool $debug = false;
+    protected ?string $columnKey = null;
+
+    // Meta-information and profiling information.
+    private ?ResultMetadata $metadata = null;
     /** @var string[] */
-    private $userTypeMap = [];
-    /** @var null|ResultProfile */
-    private $profile = null;
-    /** @var null|ResultHydrator */
-    private $hydrator = null;
-    /** @var bool */
-    private $rewindable = false;
+    private array $userTypeMap = [];
+    private ?ProfilerResult $profilerResult = null;
+
+    // Object hydration and value convertion.
+    protected ?ConverterInterface $converter = null;
+    private ?ResultHydrator $hydrator = null;
+
+    // Iterator properties.
+    private bool $iterationStarted = false;
+    private bool $iterationCompleted = false;
+    private bool $justRewinded = false;
+    private bool $rewindable = false;
+    private int $currentIndex = -1;
+
+    // Current iterator item and iterator data.
     /** @var null|array|ResultIteratorItem[] */
-    private $expandedResult = null;
+    private ?array $expandedResult = null;
     /** @var null|mixed */
     private $currentValue = null;
     /** @var null|int|string */
     private $currentKey = null;
-    /** @var int */
-    private $currentIndex = -1;
-    /** @var null|string */
-    protected $columnKey = null;
-    /** @var null|ConverterInterface */
-    protected $converter = null;
-
-    /** @todo ugly fix. */
-    private $justRewinded = false;
 
     /**
      * Implementation of both getColumnType() and getColumnName().
@@ -131,17 +126,17 @@ abstract class AbstractResultIterator implements ResultIterator, \Iterator
     /**
      * {@inheritdoc}
      */
-    public function getResultProfile(): ResultProfile
+    public function getProfilerResult(): QueryResult
     {
-        return $this->profile ?? new DefaultResultProfile();
+        return $this->profilerResult ?? QueryResult::empty();
     }
 
     /**
      * @internal
      */
-    public function setResultProfile(ResultProfile $profile): void
+    public function setProfilerResult(QueryResult $profilerResult): void
     {
-        $this->profile = $profile;
+        $this->profilerResult = $profilerResult;
     }
 
     /**

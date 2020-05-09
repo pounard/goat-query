@@ -10,19 +10,19 @@ use PHPUnit\Framework\TestCase;
 
 final class TimerTest extends TestCase
 {
-    public function testGetDurationWithoutStop(): void
+    public function testGetTotalTimeWithoutStop(): void
     {
         $timer = new Timer();
 
-        self::assertNotNull($timer->getDuration());
+        self::assertNotNull($timer->getTotalTime());
     }
 
-    public function testGetDurationWithStop(): void
+    public function testGetTotalTimeWithStop(): void
     {
         $timer = new Timer();
         $timer->stop();
 
-        self::assertNotNull($timer->getDuration());
+        self::assertNotNull($timer->getTotalTime());
     }
 
     public function testStopTwiceRaiseError(): void
