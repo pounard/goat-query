@@ -16,7 +16,15 @@ final class Timer implements ProfilerResult
      */
     public function __construct()
     {
-        $this->startsAt = \microtime(true);
+        $this->startsAt = \hrtime(true);
+    }
+
+    /**
+     * Convert nano seconds to milliseconds and round the result.
+     */
+    public static function nsecToMsec(float $nsec): int
+    {
+        return (int) ($nsec / 1e+6);
     }
 
     /**
@@ -28,7 +36,7 @@ final class Timer implements ProfilerResult
             throw new QueryError("You cannot stop a timer twice.");
         }
 
-        $this->stopsAt = \microtime(true);
+        $this->stopsAt = \hrtime(true);
 
         return $this->getTotalTime();
     }
@@ -39,9 +47,9 @@ final class Timer implements ProfilerResult
     public function getTotalTime(): int
     {
         if (null === $this->stopsAt) {
-            return (int) \round((\microtime(true) - $this->startsAt) * 1000);
+            return self::nsecToMsec(\hrtime(true) - $this->startsAt);
         }
-        return (int) \round(($this->stopsAt - $this->startsAt) * 1000);
+        return self::nsecToMsec($this->stopsAt - $this->startsAt);
     }
 
     /**

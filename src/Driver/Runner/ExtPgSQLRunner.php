@@ -6,7 +6,7 @@ namespace Goat\Driver\Runner;
 
 use Goat\Converter\ConverterInterface;
 use Goat\Converter\Driver\PgSQLConverter;
-use Goat\Driver\Instrumentation\QueryResultBuilder;
+use Goat\Driver\Instrumentation\QueryProfiler;
 use Goat\Driver\Platform\Platform;
 use Goat\Driver\Query\FormattedQuery;
 use Goat\Query\Query;
@@ -87,20 +87,22 @@ class ExtPgSQLRunner extends AbstractRunner
         $connection = $this->connection;
 
         try {
-            $profile = new QueryResultBuilder();
+            $profiler = QueryProfiler::start();
 
+            $profiler->start('prepare');
             $prepared = $this->formatter->prepare($query);
             $rawSQL = $prepared->getRawSQL();
             $args = $prepared->prepareArgumentsWith($this->converter, $query, $arguments);
-            $profile->prepared();
+            $profiler->end('prepare');
 
+            $profiler->start('execute');
             $resource = @\pg_query_params($connection, $rawSQL, $args);
             if (false === $resource) {
                 $this->serverError($connection, $rawSQL);
             }
-            $profile->executed();
+            $profiler->start('execute');
 
-            return $this->createResultIterator($prepared->getIdentifier(), $profile->stop(), $options, $resource);
+            return $this->createResultIterator($prepared->getIdentifier(), $profiler, $options, $resource);
 
         } catch (DatabaseError $e) {
             throw $e;
@@ -118,19 +120,20 @@ class ExtPgSQLRunner extends AbstractRunner
         $connection = $this->connection;
 
         try {
-            $profile = new QueryResultBuilder();
+            $profiler = QueryProfiler::start();
 
+            $profiler->start('prepare');
             $prepared = $this->formatter->prepare($query);
             $rawSQL = $prepared->getRawSQL();
             $args = $prepared->prepareArgumentsWith($this->converter, $query, $arguments);
-            $profile->prepared();
+            $profiler->end('prepare');
 
+            $profiler->start('execute');
             $resource = @\pg_query_params($connection, $rawSQL, $args);
             if (false === $resource) {
                 $this->serverError($connection, $rawSQL);
             }
-            $profile->executed();
-            $profile->stop();
+            $profiler->end('execute');
 
             $rowCount = @\pg_affected_rows($resource);
             if (false === $rowCount) {
@@ -139,6 +142,8 @@ class ExtPgSQLRunner extends AbstractRunner
 
             // No need to keep any result into memory.
             @\pg_free_result($resource);
+
+            $profiler->stop();
 
             // @todo How to fetch result profile?
             return $rowCount;
@@ -159,19 +164,26 @@ class ExtPgSQLRunner extends AbstractRunner
         $connection = $this->connection;
 
         try {
+            $profiler = QueryProfiler::start();
+
+            $profiler->start('prepare');
             $prepared = $this->formatter->prepare($query);
             $rawSQL = $prepared->getRawSQL();
+            $profiler->end('prepare');
 
             if (null === $identifier) {
                 $identifier = \md5($rawSQL);
             }
             // @merge argument types from query
 
+            $profiler->start('execute');
             if (false === @\pg_prepare($connection, $identifier, $rawSQL)) {
                 $this->serverError($connection);
             }
-
             $this->prepared[$identifier] = $prepared;
+            $profiler->end('prepare');
+
+            $profiler->stop();
 
             return $identifier;
 
@@ -197,18 +209,20 @@ class ExtPgSQLRunner extends AbstractRunner
         $connection = $this->connection;
 
         try {
-            $profile = new QueryResultBuilder();
+            $profiler = QueryProfiler::start();
 
+            $profiler->start('prepare');
             $args = $prepared->prepareArgumentsWith($this->converter, '', $arguments);
-            $profile->prepared();
+            $profiler->end('prepare');
 
+            $profiler->start('execute');
             $resource = @\pg_execute($connection, $identifier, $args);
             if (false === $resource) {
                 $this->serverError($connection, $identifier);
             }
-            $profile->executed();
+            $profiler->end('execute');
 
-            return $this->createResultIterator($identifier, $profile->stop(), $options, $resource);
+            return $this->createResultIterator($identifier, $profiler, $options, $resource);
 
         } catch (DatabaseError $e) {
             throw $e;

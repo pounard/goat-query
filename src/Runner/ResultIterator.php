@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Goat\Runner;
 
 use Goat\Converter\ConverterInterface;
-use Goat\Driver\Instrumentation\QueryResult;
+use Goat\Driver\Instrumentation\QueryProfiler;
 use Goat\Hydrator\HydratorInterface;
 use Goat\Runner\Metadata\ResultMetadata;
 
@@ -17,7 +17,7 @@ interface ResultIterator extends ResultMetadata, \Traversable, \Countable
     /**
      * Get result profiler data.
      */
-    public function getProfilerResult(): QueryResult;
+    public function getQueryProfiler(): QueryProfiler;
 
     /**
      * Toggle rewindable feature.

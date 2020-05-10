@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace Goat\Runner;
 
 use Goat\Converter\ConverterInterface;
-use Goat\Driver\Instrumentation\ProfilerResult;
-use Goat\Driver\Instrumentation\QueryResult;
 use Goat\Query\QueryError;
 use Goat\Runner\Hydrator\ResultHydrator;
 use Goat\Runner\Metadata\DefaultResultMetadata;
@@ -14,6 +12,8 @@ use Goat\Runner\Metadata\ResultMetadata;
 
 abstract class AbstractResultIterator implements ResultIterator, \Iterator
 {
+    use WithQueryProfilerTrait;
+
     // Result information and configuration.
     private ?int $columnCount = null;
     private ?int $rowCount = null;
@@ -24,7 +24,6 @@ abstract class AbstractResultIterator implements ResultIterator, \Iterator
     private ?ResultMetadata $metadata = null;
     /** @var string[] */
     private array $userTypeMap = [];
-    private ?ProfilerResult $profilerResult = null;
 
     // Object hydration and value convertion.
     protected ?ConverterInterface $converter = null;
@@ -121,22 +120,6 @@ abstract class AbstractResultIterator implements ResultIterator, \Iterator
         return $this->metadata ?? (
             $this->metadata = $this->createMetadata()
         );
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getProfilerResult(): QueryResult
-    {
-        return $this->profilerResult ?? QueryResult::empty();
-    }
-
-    /**
-     * @internal
-     */
-    public function setProfilerResult(QueryResult $profilerResult): void
-    {
-        $this->profilerResult = $profilerResult;
     }
 
     /**

@@ -8,7 +8,7 @@ use Goat\Converter\ConverterInterface;
 use Goat\Converter\DefaultConverter;
 use Goat\Driver\Instrumentation\ProfilerAware;
 use Goat\Driver\Instrumentation\ProfilerAwareTrait;
-use Goat\Driver\Instrumentation\QueryResult;
+use Goat\Driver\Instrumentation\QueryProfiler;
 use Goat\Driver\Platform\Platform;
 use Goat\Driver\Query\SqlWriter;
 use Goat\Hydrator\HydratorInterface;
@@ -271,11 +271,13 @@ abstract class AbstractRunner implements Runner, ProfilerAware
      *
      * @return ResultIterator
      */
-    final protected function createResultIterator(string $identifier, QueryResult $profilerResult, $options = null, ...$constructorArgs): ResultIterator
+    final protected function createResultIterator(string $identifier, QueryProfiler $profiler, $options = null, ...$constructorArgs): ResultIterator
     {
+        $profiler->stop(); // In case it was missed.
+
         $result = $this->doCreateResultIterator(...$constructorArgs);
         $result->setConverter($this->converter);
-        $result->setProfilerResult($profilerResult);
+        $result->setQueryProfiler($profiler);
 
         // Normalize options, it might be a string only.
         if ($options) {
