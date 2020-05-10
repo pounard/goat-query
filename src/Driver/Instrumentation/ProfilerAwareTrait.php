@@ -26,4 +26,20 @@ trait ProfilerAwareTrait
 
         return $previous;
     }
+
+    protected function startProfilerQuery(): QueryProfiler
+    {
+        $profiler = QueryProfiler::start();
+        $this->getProfiler()->add($profiler);
+
+        return $profiler;
+    }
+
+    protected function startProfilerTimerAggregate(): TimerAggregate
+    {
+        $profiler = TimerAggregate::start();
+        $this->getProfiler()->add($profiler);
+
+        return $profiler;
+    }
 }

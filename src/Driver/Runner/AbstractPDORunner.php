@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Goat\Driver\Runner;
 
-use Goat\Driver\Instrumentation\QueryProfiler;
 use Goat\Driver\Platform\Platform;
 use Goat\Driver\Query\FormattedQuery;
 use Goat\Query\Query;
@@ -74,7 +73,7 @@ abstract class AbstractPDORunner extends AbstractRunner
         $rawSQL = '';
 
         try {
-            $profiler = QueryProfiler::start();
+            $profiler = $this->startProfilerQuery();
 
             $profiler->start('prepare');
             $prepared = $this->formatter->prepare($query);
@@ -107,7 +106,7 @@ abstract class AbstractPDORunner extends AbstractRunner
         $rawSQL = '';
 
         try {
-            $profiler = QueryProfiler::start();
+            $profiler = $this->startProfilerQuery();
 
             $profiler->start('prepare');
             $prepared = $this->formatter->prepare($query);
@@ -142,7 +141,7 @@ abstract class AbstractPDORunner extends AbstractRunner
         $rawSQL = '';
 
         try {
-            $profiler = QueryProfiler::start();
+            $profiler = $this->startProfilerQuery();
 
             $profiler->start('prepare');
             $prepared = $this->formatter->prepare($query);
@@ -187,7 +186,7 @@ abstract class AbstractPDORunner extends AbstractRunner
         \assert($prepared instanceof FormattedQuery);
 
         try {
-            $profiler = QueryProfiler::start();
+            $profiler = $this->startProfilerQuery();
 
             $profiler->begin('prepare');
             $args = $prepared->prepareArgumentsWith($this->converter, '', $arguments);

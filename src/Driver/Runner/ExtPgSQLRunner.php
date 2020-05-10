@@ -6,7 +6,6 @@ namespace Goat\Driver\Runner;
 
 use Goat\Converter\ConverterInterface;
 use Goat\Converter\Driver\PgSQLConverter;
-use Goat\Driver\Instrumentation\QueryProfiler;
 use Goat\Driver\Platform\Platform;
 use Goat\Driver\Query\FormattedQuery;
 use Goat\Query\Query;
@@ -87,7 +86,7 @@ class ExtPgSQLRunner extends AbstractRunner
         $connection = $this->connection;
 
         try {
-            $profiler = QueryProfiler::start();
+            $profiler = $this->startProfilerQuery();
 
             $profiler->start('prepare');
             $prepared = $this->formatter->prepare($query);
@@ -120,7 +119,7 @@ class ExtPgSQLRunner extends AbstractRunner
         $connection = $this->connection;
 
         try {
-            $profiler = QueryProfiler::start();
+            $profiler = $this->startProfilerQuery();
 
             $profiler->start('prepare');
             $prepared = $this->formatter->prepare($query);
@@ -164,7 +163,7 @@ class ExtPgSQLRunner extends AbstractRunner
         $connection = $this->connection;
 
         try {
-            $profiler = QueryProfiler::start();
+            $profiler = $this->startProfilerQuery();
 
             $profiler->start('prepare');
             $prepared = $this->formatter->prepare($query);
@@ -209,7 +208,7 @@ class ExtPgSQLRunner extends AbstractRunner
         $connection = $this->connection;
 
         try {
-            $profiler = QueryProfiler::start();
+            $profiler = $this->startProfilerQuery();
 
             $profiler->start('prepare');
             $args = $prepared->prepareArgumentsWith($this->converter, '', $arguments);
