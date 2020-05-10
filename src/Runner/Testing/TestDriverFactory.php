@@ -2,13 +2,14 @@
 
 namespace Goat\Runner\Testing;
 
-use GeneratedHydrator\Configuration as GeneratedHydratorConfiguration;
+use GeneratedHydrator\Bridge\Symfony\DeepHydrator;
+use GeneratedHydrator\Bridge\Symfony\DefaultHydrator;
 use Goat\Driver\Configuration;
 use Goat\Driver\Driver;
 use Goat\Driver\DriverFactory;
-use Goat\Driver\Runner\AbstractRunner;
-use Goat\Hydrator\HydratorMap;
 use Goat\Runner\Runner;
+use Goat\Runner\Hydrator\GeneratedHydratorBundleHydratorRegistry;
+use Goat\Runner\Hydrator\HydratorRegistry;
 use Goat\Runner\Metadata\ApcuResultMetadataCache;
 use Goat\Runner\Metadata\ArrayResultMetadataCache;
 use PHPUnit\Framework\SkippedTestError;
@@ -84,12 +85,27 @@ class TestDriverFactory
         return DriverFactory::fromConfiguration($configuration);
     }
 
+    private function createTestHydratorRegistry(): ?HydratorRegistry
+    {
+        if (\class_exists(DeepHydrator::class)) {
+            return new GeneratedHydratorBundleHydratorRegistry(
+                new DeepHydrator(
+                    new DefaultHydrator(
+                        \sys_get_temp_dir()
+                    )
+                )
+            );
+        }
+
+        return null;
+    }
+
     public function getRunner(?callable $initializer = null): Runner
     {
         $runner = $this->getDriver()->getRunner();
 
-        if ($runner instanceof AbstractRunner && \class_exists(HydratorMap::class)) {
-            $runner->setHydratorMap(new HydratorMap(new GeneratedHydratorConfiguration()));
+        if ($hydratorRegistry = $this->createTestHydratorRegistry()) {
+            $runner->setHydratorRegistry($hydratorRegistry);
         }
 
         if ($this->apcuEnabled) {

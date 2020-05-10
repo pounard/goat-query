@@ -11,8 +11,6 @@ use Goat\Driver\Instrumentation\ProfilerAwareTrait;
 use Goat\Driver\Instrumentation\QueryProfiler;
 use Goat\Driver\Platform\Platform;
 use Goat\Driver\Query\SqlWriter;
-use Goat\Hydrator\HydratorInterface;
-use Goat\Hydrator\HydratorMap;
 use Goat\Query\QueryBuilder;
 use Goat\Query\QueryError;
 use Goat\Runner\AbstractResultIterator;
@@ -21,6 +19,7 @@ use Goat\Runner\ResultIterator;
 use Goat\Runner\Runner;
 use Goat\Runner\Transaction;
 use Goat\Runner\TransactionError;
+use Goat\Runner\Hydrator\HydratorRegistry;
 use Goat\Runner\Metadata\ArrayResultMetadataCache;
 use Goat\Runner\Metadata\ResultMetadataCache;
 use Psr\Log\LoggerInterface;
@@ -38,8 +37,8 @@ abstract class AbstractRunner implements Runner, ProfilerAware
     private $currentTransaction;
     /** @var bool */
     private $debug = false;
-    /** @var HydratorMap */
-    private $hydratorMap;
+    /** @var HydratorRegistry */
+    private $hydratorRegistry;
     /** @ar QueryBuilder */
     private $queryBuilder;
     /** @var ResultMetadataCache */
@@ -140,31 +139,23 @@ abstract class AbstractRunner implements Runner, ProfilerAware
     }
 
     /**
-     * Set hydrator map.
-     *
-     * @deprecated
-     *   Will use GeneratedHydrator or only callbacks in the future, final
-     *   decision has not been made yet.
+     * {@inheritdoc}
      */
-    final public function setHydratorMap(HydratorMap $hydratorMap): void
+    final public function setHydratorRegistry(HydratorRegistry $hydratorRegistry): void
     {
-        $this->hydratorMap = $hydratorMap;
+        $this->hydratorRegistry = $hydratorRegistry;
     }
 
     /**
-     * Get hydrator map.
-     *
-     * @deprecated
-     *   Will use GeneratedHydrator or only callbacks in the future, final
-     *   decision has not been made yet.
+     * Get hydrator registry
      */
-    final protected function getHydratorMap(): HydratorMap
+    final protected function getHydratorRegistry(): HydratorRegistry
     {
-        if (!$this->hydratorMap) {
+        if (!$this->hydratorRegistry) {
             throw new \BadMethodCallException("There is no hydrator configured");
         }
 
-        return $this->hydratorMap;
+        return $this->hydratorRegistry;
     }
 
     /**
@@ -292,17 +283,14 @@ abstract class AbstractRunner implements Runner, ProfilerAware
             if (isset($options['class'])) {
                 $this->logger->warning("'hydrator' option overrides the 'class' option");
             }
-            if (!$options['hydrator'] instanceof HydratorInterface && !\is_callable($options['hydrator'])) {
-                throw new QueryError(\sprintf(
-                    "'hydrator' option must be an instance of '%s' or a callable, found '%s'",
-                    HydratorInterface::class, \gettype($options['hydrator'])
-                ));
+            if (!\is_callable($options['hydrator'])) {
+                throw new QueryError(\sprintf("'hydrator' option must be a callable, found '%s'", \gettype($options['hydrator'])));
             }
             $result->setHydrator($options['hydrator']);
         } else if (isset($options['class'])) {
             // Class can be either an alias or a valid class name, the hydrator
             // will proceed with all runtime checks to ensure that.
-            $result->setHydrator($this->getHydratorMap()->get($options['class']));
+            $result->setHydrator($this->getHydratorRegistry()->getHydrator($options['class']));
         }
 
         $userTypes = [];

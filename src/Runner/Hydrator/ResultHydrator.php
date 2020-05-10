@@ -4,14 +4,11 @@ declare(strict_types=1);
 
 namespace Goat\Runner\Hydrator;
 
-use Goat\Hydrator\HydratorInterface;
 use Goat\Query\QueryError;
 
 final class ResultHydrator
 {
-    /** @var bool */
-    private $hydratorIsCallable = false;
-    /** @var null|callable|HydratorInterface */
+    /** @var null|callable */
     private $hydrator;
     /** @var null|string */
     private $separator;
@@ -21,13 +18,13 @@ final class ResultHydrator
     private $doDropNullArrays = true;
 
     /**
-     * @param callable|HydratorInterface $hydrator
+     * @param callable $hydrator
      * @param string $separator
      * @param bool $dropNullArrays
      *   If an array contains only null values during nested property hydration
      *   then replace it will null simply.
      */
-    public function __construct($hydrator = null, ?string $separator = '.', bool $dropNullArrays = true)
+    public function __construct(?callable $hydrator = null, ?string $separator = '.', bool $dropNullArrays = true)
     {
         $this->separator = $separator;
         $this->doDropNullArrays = $dropNullArrays;
@@ -36,12 +33,8 @@ final class ResultHydrator
             $this->hydrator = null;
         } else if (\is_callable($hydrator)) {
             $this->hydrator = $hydrator;
-            $this->hydratorIsCallable = true;
-        } else if ($hydrator instanceof HydratorInterface) {
-            $this->hydrator = $hydrator;
-            $this->hydratorIsCallable = false;
         } else {
-            throw new QueryError(\sprintf("Result hydrator must be a callable or an instance of %s", HydratorInterface::class));
+            throw new QueryError("Result hydrator must be a callable.");
         }
     }
 
@@ -51,11 +44,10 @@ final class ResultHydrator
             $row = $this->aggregate($row);
         }
 
-        if ($this->hydratorIsCallable) {
+        if ($this->hydrator) {
             return ($this->hydrator)($row);
-        } else if ($this->hydrator) {
-            return $this->hydrator->createAndHydrateInstance($row);
         }
+
         return $row;
     }
 

@@ -35,8 +35,9 @@
         "psr/log": "^1.1"
     },
     "require-dev" : {
+        "makinacorpus/generated-hydrator-bundle": "^1.0.0-alpha1",
+        "ocramius/generated-hydrator": "^3.1",
         "phpunit/phpunit" : "8.*",
-        "makinacorpus/goat-hydrator": "^1.0@alpha",
         "ramsey/uuid": "^3.8 || ^4"
     },
     "suggest": {

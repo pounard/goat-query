@@ -204,8 +204,7 @@ Using a custom hydrator
 Using a callback
 ################
 
-Instead of using an ``HydratorInterface`` instance, you may arbitrarily use any
-callable for hydrating rows, callable signature must be:
+You may arbitrarily use any callable for hydrating rows, callable signature must be:
 
 .. code-block:: php
 

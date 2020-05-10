@@ -5,8 +5,9 @@ declare(strict_types=1);
 namespace Goat\Runner;
 
 use Goat\Converter\ConverterInterface;
-use Goat\Query\QueryBuilder;
 use Goat\Driver\Platform\Platform;
+use Goat\Query\QueryBuilder;
+use Goat\Runner\Hydrator\HydratorRegistry;
 
 interface Runner
 {
@@ -34,6 +35,11 @@ interface Runner
      *   This interface documents why this cache exists in details.
      */
     public function isResultMetadataSlow(): bool;
+
+    /**
+     * Set hydrator registry.
+     */
+    public function setHydratorRegistry(HydratorRegistry $hydratorRegistry): void;
 
     /**
      * Get the query builder

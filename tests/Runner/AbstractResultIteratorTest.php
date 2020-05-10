@@ -6,7 +6,6 @@ namespace Goat\Runner\Tests;
 
 use Goat\Converter\DefaultConverter;
 use Goat\Driver\Instrumentation\QueryProfiler;
-use Goat\Hydrator\HydratorInterface;
 use Goat\Query\QueryError;
 use PHPUnit\Framework\TestCase;
 
@@ -146,25 +145,11 @@ final class AbstractResultIteratorTest extends TestCase
         $result = $this->createArrayResultIterator();
         $result->setConverter(new DefaultConverter());
 
-        $result->setHydrator(new class () implements HydratorInterface {
-
-            public function createAndHydrateInstance(array $values, $constructor = self::CONSTRUCTOR_SKIP)
-            {
-                if (!$values['c'] instanceof \DateTimeInterface) {
-                    throw new \LogicException("Values were not converted");
-                }
-                return ['baah'];
+        $result->setHydrator(static function (array $values) {
+            if (!$values['c'] instanceof \DateTimeInterface) {
+                throw new \LogicException("Values were not converted");
             }
-
-            public function hydrateObject(array $values, $object)
-            {
-                throw new \LogicException("I shall not be called");
-            }
-
-            public function extractValues($object)
-            {
-                throw new \LogicException("I shall not be called");
-            }
+            return ['baah'];
         });
 
         $row = $result->fetch();
@@ -183,18 +168,6 @@ final class AbstractResultIteratorTest extends TestCase
         $row = $result->fetch();
 
         self::assertIsArray($row);
-    }
-
-    /**
-     * You cannot set anything as hydrator
-     */
-    public function testSetStupidHydratorRaiseError()
-    {
-        $result = $this->createArrayResultIterator();
-
-        self::expectException(QueryError::class);
-
-        $result->setHydrator('foo');
     }
 
     /**

@@ -115,13 +115,7 @@ Standalone setup
 
 3. initialize the data converter and object hydrator:
 
-   .. code-block:: php
-
-      <?php
-
-      use Goat\Hydrator\HydratorMap;
-
-      $runner->setHydratorMap(new HydratorMap('/tmp/goat-hydrators'));
+@todo
 
 4. play with it:
 

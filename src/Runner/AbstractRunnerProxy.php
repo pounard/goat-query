@@ -7,8 +7,8 @@ namespace Goat\Runner;
 use Goat\Converter\ConverterInterface;
 use Goat\Driver\Platform\Platform;
 use Goat\Driver\Runner\AbstractRunner;
-use Goat\Hydrator\HydratorMap;
 use Goat\Query\QueryBuilder;
+use Goat\Runner\Hydrator\HydratorRegistry;
 use Goat\Runner\Metadata\ResultMetadataCache;
 use Psr\Log\LoggerInterface;
 
@@ -78,14 +78,12 @@ abstract class AbstractRunnerProxy implements Runner
     }
 
     /**
-     * Set hydrator map.
-     *
-     * @deprecated
+     * {@inheritdoc}
      */
-    final public function setHydratorMap(HydratorMap $hydratorMap): void
+    final public function setHydratorRegistry(HydratorRegistry $hydratorRegistry): void
     {
         if ($this->decorated instanceof AbstractRunner) {
-            $this->decorated->setHydratorMap($hydratorMap);
+            $this->decorated->setHydratorRegistry($hydratorRegistry);
         }
     }
 

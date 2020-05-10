@@ -6,7 +6,6 @@ namespace Goat\Runner;
 
 use Goat\Converter\ConverterInterface;
 use Goat\Driver\Instrumentation\QueryProfiler;
-use Goat\Hydrator\HydratorInterface;
 use Goat\Query\QueryError;
 use Goat\Runner\Metadata\ResultMetadata;
 
@@ -81,7 +80,7 @@ abstract class AbstractResultIteratorProxy implements ResultIterator, \IteratorA
     /**
      * {@inheritdoc}
      */
-    final public function setHydrator(HydratorInterface $hydrator): ResultIterator
+    final public function setHydrator(callable $hydrator): ResultIterator
     {
         $this->getResult()->setHydrator($hydrator);
 

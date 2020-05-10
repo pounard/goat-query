@@ -6,7 +6,6 @@ namespace Goat\Runner;
 
 use Goat\Converter\ConverterInterface;
 use Goat\Driver\Instrumentation\QueryProfiler;
-use Goat\Hydrator\HydratorInterface;
 use Goat\Runner\Metadata\ResultMetadata;
 
 /**
@@ -34,9 +33,12 @@ interface ResultIterator extends ResultMetadata, \Traversable, \Countable
     /**
      * Set hydrator.
      *
+     * @param callable $hydrator
+     *   First callable argument is the row values array.
+     *
      * @return $this
      */
-    public function setHydrator(HydratorInterface $hydrator): self;
+    public function setHydrator(callable $hydrator): self;
 
     /**
      * Set column to use as iterator key.
