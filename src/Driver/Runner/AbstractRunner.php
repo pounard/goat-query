@@ -19,6 +19,7 @@ use Goat\Runner\ResultIterator;
 use Goat\Runner\Runner;
 use Goat\Runner\Transaction;
 use Goat\Runner\TransactionError;
+use Goat\Runner\Hydrator\DefaultHydratorRegistry;
 use Goat\Runner\Hydrator\HydratorRegistry;
 use Goat\Runner\Metadata\ArrayResultMetadataCache;
 use Goat\Runner\Metadata\ResultMetadataCache;
@@ -152,7 +153,7 @@ abstract class AbstractRunner implements Runner, ProfilerAware
     final protected function getHydratorRegistry(): HydratorRegistry
     {
         if (!$this->hydratorRegistry) {
-            throw new \BadMethodCallException("There is no hydrator configured");
+            $this->hydratorRegistry = DefaultHydratorRegistry::createDefaultInstance();
         }
 
         return $this->hydratorRegistry;

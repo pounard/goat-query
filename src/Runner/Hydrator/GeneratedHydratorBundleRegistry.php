@@ -7,7 +7,7 @@ namespace Goat\Runner\Hydrator;
 use GeneratedHydrator\Bridge\Symfony\DeepHydrator;
 use GeneratedHydrator\Bridge\Symfony\Hydrator;
 
-class GeneratedHydratorBundleHydratorRegistry implements HydratorRegistry
+class GeneratedHydratorBundleRegistry implements HydratorRegistry
 {
     private Hydrator $hydrator;
 
