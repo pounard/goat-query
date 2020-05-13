@@ -114,18 +114,6 @@ abstract class AbstractRunner implements Runner, ProfilerAware
     /**
      * {@inheritdoc}
      */
-    public function getQueryBuilder(): QueryBuilder
-    {
-        return $this->queryBuilder ?? ($this->queryBuilder = new DefaultQueryBuilder($this));
-    }
-
-    /**
-     * Set converter.
-     *
-     * @deprecated
-     * @todo This needs to be sorted out, we need to be able to override
-     *   converted, but properly.
-     */
     public function setConverter(ConverterInterface $converter): void
     {
         $this->converter = new RunnerConverter($converter, $this->getPlatform()->getEscaper());
@@ -137,6 +125,14 @@ abstract class AbstractRunner implements Runner, ProfilerAware
     final public function getConverter(): ConverterInterface
     {
         return $this->converter;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getQueryBuilder(): QueryBuilder
+    {
+        return $this->queryBuilder ?? ($this->queryBuilder = new DefaultQueryBuilder($this));
     }
 
     /**

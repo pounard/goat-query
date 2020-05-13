@@ -42,14 +42,19 @@ interface Runner
     public function setHydratorRegistry(HydratorRegistry $hydratorRegistry): void;
 
     /**
-     * Get the query builder
+     * Set converter.
      */
-    public function getQueryBuilder(): QueryBuilder;
+    public function setConverter(ConverterInterface $converter): void;
 
     /**
      * Get converter
      */
     public function getConverter(): ConverterInterface;
+
+    /**
+     * Get the query builder
+     */
+    public function getQueryBuilder(): QueryBuilder;
 
     /**
      * Creates a new transaction
