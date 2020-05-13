@@ -193,6 +193,7 @@ class ExtPgSQLDriver extends AbstractDriver
         }
         $this->platform = null;
         $this->runner = null;
+        // Without \gc_collect_cycles() call, unit tests will fail.
         \gc_collect_cycles();
     }
 

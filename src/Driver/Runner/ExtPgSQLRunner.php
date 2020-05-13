@@ -25,9 +25,8 @@ class ExtPgSQLRunner extends AbstractRunner
 
     /** @var resource<\pg_connect> */
     private $connection;
-
     /** @var string[] */
-    private $prepared = [];
+    private array $prepared = [];
 
     /**
      * Constructor

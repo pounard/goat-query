@@ -32,7 +32,7 @@ class MySQLTransaction extends AbstractTransaction
             // that's the downside of using MySQL.
             if (1568 == $e->getCode()) {
                 /* if ($this->runner->isDebugEnabled()) {
-                    \trigger_error("transaction is nested into another, MySQL can't change the isolation level", E_USER_NOTICE);
+                    @\trigger_error("transaction is nested into another, MySQL can't change the isolation level", E_USER_NOTICE);
                 } */
             } else {
                 // MySQL >= 8 has a different syntax for transaction level which
@@ -54,7 +54,7 @@ class MySQLTransaction extends AbstractTransaction
     protected function doChangeLevel(int $isolationLevel): void
     {
         /* if ($this->runner->isDebugEnabled()) {
-            \trigger_error("MySQL does not support transaction level change during transaction", E_USER_NOTICE);
+            @\trigger_error("MySQL does not support transaction level change during transaction", E_USER_NOTICE);
         } */
     }
 
@@ -118,7 +118,7 @@ class MySQLTransaction extends AbstractTransaction
     protected function doDeferConstraints(array $constraints): void
     {
         /* if ($this->runner->isDebugEnabled()) {
-            \trigger_error("MySQL does not support deferred constraints", E_USER_NOTICE);
+            @\trigger_error("MySQL does not support deferred constraints", E_USER_NOTICE);
         } */
     }
 
@@ -128,7 +128,7 @@ class MySQLTransaction extends AbstractTransaction
     protected function doDeferAll(): void
     {
         /* if ($this->runner->isDebugEnabled()) {
-            \trigger_error("MySQL does not support deferred constraints", E_USER_NOTICE);
+            @\trigger_error("MySQL does not support deferred constraints", E_USER_NOTICE);
         } */
     }
 

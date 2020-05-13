@@ -180,13 +180,10 @@ class PDODriver extends AbstractDriver
      */
     protected function doClose(): void
     {
-        // Attention here, if something kept a reference to the \PDO object
-        // it will not close the connection, you've been warned. This is
-        // especially true during unit and functionnal tests. Hence the
-        // \gc_collect_cycles() call at the end of this method.
         $this->runner = null;
         $this->platform = null;
         $this->connection = null;
+        // Without \gc_collect_cycles() call, unit tests will fail.
         \gc_collect_cycles();
     }
 
