@@ -6,11 +6,8 @@ namespace Goat\Runner;
 
 class ServerError extends \RuntimeException implements DatabaseError
 {
-    /** @var string */
-    private $rawSQL;
-
-    /** @var null|array */
-    private $parameters;
+    private ?string $rawSQL = null;
+    private ?array $parameters = null;
 
     /**
      * Default constructor
@@ -18,7 +15,7 @@ class ServerError extends \RuntimeException implements DatabaseError
     public function __construct($rawSQL, $parameters = null, \Throwable $previous = null)
     {
         $this->rawSQL = $rawSQL;
-        $this->parameters = $parameters;
+        $this->parameters = (array)$parameters;
 
         $message = \sprintf("error while querying backend, query is:\n%s", $rawSQL);
 

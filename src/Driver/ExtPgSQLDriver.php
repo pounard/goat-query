@@ -14,10 +14,8 @@ use Goat\Runner\Runner;
 class ExtPgSQLDriver extends AbstractDriver
 {
     /** @var null|resource */
-    private $connection;
-
-    /** @var null|Escaper */
-    private $escaper;
+    private $connection = null;
+    private ?Escaper $escaper = null;
 
     /**
      * {@inheritdoc}

@@ -13,14 +13,14 @@ use Goat\Query\SelectQuery;
  */
 final class QueryPagerResultIterator extends AbstractResultIteratorProxy
 {
-    private $countQuery;
-    private $limit = 0;
-    private $page = 1;
-    private $query;
-    private $queryArguments;
-    private $queryOptions;
-    private $result;
-    private $totalCount;
+    private ?Query $countQuery = null;
+    private SelectQuery $query;
+    private int $limit = 0;
+    private int $page = 1;
+    private ?int $totalCount = null;
+    private ?array $queryArguments = null;
+    private ?array $queryOptions = null;
+    private ?ResultIterator $result = null;
 
     /**
      * Default constructor

@@ -11,8 +11,7 @@ use Goat\Runner\Metadata\ResultMetadata;
 
 abstract class AbstractResultIteratorProxy implements ResultIterator, \IteratorAggregate
 {
-    /** @var null|ResultIterator */
-    private $decorated = null;
+    private ?ResultIterator $decorated = null;
 
     public function __construct(?ResultIterator $decorated = null)
     {

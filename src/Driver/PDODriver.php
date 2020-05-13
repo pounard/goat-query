@@ -16,10 +16,8 @@ use Goat\Runner\Runner;
 
 class PDODriver extends AbstractDriver
 {
-    /** @var null|\PDO */
-    private $connection;
-    /** @var null|Escaper */
-    private $escaper;
+    private ?\PDO $connection = null;
+    private ?Escaper $escaper = null;
 
     /**
      * Create driver from existing PDO connection

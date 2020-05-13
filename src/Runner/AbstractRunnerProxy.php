@@ -21,8 +21,7 @@ use Psr\Log\LoggerInterface;
  */
 abstract class AbstractRunnerProxy implements Runner
 {
-    /** @var Runner */
-    private $decorated;
+    private Runner $decorated;
 
     public function __construct(Runner $decorated)
     {
@@ -54,27 +53,19 @@ abstract class AbstractRunnerProxy implements Runner
     }
 
     /**
-     * Inject the result metadata cache implementation.
-     *
-     * @deprecated
+     * {@inheritdoc}
      */
     public function setResultMetadataCache(ResultMetadataCache $metadataCache): void
     {
-        if ($this->decorated instanceof AbstractRunner) {
-            $this->decorated->setResultMetadataCache($metadataCache);
-        }
+        $this->decorated->setResultMetadataCache($metadataCache);
     }
 
     /**
-     * Set converter.
-     *
-     * @deprecated
+     * {@inheritdoc}
      */
     public function setConverter(ConverterInterface $converter): void
     {
-        if ($this->decorated instanceof AbstractRunner) {
-            $this->decorated->setConverter($converter);
-        }
+        $this->decorated->setConverter($converter);
     }
 
     /**
@@ -82,9 +73,7 @@ abstract class AbstractRunnerProxy implements Runner
      */
     final public function setHydratorRegistry(HydratorRegistry $hydratorRegistry): void
     {
-        if ($this->decorated instanceof AbstractRunner) {
-            $this->decorated->setHydratorRegistry($hydratorRegistry);
-        }
+        $this->decorated->setHydratorRegistry($hydratorRegistry);
     }
 
     /**

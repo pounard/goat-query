@@ -9,18 +9,12 @@ use Goat\Runner\Runner;
 
 abstract class AbstractDriver implements Driver
 {
-    /** @var null|Configuration */
-    private $configuration;
-    /** @var bool */
-    private $isClosed = true;
-    /** @var null|string */
-    private $serverVersion = null;
-    /** @var bool */
-    private $serverVersionLookupDone = false;
-    /** @var null|Platform */
-    protected $platform;
-    /** @var null|Runner */
-    protected $runner;
+    private ?Configuration $configuration = null;
+    private bool $isClosed = true;
+    private ?string $serverVersion = null;
+    private bool $serverVersionLookupDone = false;
+    protected ?Platform $platform = null;
+    protected ?Runner $runner = null;
 
     /**
      * Is connection alive

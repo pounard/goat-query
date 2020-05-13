@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Goat\Runner\Metadata;
 
 /**
- * Keeps track of column metadata
+ * Keeps track of column metadata.
  *
  * Rationale behind this is that the PDO driver has no optimisation behind
  * the PDO::getColumnMetadata() method, which is not expiremental anymore but

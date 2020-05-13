@@ -6,9 +6,9 @@ namespace Goat\Runner;
 
 final class TransactionSavepoint implements Transaction
 {
-    private $name;
-    private $root;
-    private $running = true;
+    private string $name;
+    private Transaction $root;
+    private bool $running = true;
 
     /**
      * Default constructor
@@ -78,7 +78,7 @@ final class TransactionSavepoint implements Transaction
     /**
      * {@inheritdoc}
      */
-    public function savepoint(string $name = null): TransactionSavepoint
+    public function savepoint(?string $name = null): TransactionSavepoint
     {
         if ($name) {
             return $this->root->savepoint($name);

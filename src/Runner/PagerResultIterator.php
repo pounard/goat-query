@@ -11,10 +11,10 @@ use Goat\Query\QueryError;
  */
 final class PagerResultIterator extends AbstractResultIteratorProxy
 {
-    private $count = 0;
-    private $limit = 0;
-    private $page = 0;
-    private $result;
+    private int $count = 0;
+    private int $limit = 0;
+    private int $page = 0;
+    private ResultIterator $result;
 
     /**
      * Default constructor

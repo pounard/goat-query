@@ -16,11 +16,9 @@ use Goat\Runner\ServerError;
 
 abstract class AbstractPDORunner extends AbstractRunner
 {
-    /** @var \PDO */
-    private $connection;
-
+    private \PDO $connection;
     /** @var string[] */
-    private $prepared = [];
+    private array $prepared = [];
 
     /**
      * Default constructor

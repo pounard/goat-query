@@ -15,7 +15,7 @@ use Goat\Query\UpdateQuery;
 
 class DefaultQueryBuilder implements QueryBuilder
 {
-    private $runner;
+    private ?Runner $runner = null;
 
     public function __construct(?Runner $runner = null)
     {

@@ -30,24 +30,15 @@ abstract class AbstractRunner implements Runner, ProfilerAware
 {
     use ProfilerAwareTrait;
 
-    /** @var LoggerInterface */
-    private $logger;
-    /** @var Platform */
-    private $platform;
-    /** @var null|Transaction */
-    private $currentTransaction;
-    /** @var bool */
-    private $debug = false;
-    /** @var HydratorRegistry */
-    private $hydratorRegistry;
-    /** @ar QueryBuilder */
-    private $queryBuilder;
-    /** @var ResultMetadataCache */
-    private $metadataCache;
-    /** @var ConverterInterface */
-    protected $converter;
-    /** @var SqlWriter */
-    protected $formatter;
+    private LoggerInterface $logger;
+    private Platform $platform;
+    private ?Transaction $currentTransaction = null;
+    private bool $debug = false;
+    private ?HydratorRegistry $hydratorRegistry = null;
+    private ?QueryBuilder $queryBuilder = null;
+    private ?ResultMetadataCache $metadataCache = null;
+    protected ConverterInterface $converter;
+    protected SqlWriter $formatter;
 
     /**
      * Constructor

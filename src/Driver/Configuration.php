@@ -50,16 +50,11 @@ final class Configuration
     const REGEX_UNIX = '@^(unix\://|)([\w]+)\://(/[^\:]+)\:(.+)$@';
 
     /** @var array<string,bool|int|float|string> */
-    private $options = [];
-
+    private array $options = [];
     /** @var array<string,bool|int|float|string> */
-    private $driverOptions = [];
-
-    /** @var null|LoggerInterface */
-    private $logger;
-
-    /** @var null|string */
-    private $description;
+    private array $driverOptions = [];
+    private ?LoggerInterface $logger = null;
+    private ?string $description = null;
 
     /**
      * Default constructor

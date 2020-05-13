@@ -8,6 +8,7 @@ use Goat\Converter\ConverterInterface;
 use Goat\Driver\Platform\Platform;
 use Goat\Query\QueryBuilder;
 use Goat\Runner\Hydrator\HydratorRegistry;
+use Goat\Runner\Metadata\ResultMetadataCache;
 
 interface Runner
 {
@@ -35,6 +36,11 @@ interface Runner
      *   This interface documents why this cache exists in details.
      */
     public function isResultMetadataSlow(): bool;
+
+    /**
+     * Set result metadata cache.
+     */
+    public function setResultMetadataCache(ResultMetadataCache $metadataCache): void;
 
     /**
      * Set hydrator registry.

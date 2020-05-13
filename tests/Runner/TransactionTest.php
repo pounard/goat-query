@@ -11,6 +11,7 @@ use Goat\Runner\TransactionFailedError;
 use Goat\Runner\TransactionSavepoint;
 use Goat\Runner\Testing\DatabaseAwareQueryTest;
 use Goat\Runner\Testing\TestDriverFactory;
+use Goat\Runner\DatabaseError;
 
 final class TransactionTest extends DatabaseAwareQueryTest
 {
@@ -356,7 +357,7 @@ final class TransactionTest extends DatabaseAwareQueryTest
         } catch (TransactionFailedError $e) {
             // This is what should happen, error at commit time
             $transaction->rollback();
-        } catch (\Throwable $e) {
+        } catch (DatabaseError $e) {
             // All constraints are deffered, we should not experience arbitrary
             // SQL errors at insert time
             $this->fail();
