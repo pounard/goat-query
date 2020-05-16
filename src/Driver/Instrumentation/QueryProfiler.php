@@ -10,4 +10,22 @@ namespace Goat\Driver\Instrumentation;
  */
 class QueryProfiler extends TimerAggregate
 {
+    private ?string $sqlQuery = null;
+    private ?array $sqlArguments = null;
+
+    public function setRawSql(string $query, ?array $arguments = null): void
+    {
+        $this->sqlQuery = $query;
+        $this->sqlArguments = $arguments;
+    }
+
+    public function getSqlQuery(): ?string
+    {
+        return $this->sqlQuery;
+    }
+
+    public function getSqlArguments(): ?array
+    {
+        return $this->sqlArguments;
+    }
 }

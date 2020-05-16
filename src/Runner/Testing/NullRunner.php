@@ -45,7 +45,7 @@ class NullRunner extends AbstractRunner
     /**
      * {@inheritdoc}
      */
-    public function perform($query, $arguments = null, $options = null): int
+    protected function doPerform(string $sql, array $args, array $options): int
     {
         throw new \Exception("Null runner cannot actually run queries.");
     }
@@ -53,7 +53,7 @@ class NullRunner extends AbstractRunner
     /**
      * {@inheritdoc}
      */
-    public function execute($query, $arguments = null, $options = null): ResultIterator
+    protected function doExecute(string $sql, array $args, array $options): ResultIterator
     {
         throw new \Exception("Null runner cannot actually run queries.");
     }
