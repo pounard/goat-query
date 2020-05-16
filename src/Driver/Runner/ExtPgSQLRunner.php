@@ -10,9 +10,6 @@ use Goat\Driver\Platform\Platform;
 use Goat\Driver\Query\FormattedQuery;
 use Goat\Query\QueryError;
 use Goat\Runner\AbstractResultIterator;
-use Goat\Runner\DatabaseError;
-use Goat\Runner\ResultIterator;
-use Goat\Runner\ServerError;
 
 /**
  * ext-pgsql connection implementation
@@ -61,21 +58,11 @@ class ExtPgSQLRunner extends AbstractRunner
     /**
      * {@inheritdoc}
      */
-    protected function doCreateResultIterator(...$constructorArgs) : AbstractResultIterator
+    protected function doExecute(string $sql, array $args, array $options): AbstractResultIterator
     {
-        return new ExtPgSQLResultIterator(...$constructorArgs);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    protected function doExecute(string $sql, array $args, array $options): ResultIterator
-    {
-        $connection = $this->connection;
-
-        $resource = @\pg_query_params($connection, $sql, $args);
+        $resource = @\pg_query_params($this->connection, $sql, $args);
         if (!\is_resource($resource)) {
-            $this->serverError($connection, $sql);
+            $this->serverError($this->connection, $sql);
         }
 
         return new ExtPgSQLResultIterator($resource);
@@ -86,14 +73,12 @@ class ExtPgSQLRunner extends AbstractRunner
      */
     protected function doPerform(string $sql, array $args, array $options): int
     {
-        $connection = $this->connection;
-
         $resource = null;
 
         try {
-            $resource = @\pg_query_params($connection, $sql, $args);
+            $resource = @\pg_query_params($this->connection, $sql, $args);
             if (!\is_resource($resource)) {
-                $this->serverError($connection, $sql);
+                $this->serverError($this->connection, $sql);
             }
 
             $rowCount = @\pg_affected_rows($resource);
@@ -114,52 +99,19 @@ class ExtPgSQLRunner extends AbstractRunner
     /**
      * {@inheritdoc}
      */
-    public function prepareQuery($query, ?string $identifier = null): string
+    protected function doPrepareQuery(string $identifier, FormattedQuery $prepared, array $options): void
     {
-        $rawSQL = '';
-        $connection = $this->connection;
-        $profiler = $this->startProfilerQuery();
+        $this->prepared[$identifier] = $prepared;
 
-        try {
-            $profiler->begin('prepare');
-            $prepared = $this->formatter->prepare($query);
-            $rawSQL = $prepared->getRawSQL();
-            $profiler->end('prepare');
-
-            if (null === $identifier) {
-                $identifier = \md5($rawSQL);
-            }
-            // @merge argument types from query
-
-            if ($this->isDebugEnabled()) {
-                $profiler->setRawSql($rawSQL, [$identifier]);
-            }
-
-            $profiler->begin('execute');
-            if (false === @\pg_prepare($connection, $identifier, $rawSQL)) {
-                $this->serverError($connection);
-            }
-            $this->prepared[$identifier] = $prepared;
-            $profiler->end('prepare');
-
-            return $identifier;
-
-        } catch (DatabaseError $e) {
-            throw $e;
-        } catch (\Exception $e) {
-            throw new ServerError($rawSQL, null, $e);
-        } finally {
-            $profiler->stop();
-            if ($this->isDebugEnabled()) {
-                $profiler->setRawSql($rawSQL, [$identifier]);
-            }
+        if (false === @\pg_prepare($this->connection, $identifier, $prepared->getRawSQL())) {
+            $this->serverError($this->connection);
         }
     }
 
     /**
      * {@inheritdoc}
      */
-    public function executePreparedQuery(string $identifier, $arguments = null, $options = null): ResultIterator
+    protected function doExecutePreparedQuery(string $identifier, array $args, array $options): AbstractResultIterator
     {
         if (!isset($this->prepared[$identifier])) {
             throw new QueryError(\sprintf("'%s': query was not prepared", $identifier));
@@ -168,38 +120,12 @@ class ExtPgSQLRunner extends AbstractRunner
         $prepared = $this->prepared[$identifier];
         \assert($prepared instanceof FormattedQuery);
 
-        $args = null;
-        $connection = $this->connection;
-        $profiler = $this->startProfilerQuery();
-
-        try {
-
-            $profiler->begin('prepare');
-            $args = $prepared->prepareArgumentsWith($this->converter, '', $arguments);
-            $profiler->end('prepare');
-
-            if ($this->isDebugEnabled()) {
-                $profiler->setRawSql($identifier, $args);
-            }
-
-            $profiler->begin('execute');
-            $resource = @\pg_execute($connection, $identifier, $args);
-            if (false === $resource) {
-                $this->serverError($connection, $identifier);
-            }
-            $profiler->end('execute');
-
-            return $this->configureResultIterator($identifier, $profiler, new ExtPgSQLResultIterator($resource), $options);
-
-        } catch (DatabaseError $e) {
-            throw $e;
-        } catch (\Exception $e) {
-            throw new ServerError($identifier, $args, $e);
-        } finally {
-            $profiler->stop();
-            if ($this->isDebugEnabled()) {
-                $profiler->setRawSql("<execute prepared statement> " . $identifier, $args);
-            }
+        $args = $prepared->prepareArgumentsWith($this->converter, '', $args);
+        $resource = @\pg_execute($this->connection, $identifier, $args);
+        if (false === $resource) {
+            $this->serverError($this->connection, $identifier);
         }
+
+        return new ExtPgSQLResultIterator($resource);
     }
 }

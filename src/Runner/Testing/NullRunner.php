@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Goat\Runner\Testing;
 
+use Goat\Driver\Query\FormattedQuery;
 use Goat\Driver\Runner\AbstractRunner;
 use Goat\Runner\AbstractResultIterator;
-use Goat\Runner\ResultIterator;
 
 class NullRunner extends AbstractRunner
 {
@@ -29,7 +29,7 @@ class NullRunner extends AbstractRunner
     /**
      * {@inheritdoc}
      */
-    public function prepareQuery($query, ?string $identifier = null): string
+    protected function doPrepareQuery(string $identifier, FormattedQuery $prepared, array $options): void
     {
         throw new \Exception("Null runner cannot actually run queries.");
     }
@@ -37,7 +37,7 @@ class NullRunner extends AbstractRunner
     /**
      * {@inheritdoc}
      */
-    public function executePreparedQuery(string $identifier, $arguments = null, $options = null): ResultIterator
+    protected function doExecutePreparedQuery(string $identifier, array $args, array $options): AbstractResultIterator
     {
         throw new \Exception("Null runner cannot actually run queries.");
     }
@@ -53,15 +53,7 @@ class NullRunner extends AbstractRunner
     /**
      * {@inheritdoc}
      */
-    protected function doExecute(string $sql, array $args, array $options): ResultIterator
-    {
-        throw new \Exception("Null runner cannot actually run queries.");
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    protected function doCreateResultIterator(...$constructorArgs) : AbstractResultIterator
+    protected function doExecute(string $sql, array $args, array $options): AbstractResultIterator
     {
         throw new \Exception("Null runner cannot actually run queries.");
     }

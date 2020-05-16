@@ -8,8 +8,8 @@ use Goat\Converter\ConverterInterface;
 use Goat\Converter\DefaultConverter;
 use Goat\Driver\Instrumentation\ProfilerAware;
 use Goat\Driver\Instrumentation\ProfilerAwareTrait;
-use Goat\Driver\Instrumentation\QueryProfiler;
 use Goat\Driver\Platform\Platform;
+use Goat\Driver\Query\FormattedQuery;
 use Goat\Driver\Query\SqlWriter;
 use Goat\Query\Query;
 use Goat\Query\QueryBuilder;
@@ -246,10 +246,9 @@ abstract class AbstractRunner implements Runner, ProfilerAware
      *
      * @return ResultIterator
      */
-    protected function configureResultIterator(string $identifier, QueryProfiler $profiler, AbstractResultIterator $result, array $options): ResultIterator
+    private function configureResultIterator(string $identifier, ResultIterator $result, array $options): ResultIterator
     {
         $result->setConverter($this->converter);
-        $result->setQueryProfiler($profiler);
 
         // Normalize options, it might be a string only.
         if ($options) {
@@ -310,7 +309,7 @@ abstract class AbstractRunner implements Runner, ProfilerAware
     /**
      * execute() implementation.
      */
-    protected abstract function doExecute(string $sql, array $args, array $options): ResultIterator;
+    protected abstract function doExecute(string $sql, array $args, array $options): AbstractResultIterator;
 
     /**
      * perform() implementation.
@@ -320,12 +319,12 @@ abstract class AbstractRunner implements Runner, ProfilerAware
     /**
      * prepareQuery() implementation.
      */
-    // protected abstract function doPrepareQuery($query, string $identifier): string;
+    protected abstract function doPrepareQuery(string $identifier, FormattedQuery $prepared, array $options): void;
 
     /**
      * executePreparedQuery() implementation.
      */
-    // protected abstract function doExecutePreparedQuery(string $identifier, $arguments = null, $options = null): ResultIterator;
+    protected abstract function doExecutePreparedQuery(string $identifier, array $args, array $options): AbstractResultIterator;
 
     /**
      * {@inheritdoc}
@@ -356,7 +355,9 @@ abstract class AbstractRunner implements Runner, ProfilerAware
             $result = $this->doExecute($rawSQL, $args ?? [], $options);
             $profiler->end('execute');
 
-            return $this->configureResultIterator($prepared->getIdentifier(), $profiler, $result, $options);
+            $result->setQueryProfiler($profiler);
+
+            return $this->configureResultIterator($prepared->getIdentifier(), $result, $options);
 
         } catch (DatabaseError $e) {
             throw $e;
@@ -409,7 +410,7 @@ abstract class AbstractRunner implements Runner, ProfilerAware
 
     /**
      * {@inheritdoc}
-     *
+     */
     public function prepareQuery($query, string $identifier = null): string
     {
         $rawSQL = '';
@@ -422,15 +423,11 @@ abstract class AbstractRunner implements Runner, ProfilerAware
             $profiler->end('prepare');
 
             if (null === $identifier) {
-                $identifier = \md5($rawSQL);
+                $identifier = \md5($rawSQL); // @todo fast and collision low probability enought?
             }
-            // @merge argument types from query
 
             $profiler->begin('execute');
-            $this->prepared[$identifier] = [
-                $this->connection->prepare($rawSQL, [\PDO::ATTR_CURSOR => \PDO::CURSOR_FWDONLY]),
-                $prepared,
-            ];
+            $this->doPrepareQuery($identifier, $prepared, [] /* no options here? */);
             $profiler->end('execute');
 
             return $identifier;
@@ -444,37 +441,27 @@ abstract class AbstractRunner implements Runner, ProfilerAware
         } finally {
             $profiler->stop();
             if ($this->isDebugEnabled()) {
-                $profiler->setRawSql($rawSQL, [$identifier]);
+                $profiler->setRawSql('<prepare statement> ' . $identifier, [$rawSQL]);
             }
         }
     }
-     */
 
     /**
      * {@inheritdoc}
-     *
+     */
     public function executePreparedQuery(string $identifier, $arguments = null, $options = null): ResultIterator
     {
-        if (!isset($this->prepared[$identifier])) {
-            throw new QueryError(\sprintf("'%s': query was not prepared", $identifier));
-        }
-
-        list($statement, $prepared) = $this->prepared[$identifier];
-        \assert($prepared instanceof FormattedQuery);
-
-        $args = null;
+        $args = $arguments ?? [];
         $profiler = $this->startProfilerQuery();
 
         try {
-            $profiler->begin('prepare');
-            $args = $prepared->prepareArgumentsWith($this->converter, '', $arguments);
-            $profiler->end('prepare');
-
             $profiler->begin('execute');
-            $statement->execute($args);
+            $result = $this->doExecutePreparedQuery($identifier, $args, $options);
             $profiler->end('execute');
 
-            return $this->createResultIterator($identifier, $profiler, $options, $statement);
+            $result->setQueryProfiler($profiler);
+
+            return $this->configureResultIterator($identifier, $result, $options);
 
         } catch (DatabaseError $e) {
             throw $e;
@@ -487,5 +474,4 @@ abstract class AbstractRunner implements Runner, ProfilerAware
             }
         }
     }
-     */
 }
