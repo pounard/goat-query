@@ -6,11 +6,8 @@ namespace Goat\Driver\Runner;
 
 use Goat\Driver\Platform\Platform;
 use Goat\Driver\Query\FormattedQuery;
-use Goat\Query\Query;
 use Goat\Query\QueryError;
-use Goat\Runner\AbstractResultIterator;
 use Goat\Runner\DatabaseError;
-use Goat\Runner\EmptyResultIterator;
 use Goat\Runner\ResultIterator;
 use Goat\Runner\ServerError;
 
@@ -49,86 +46,23 @@ abstract class AbstractPDORunner extends AbstractRunner
     /**
      * {@inheritdoc}
      */
-    protected function doCreateResultIterator(...$constructorArgs): AbstractResultIterator
+    protected function doExecute(string $sql, array $args, array $options): ResultIterator
     {
-        return new PDOResultIterator(...$constructorArgs);
+        $statement = $this->connection->prepare($sql, [\PDO::ATTR_CURSOR => \PDO::CURSOR_FWDONLY]);
+        $statement->execute($args);
+
+        return new PDOResultIterator($statement);
     }
 
     /**
      * {@inheritdoc}
      */
-    public function execute($query, $arguments = null, $options = null): ResultIterator
+    protected function doPerform(string $sql, array $args, array $options): int
     {
-        if ($query instanceof Query) {
-            if (!$query->willReturnRows()) {
-                $affectedRowCount = $this->perform($query, $arguments, $options);
+        $statement = $this->connection->prepare($sql, [\PDO::ATTR_CURSOR => \PDO::CURSOR_FWDONLY]);
+        $statement->execute($args);
 
-                return new EmptyResultIterator($affectedRowCount);
-            }
-        }
-
-        $args = [];
-        $rawSQL = '';
-
-        try {
-            $profiler = $this->startProfilerQuery();
-
-            $profiler->start('prepare');
-            $prepared = $this->formatter->prepare($query);
-            $rawSQL = $prepared->getRawSQL();
-            $args = $prepared->prepareArgumentsWith($this->converter, $query, $arguments);
-            $profiler->end('prepare');
-
-            $profiler->start('execute');
-            $statement = $this->connection->prepare($rawSQL, [\PDO::ATTR_CURSOR => \PDO::CURSOR_FWDONLY]);
-            $statement->execute($args);
-            $profiler->end('execute');
-
-            return $this->createResultIterator($prepared->getIdentifier(), $profiler, $options, $statement);
-
-        } catch (DatabaseError $e) {
-            throw $e;
-        } catch (\PDOException $e) {
-            throw new ServerError($rawSQL, $arguments, $e);
-        } catch (\Exception $e) {
-            throw new ServerError($rawSQL, $arguments, $e);
-        }
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function perform($query, $arguments = null, $options = null) : int
-    {
-        $args = [];
-        $rawSQL = '';
-
-        try {
-            $profiler = $this->startProfilerQuery();
-
-            $profiler->start('prepare');
-            $prepared = $this->formatter->prepare($query);
-            $rawSQL = $prepared->getRawSQL();
-            $args = $prepared->prepareArgumentsWith($this->converter, $query, $arguments);
-            $profiler->end('prepare');
-
-            $profiler->start('execute');
-            $statement = $this->connection->prepare($rawSQL, [\PDO::ATTR_CURSOR => \PDO::CURSOR_FWDONLY]);
-            $statement->execute($args);
-            $profiler->end('execute');
-
-            $profiler->stop();
-
-            // @todo How to fetch result profile?
-            return $statement->rowCount();
-
-        } catch (DatabaseError $e) {
-            throw $e;
-        } catch (\PDOException $e) {
-            throw new ServerError($rawSQL, $arguments, $e);
-        } catch (\Exception $e) {
-            throw new ServerError($rawSQL, $arguments, $e);
-        }
+        return $statement->rowCount();
     }
 
     /**
@@ -137,28 +71,25 @@ abstract class AbstractPDORunner extends AbstractRunner
     public function prepareQuery($query, string $identifier = null): string
     {
         $rawSQL = '';
+        $profiler = $this->startProfilerQuery();
 
         try {
-            $profiler = $this->startProfilerQuery();
-
-            $profiler->start('prepare');
+            $profiler->begin('prepare');
             $prepared = $this->formatter->prepare($query);
             $rawSQL = $prepared->getRawSQL();
-            $profiler->stop('prepare');
+            $profiler->end('prepare');
 
             if (null === $identifier) {
                 $identifier = \md5($rawSQL);
             }
             // @merge argument types from query
 
-            $profiler->start('execute');
+            $profiler->begin('execute');
             $this->prepared[$identifier] = [
                 $this->connection->prepare($rawSQL, [\PDO::ATTR_CURSOR => \PDO::CURSOR_FWDONLY]),
                 $prepared,
             ];
             $profiler->end('execute');
-
-            $profiler->stop();
 
             return $identifier;
 
@@ -168,6 +99,11 @@ abstract class AbstractPDORunner extends AbstractRunner
             throw new ServerError($rawSQL, [], $e);
         } catch (\Exception $e) {
             throw new ServerError($rawSQL, [], $e);
+        } finally {
+            $profiler->stop();
+            if ($this->isDebugEnabled()) {
+                $profiler->setRawSql($rawSQL, [$identifier]);
+            }
         }
     }
 
@@ -183,9 +119,10 @@ abstract class AbstractPDORunner extends AbstractRunner
         list($statement, $prepared) = $this->prepared[$identifier];
         \assert($prepared instanceof FormattedQuery);
 
-        try {
-            $profiler = $this->startProfilerQuery();
+        $args = null;
+        $profiler = $this->startProfilerQuery();
 
+        try {
             $profiler->begin('prepare');
             $args = $prepared->prepareArgumentsWith($this->converter, '', $arguments);
             $profiler->end('prepare');
@@ -194,12 +131,17 @@ abstract class AbstractPDORunner extends AbstractRunner
             $statement->execute($args);
             $profiler->end('execute');
 
-            return $this->createResultIterator($identifier, $profiler, $options, $statement);
+            return $this->configureResultIterator($identifier, $profiler, new PDOResultIterator($statement), $options);
 
         } catch (DatabaseError $e) {
             throw $e;
         } catch (\Throwable $e) {
             throw new ServerError($identifier, [], $e);
+        } finally {
+            $profiler->stop();
+            if ($this->isDebugEnabled()) {
+                $profiler->setRawSql("<execute prepared statement> " . $identifier, $args);
+            }
         }
     }
 }

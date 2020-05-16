@@ -79,10 +79,10 @@ class TimerAggregate implements ProfilerResult
     public function stop(): void
     {
         $stopAt = \hrtime(true);
+        $this->pending = false;
         if ($this->startAt) {
             $this->totalTime = $stopAt - $this->startAt;
         }
-
         foreach ($this->timers as $name => $startAt) {
             $this->timings[$name] = $stopAt - $startAt;
         }
@@ -112,7 +112,7 @@ class TimerAggregate implements ProfilerResult
      */
     public function getAll(): array
     {
-        return \array_map([Timer::class, 'nsecToMsec'], $this->timings);
+        return \array_map(fn ($value) => Timer::nsecToMsec($value), $this->timings);
     }
 
     /**

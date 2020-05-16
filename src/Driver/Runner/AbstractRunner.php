@@ -11,12 +11,16 @@ use Goat\Driver\Instrumentation\ProfilerAwareTrait;
 use Goat\Driver\Instrumentation\QueryProfiler;
 use Goat\Driver\Platform\Platform;
 use Goat\Driver\Query\SqlWriter;
+use Goat\Query\Query;
 use Goat\Query\QueryBuilder;
 use Goat\Query\QueryError;
 use Goat\Runner\AbstractResultIterator;
+use Goat\Runner\DatabaseError;
 use Goat\Runner\DefaultQueryBuilder;
+use Goat\Runner\EmptyResultIterator;
 use Goat\Runner\ResultIterator;
 use Goat\Runner\Runner;
+use Goat\Runner\ServerError;
 use Goat\Runner\Transaction;
 use Goat\Runner\TransactionError;
 use Goat\Runner\Hydrator\DefaultHydratorRegistry;
@@ -231,14 +235,6 @@ abstract class AbstractRunner implements Runner, ProfilerAware
     }
 
     /**
-     * Do create iterator.
-     *
-     * @param mixed[] $constructorArgs
-     *   Driver specific parameters
-     */
-    abstract protected function doCreateResultIterator(...$constructorArgs) : AbstractResultIterator;
-
-    /**
      * Create the result iterator instance.
      *
      * @param string $identifier
@@ -250,11 +246,8 @@ abstract class AbstractRunner implements Runner, ProfilerAware
      *
      * @return ResultIterator
      */
-    final protected function createResultIterator(string $identifier, QueryProfiler $profiler, $options = null, ...$constructorArgs): ResultIterator
+    protected function configureResultIterator(string $identifier, QueryProfiler $profiler, AbstractResultIterator $result, array $options): ResultIterator
     {
-        $profiler->stop(); // In case it was missed.
-
-        $result = $this->doCreateResultIterator(...$constructorArgs);
         $result->setConverter($this->converter);
         $result->setQueryProfiler($profiler);
 
@@ -313,4 +306,186 @@ abstract class AbstractRunner implements Runner, ProfilerAware
 
         return $result;
     }
+
+    /**
+     * execute() implementation.
+     */
+    protected abstract function doExecute(string $sql, array $args, array $options): ResultIterator;
+
+    /**
+     * perform() implementation.
+     */
+    protected abstract function doPerform(string $sql, array $args, array $options): int;
+
+    /**
+     * prepareQuery() implementation.
+     */
+    // protected abstract function doPrepareQuery($query, string $identifier): string;
+
+    /**
+     * executePreparedQuery() implementation.
+     */
+    // protected abstract function doExecutePreparedQuery(string $identifier, $arguments = null, $options = null): ResultIterator;
+
+    /**
+     * {@inheritdoc}
+     */
+    public function execute($query, $arguments = null, $options = null): ResultIterator
+    {
+        if ($query instanceof Query) {
+            if (!$query->willReturnRows()) {
+                $affectedRowCount = $this->perform($query, $arguments, $options);
+
+                return new EmptyResultIterator($affectedRowCount);
+            }
+        }
+
+        $options = $options ?? [];
+        $args = null;
+        $rawSQL = '';
+        $profiler = $this->startProfilerQuery();
+
+        try {
+            $profiler->begin('prepare');
+            $prepared = $this->formatter->prepare($query);
+            $rawSQL = $prepared->getRawSQL();
+            $args = $prepared->prepareArgumentsWith($this->converter, $query, $arguments);
+            $profiler->end('prepare');
+
+            $profiler->begin('execute');
+            $result = $this->doExecute($rawSQL, $args ?? [], $options);
+            $profiler->end('execute');
+
+            return $this->configureResultIterator($prepared->getIdentifier(), $profiler, $result, $options);
+
+        } catch (DatabaseError $e) {
+            throw $e;
+        } catch (\Exception $e) {
+            throw new ServerError($rawSQL, $arguments, $e);
+        } finally {
+            $profiler->stop();
+            if ($this->isDebugEnabled()) {
+                $profiler->setRawSql($rawSQL, $args);
+            }
+        }
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function perform($query, $arguments = null, $options = null) : int
+    {
+        $options = $options ?? [];
+        $args = null;
+        $rawSQL = '';
+        $profiler = $this->startProfilerQuery();
+
+        try {
+            $profiler->begin('prepare');
+            $prepared = $this->formatter->prepare($query);
+            $rawSQL = $prepared->getRawSQL();
+            $args = $prepared->prepareArgumentsWith($this->converter, $query, $arguments);
+            $profiler->end('prepare');
+
+            $profiler->begin('execute');
+            $rowCount = $this->doPerform($rawSQL, $args ?? [], $options);
+            $profiler->end('execute');
+
+            return $rowCount;
+
+        } catch (DatabaseError $e) {
+            throw $e;
+        } catch (\PDOException $e) {
+            throw new ServerError($rawSQL, $arguments, $e);
+        } catch (\Exception $e) {
+            throw new ServerError($rawSQL, $arguments, $e);
+        } finally {
+            $profiler->stop();
+            if ($this->isDebugEnabled()) {
+                $profiler->setRawSql($rawSQL, $args);
+            }
+        }
+    }
+
+    /**
+     * {@inheritdoc}
+     *
+    public function prepareQuery($query, string $identifier = null): string
+    {
+        $rawSQL = '';
+        $profiler = $this->startProfilerQuery();
+
+        try {
+            $profiler->begin('prepare');
+            $prepared = $this->formatter->prepare($query);
+            $rawSQL = $prepared->getRawSQL();
+            $profiler->end('prepare');
+
+            if (null === $identifier) {
+                $identifier = \md5($rawSQL);
+            }
+            // @merge argument types from query
+
+            $profiler->begin('execute');
+            $this->prepared[$identifier] = [
+                $this->connection->prepare($rawSQL, [\PDO::ATTR_CURSOR => \PDO::CURSOR_FWDONLY]),
+                $prepared,
+            ];
+            $profiler->end('execute');
+
+            return $identifier;
+
+        } catch (DatabaseError $e) {
+            throw $e;
+        } catch (\PDOException $e) {
+            throw new ServerError($rawSQL, [], $e);
+        } catch (\Exception $e) {
+            throw new ServerError($rawSQL, [], $e);
+        } finally {
+            $profiler->stop();
+            if ($this->isDebugEnabled()) {
+                $profiler->setRawSql($rawSQL, [$identifier]);
+            }
+        }
+    }
+     */
+
+    /**
+     * {@inheritdoc}
+     *
+    public function executePreparedQuery(string $identifier, $arguments = null, $options = null): ResultIterator
+    {
+        if (!isset($this->prepared[$identifier])) {
+            throw new QueryError(\sprintf("'%s': query was not prepared", $identifier));
+        }
+
+        list($statement, $prepared) = $this->prepared[$identifier];
+        \assert($prepared instanceof FormattedQuery);
+
+        $args = null;
+        $profiler = $this->startProfilerQuery();
+
+        try {
+            $profiler->begin('prepare');
+            $args = $prepared->prepareArgumentsWith($this->converter, '', $arguments);
+            $profiler->end('prepare');
+
+            $profiler->begin('execute');
+            $statement->execute($args);
+            $profiler->end('execute');
+
+            return $this->createResultIterator($identifier, $profiler, $options, $statement);
+
+        } catch (DatabaseError $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            throw new ServerError($identifier, [], $e);
+        } finally {
+            $profiler->stop();
+            if ($this->isDebugEnabled()) {
+                $profiler->setRawSql("<execute prepared statement> " . $identifier, $args);
+            }
+        }
+    }
+     */
 }
