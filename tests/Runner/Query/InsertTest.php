@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Goat\Runner\Tests\Query;
 
+use Goat\Query\ExpressionRaw;
+use Goat\Query\ExpressionValue;
 use Goat\Query\Query;
 use Goat\Runner\Runner;
 use Goat\Runner\Testing\DatabaseAwareQueryTest;
@@ -81,6 +83,49 @@ class InsertTest extends DatabaseAwareQueryTest
             $referenceDate->format(\DateTime::ISO8601),
             $value['date']->format(\DateTime::ISO8601)
         );
+    }
+
+    /**
+     * @dataProvider runnerDataProvider
+     */
+    public function testInsertValuesWithExpressionsInConstantTable(TestDriverFactory $factory): void
+    {
+        $runner = $factory->getRunner();
+
+        $runner
+            ->getQueryBuilder()
+            ->insert('some_table')
+            ->columns(['foo', 'bar', 'baz'])
+            ->values([
+                ExpressionRaw::create('11 + 11'),
+                'b',
+                ExpressionRaw::create('current_timestamp'),
+            ])
+            ->values([
+                42,
+                ExpressionValue::create('a'),
+                ExpressionRaw::create('current_timestamp'),
+            ])
+            ->execute()
+        ;
+
+        $result = $runner
+            ->getQueryBuilder()
+            ->select('some_table', 't')
+            ->orderBy('t.id', Query::ORDER_DESC)
+            ->range(2)
+            ->execute()
+        ;
+
+        $row1 = $result->fetch();
+        self::assertSame(42, $row1['foo']);
+        self::assertSame('a', $row1['bar']);
+        self::assertInstanceOf(\DateTimeInterface::class, $row1['baz']);
+
+        $row2 = $result->fetch();
+        self::assertSame(22, $row2['foo']);
+        self::assertSame('b', $row2['bar']);
+        self::assertInstanceOf(\DateTimeInterface::class, $row2['baz']);
     }
 
     /**

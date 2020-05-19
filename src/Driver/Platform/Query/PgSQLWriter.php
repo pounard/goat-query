@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Goat\Driver\Platform\Query;
 
 use Goat\Driver\Query\DefaultSqlWriter;
-use Goat\Query\ExpressionConstantTable;
 use Goat\Query\ExpressionRaw;
 use Goat\Query\MergeQuery;
 use Goat\Query\Query;
@@ -64,12 +63,7 @@ class PgSQLWriter extends DefaultSqlWriter
             $output[] = \sprintf("(%s)", $this->formatColumnNameList($columns));
         }
 
-        $using = $query->getQuery();
-        if ($using instanceof ExpressionConstantTable) {
-            $output[] = $this->format($using);
-        } else {
-            $output[] = $this->format($using);
-        }
+        $output[] = $this->format($query->getQuery());
 
         switch ($mode = $query->getConflictBehaviour()) {
 
