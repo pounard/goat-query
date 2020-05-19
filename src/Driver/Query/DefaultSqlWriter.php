@@ -11,6 +11,7 @@ use Goat\Query\ExpressionConstantTable;
 use Goat\Query\ExpressionLike;
 use Goat\Query\ExpressionRaw;
 use Goat\Query\ExpressionRelation;
+use Goat\Query\ExpressionRow;
 use Goat\Query\ExpressionValue;
 use Goat\Query\InsertQuery;
 use Goat\Query\MergeQuery;
@@ -562,24 +563,30 @@ class DefaultSqlWriter extends AbstractSqlWriter
      */
     protected function formatExpressionConstantTable(ExpressionConstantTable $constantTable): string
     {
-        $valueCount = $constantTable->getValueCount();
-        $columnCount = $constantTable->getColumnCount();
-
-        if (!$valueCount) {
+        if (!$constantTable->getRowCount()) {
             return "values ()";
         }
 
-        $output = [];
+        return "values " . \implode(
+            ", ",
+            \array_map(
+                fn ($row) => $this->formatExpressionRow($row),
+                $constantTable->getRows(),
+            )
+        );
+    }
 
-        // @todo support raw expressions within
-        for ($i = 0; $i < $valueCount; ++$i) {
-            $output[] = \sprintf(
-                "(%s)",
-                \implode(', ', \array_fill(0, $columnCount, '?'))
-            );
-        }
-
-        return "values " . \implode(", ", $output);
+    /**
+     * Format an arbitrary row of values.
+     */
+    protected function formatExpressionRow(ExpressionRow $row): string
+    {
+        return '(' . \implode(
+            ", ",
+            \array_map(
+                fn ($value) => $this->format($value),
+                $row->getValues())
+        ) . ')';
     }
 
     /**
@@ -967,6 +974,8 @@ class DefaultSqlWriter extends AbstractSqlWriter
             return $this->formatExpressionLike($query);
         } else if ($query instanceof ExpressionConstantTable) {
             return $this->formatExpressionConstantTable($query);
+        } else if ($query instanceof ExpressionRow) {
+            return $this->formatExpressionRow($query);
         } else if ($query instanceof Where) {
             return $this->formatWhere($query);
         } else if ($query instanceof DeleteQuery) {

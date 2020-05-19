@@ -105,7 +105,7 @@ trait InsertTrait
             $this->columns = \array_keys($values);
         }
 
-        $this->query->values($values);
+        $this->query->row($values);
 
         return $this;
     }

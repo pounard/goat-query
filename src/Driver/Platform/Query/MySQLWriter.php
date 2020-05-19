@@ -7,7 +7,6 @@ namespace Goat\Driver\Platform\Query;
 use Goat\Driver\Query\DefaultSqlWriter;
 use Goat\Query\DeleteQuery;
 use Goat\Query\Expression;
-use Goat\Query\ExpressionConstantTable;
 use Goat\Query\ExpressionRaw;
 use Goat\Query\MergeQuery;
 use Goat\Query\Query;
@@ -108,16 +107,11 @@ class MySQLWriter extends DefaultSqlWriter
             $output[] = \sprintf("(%s)", $this->formatColumnNameList($columns));
         }
 
-        $using = $query->getQuery();
-        if ($using instanceof ExpressionConstantTable) {
-            $output[] = $this->format($using);
-        } else {
-            $output[] = $this->format($using);
-        }
+        $output[] = $this->format($query->getQuery());
 
         if (!$isIgnore) {
             switch ($mode = $query->getConflictBehaviour()) {
-    
+
                 case Query::CONFLICT_UPDATE:
                     // Exclude primary key from the UPDATE statement.
                     $key = $query->getKey();

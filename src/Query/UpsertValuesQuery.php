@@ -17,7 +17,7 @@ final class UpsertValuesQuery extends MergeQuery
         $query = $this->getQuery();
 
         if ($query instanceof ExpressionConstantTable) {
-            return $query->getValueCount();
+            return $query->getRowCount();
         }
 
         return 0;

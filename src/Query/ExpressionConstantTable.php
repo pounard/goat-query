@@ -15,15 +15,11 @@ namespace Goat\Query;
  */
 final class ExpressionConstantTable implements Expression
 {
-    private $arguments;
-    private $columnCount = 0;
-    private $valueCount = 0;
-    private $valueInitialized = false;
-
-    private function __construct()
-    {
-        $this->arguments = new ArgumentBag();
-    }
+    private int $columnCount = 0;
+    private int $rowCount = 0;
+    private bool $rowsInitialized = false;
+    /** @var ExpressionRow[] */
+    private array $rows = [];
 
     public static function create(): self
     {
@@ -39,11 +35,19 @@ final class ExpressionConstantTable implements Expression
     }
 
     /**
-     * Get value count.
+     * Get row count.
      */
-    public function getValueCount(): int
+    public function getRowCount(): int
     {
-        return $this->valueCount;
+        return $this->rowCount;
+    }
+
+    /**
+     * Get rows.
+     */
+    public function getRows(): iterable
+    {
+        return $this->rows;
     }
 
     /**
@@ -51,23 +55,32 @@ final class ExpressionConstantTable implements Expression
      *
      * First call determines the column count, subsequent calls are checked
      * upon the column count and will raise error in case of count mismatch.
+     *
+     * @param iterable|ExpressionRow $row
      */
-    public function values(array $values): self
+    public function row($row): self
     {
-        if ($this->valueInitialized) {
-            if (\count($values) !== $this->columnCount) {
-                throw new QueryError("values count does not match previous value count");
+        if (!$row instanceof ExpressionRow) {
+            if (!\is_iterable($row)) {
+                throw new QueryError(\sprintf("Values must be an iterable or an %s instance", ExpressionRow::class));
+            }
+
+            $row = ExpressionRow::create($row);
+        }
+
+        $columnCount = $row->getColumnCount();
+
+        if ($this->rowsInitialized) {
+            if ($columnCount !== $this->columnCount) {
+                throw new QueryError(\sprintf("Value count %d does not match previous value count %d", $columnCount, $this->columnCount));
             }
         } else {
-            $this->valueInitialized = true;
-            $this->columnCount = \count($values);
+            $this->rowsInitialized = true;
+            $this->columnCount = $columnCount;
         }
 
-        foreach ($values as $value) {
-            $this->arguments->add($value);
-        }
-
-        $this->valueCount++;
+        $this->rows[] = $row;
+        $this->rowCount++;
 
         return $this;
     }
@@ -77,6 +90,14 @@ final class ExpressionConstantTable implements Expression
      */
     public function getArguments(): ArgumentBag
     {
-        return $this->arguments;
+        $ret = new ArgumentBag();
+
+        foreach ($this->rows as $value) {
+            \assert($value instanceof Statement);
+
+            $ret->append($value->getArguments());
+        }
+
+        return $ret;
     }
 }
