@@ -80,6 +80,10 @@ abstract class AbstractRunner implements Runner, ProfilerAware
     final public function setDebug(bool $value): void
     {
         $this->debug = $value;
+
+        if ($value) {
+            $this->initializeProfiler();
+        }
     }
 
     /**
