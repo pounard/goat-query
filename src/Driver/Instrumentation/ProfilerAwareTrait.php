@@ -6,14 +6,14 @@ namespace Goat\Driver\Instrumentation;
 
 trait ProfilerAwareTrait
 {
-    private Profiler $profiler;
+    private ?Profiler $profiler = null;
 
     /**
      * Get profiler.
      */
     public function getProfiler(): Profiler
     {
-        return $this->profiler ?? ($this->profiler = new Profiler());
+        return $this->profiler ?? ($this->profiler = new NullProfiler());
     }
 
     /**
@@ -25,6 +25,13 @@ trait ProfilerAwareTrait
         $this->profiler = $profiler;
 
         return $previous;
+    }
+
+    protected function initializeProfiler(): void
+    {
+        if (!$this->profiler || $this->profiler instanceof NullProfiler) {
+            $this->profiler = new DefaultProfiler();
+        }
     }
 
     protected function startProfilerQuery(): QueryProfiler
