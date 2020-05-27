@@ -34,18 +34,12 @@ class MySQLTransaction extends AbstractTransaction
                 /* if ($this->runner->isDebugEnabled()) {
                     @\trigger_error("transaction is nested into another, MySQL can't change the isolation level", E_USER_NOTICE);
                 } */
-            } else {
-                // MySQL >= 8 has a different syntax for transaction level which
-                // is not based upon the standard SQL transaction levels.
-                throw new TransactionError("transaction start failed", null, $e);
             }
+
+            throw $e;
         }
 
-        try {
-            $this->runner->perform("BEGIN");
-        } catch (ServerError $e) {
-            throw new TransactionError("transaction start failed", null, $e);
-        }
+        $this->runner->perform("BEGIN");
     }
 
     /**
@@ -63,14 +57,10 @@ class MySQLTransaction extends AbstractTransaction
      */
     protected function doCreateSavepoint(string $name): void
     {
-        try {
-            $this->runner->perform(\sprintf(
-                "SAVEPOINT %s",
-                $this->escapeName($name)
-            ));
-        } catch (ServerError $e) {
-            throw new TransactionError(\sprintf("%s: create savepoint failed", $name), null, $e);
-        }
+        $this->runner->perform(\sprintf(
+            "SAVEPOINT %s",
+            $this->escapeName($name)
+        ));
     }
 
     /**
@@ -78,14 +68,10 @@ class MySQLTransaction extends AbstractTransaction
      */
     protected function doRollbackToSavepoint(string $name): void
     {
-        try {
-            $this->runner->perform(\sprintf(
-                "ROLLBACK TO SAVEPOINT %s",
-                $this->escapeName($name)
-            ));
-        } catch (ServerError $e) {
-            throw new TransactionError(\sprintf("%s: rollback to savepoint failed", $name), null, $e);
-        }
+        $this->runner->perform(\sprintf(
+            "ROLLBACK TO SAVEPOINT %s",
+            $this->escapeName($name)
+        ));
     }
 
     /**
@@ -93,11 +79,7 @@ class MySQLTransaction extends AbstractTransaction
      */
     protected function doRollback(): void
     {
-        try {
-            $this->runner->perform("ROLLBACK");
-        } catch (ServerError $e) {
-            throw new TransactionError(null, null, $e);
-        }
+        $this->runner->perform("ROLLBACK");
     }
 
     /**
@@ -105,11 +87,7 @@ class MySQLTransaction extends AbstractTransaction
      */
     protected function doCommit(): void
     {
-        try {
-            $this->runner->perform("COMMIT");
-        } catch (ServerError $e) {
-            throw new TransactionFailedError(null, null, $e);
-        }
+        $this->runner->perform("COMMIT");
     }
 
     /**

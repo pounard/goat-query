@@ -14,18 +14,14 @@ use Psr\Log\NullLogger;
 
 class TestDriverFactory
 {
-    /** @var string */
-    private $driverName;
-    /** @var string */
-    private $envVarName;
-    /** @var bool */
-    private $apcuEnabled = false;
-    /** @var string */
-    private $schema;
-    /** @var callable */
-    private $initializer;
-    /** @var LoggerInterface */
-    private $logger;
+    private string $driverName;
+    private string $envVarName;
+    private bool $apcuEnabled = false;
+    private string $schema;
+    private bool $schemaCreated = false;
+    private LoggerInterface $logger;
+    /** @var null|callable */
+    private $initializer = null;
 
     public function __construct(string $driverName, string $envVarName, bool $apcuEnabled = false, ?callable $initializer = null)
     {
@@ -75,7 +71,7 @@ class TestDriverFactory
             throw new SkippedTestError(\sprintf("'%s' environment variable is missing.", $this->envVarName));
         }
 
-        $configuration = Configuration::fromString($uri);
+        $configuration = Configuration::fromString($uri, ['driver' => $this->driverName]);
         $configuration->setLogger($this->logger);
 
         return DriverFactory::fromConfiguration($configuration);
@@ -106,6 +102,11 @@ class TestDriverFactory
         return $runner;
     }
 
+    public function getDriverName(): string
+    {
+        return $this->driverName;
+    }
+
     public function getSchema(): ?string
     {
         return $this->schema;
@@ -116,6 +117,10 @@ class TestDriverFactory
         if (!$runner->getPlatform()->supportsSchema()) {
             return;
         }
+        if ($this->schemaCreated) {
+            return;
+        }
+
         $runner->execute(\sprintf('CREATE SCHEMA "%s"', $schema));
         // @todo this will only work with pgsql
         //   since it's the only database with schema support we do support
@@ -123,5 +128,7 @@ class TestDriverFactory
         // We do not care about restoring the default schema search path,
         // this code is meant to run for a single test duration.
         $runner->execute(\sprintf('SET search_path TO "%s"', $schema));
+
+        $this->schemaCreated = true;
     }
 }

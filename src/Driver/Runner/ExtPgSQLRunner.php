@@ -61,6 +61,7 @@ class ExtPgSQLRunner extends AbstractRunner
     protected function doExecute(string $sql, array $args, array $options): AbstractResultIterator
     {
         $resource = @\pg_query_params($this->connection, $sql, $args);
+
         if (!\is_resource($resource)) {
             $this->serverError($this->connection, $sql);
         }

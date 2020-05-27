@@ -8,14 +8,12 @@ use Goat\Query\QueryError;
 
 final class ResultHydrator
 {
+    private ?string $separator = null;
+    private bool $doDropNullArrays = true;
     /** @var null|callable */
-    private $hydrator;
-    /** @var null|string */
-    private $separator;
+    private $hydrator = null;
     /** @var string[][] */
-    private $groupCache = [];
-    /** @var bool */
-    private $doDropNullArrays = true;
+    private array $groupCache = [];
 
     /**
      * @param callable $hydrator
@@ -101,7 +99,7 @@ final class ResultHydrator
 
             // Do not allow value overwrite.
             if (\array_key_exists($key, $ret) && !$this->propertyContentCanBeIgnored($ret[$key])) {
-                throw new \InvalidArgumentException(\sprintf(
+                throw new QueryError(\sprintf(
                     "Nested property '%s' already has a value of type '%s'",
                     $path,
                     \gettype($ret[$key])

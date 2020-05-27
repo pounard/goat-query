@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Goat\Driver\Platform\Transaction;
 
+use Goat\Driver\Error\TransactionError;
 use Goat\Runner\Runner;
 use Goat\Runner\Transaction;
-use Goat\Runner\TransactionError;
 use Goat\Runner\TransactionSavepoint;
 
 /**

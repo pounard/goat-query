@@ -6,6 +6,7 @@ namespace Goat\Driver\Runner;
 
 use Goat\Converter\ConverterInterface;
 use Goat\Converter\DefaultConverter;
+use Goat\Driver\Error\TransactionError;
 use Goat\Driver\Instrumentation\ProfilerAware;
 use Goat\Driver\Instrumentation\ProfilerAwareTrait;
 use Goat\Driver\Platform\Platform;
@@ -22,7 +23,6 @@ use Goat\Runner\ResultIterator;
 use Goat\Runner\Runner;
 use Goat\Runner\ServerError;
 use Goat\Runner\Transaction;
-use Goat\Runner\TransactionError;
 use Goat\Runner\Hydrator\DefaultHydratorRegistry;
 use Goat\Runner\Hydrator\HydratorRegistry;
 use Goat\Runner\Metadata\ArrayResultMetadataCache;
@@ -364,9 +364,12 @@ abstract class AbstractRunner implements Runner, ProfilerAware
             return $this->configureResultIterator($prepared->getIdentifier(), $result, $options);
 
         } catch (DatabaseError $e) {
+            if ($this->isTransactionPending()) {
+                throw TransactionError::fromException($e);
+            }
             throw $e;
-        } catch (\Exception $e) {
-            throw new ServerError($rawSQL, $arguments, $e);
+        } catch (\Throwable $e) {
+            throw new ServerError($rawSQL, null, $e);
         } finally {
             $profiler->stop();
             if ($this->isDebugEnabled()) {
@@ -399,11 +402,12 @@ abstract class AbstractRunner implements Runner, ProfilerAware
             return $rowCount;
 
         } catch (DatabaseError $e) {
+            if ($this->isTransactionPending()) {
+                throw TransactionError::fromException($e);
+            }
             throw $e;
-        } catch (\PDOException $e) {
-            throw new ServerError($rawSQL, $arguments, $e);
-        } catch (\Exception $e) {
-            throw new ServerError($rawSQL, $arguments, $e);
+        } catch (\Throwable $e) {
+            throw new ServerError($rawSQL, null, $e);
         } finally {
             $profiler->stop();
             if ($this->isDebugEnabled()) {
@@ -437,11 +441,12 @@ abstract class AbstractRunner implements Runner, ProfilerAware
             return $identifier;
 
         } catch (DatabaseError $e) {
+            if ($this->isTransactionPending()) {
+                throw TransactionError::fromException($e);
+            }
             throw $e;
-        } catch (\PDOException $e) {
-            throw new ServerError($rawSQL, [], $e);
-        } catch (\Exception $e) {
-            throw new ServerError($rawSQL, [], $e);
+        } catch (\Throwable $e) {
+            throw new ServerError($rawSQL, null, $e);
         } finally {
             $profiler->stop();
             if ($this->isDebugEnabled()) {
@@ -468,9 +473,12 @@ abstract class AbstractRunner implements Runner, ProfilerAware
             return $this->configureResultIterator($identifier, $result, $options);
 
         } catch (DatabaseError $e) {
+            if ($this->isTransactionPending()) {
+                throw TransactionError::fromException($e);
+            }
             throw $e;
         } catch (\Throwable $e) {
-            throw new ServerError($identifier, [], $e);
+            throw new ServerError($identifier, null, $e);
         } finally {
             $profiler->stop();
             if ($this->isDebugEnabled()) {

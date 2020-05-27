@@ -140,12 +140,12 @@ class ExtPgSQLResultIterator extends AbstractResultIterator
         //   because we shouldn't return an array, but an iterable (stream).
         $valueColumn = \pg_fetch_all_columns($this->connection, $index);
         if (false === $valueColumn) {
-            throw new QueryError(\sprintf("column '%d' is out of scope of the current result", $index));
+            throw new InvalidDataAccessError(\sprintf("column '%d' is out of scope of the current result", $index));
         }
 
         $indexColumn = \pg_fetch_all_columns($this->connection, $keyIndex);
         if (false === $indexColumn) {
-            throw new QueryError(\sprintf("column '%d' is out of scope of the current result", $keyIndex));
+            throw new InvalidDataAccessError(\sprintf("column '%d' is out of scope of the current result", $keyIndex));
         }
 
         $ret = [];
@@ -181,7 +181,7 @@ class ExtPgSQLResultIterator extends AbstractResultIterator
 
         $columns = \pg_fetch_all_columns($this->connection, $index);
         if (false === $columns) {
-            throw new QueryError(\sprintf("column '%d' is out of scope of the current result", $index));
+            throw new InvalidDataAccessError(\sprintf("column '%d' is out of scope of the current result", $index));
         }
 
         foreach ($columns as $value) {

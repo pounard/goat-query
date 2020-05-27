@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Goat\Runner;
 
+use Goat\Driver\Error\TransactionError;
+
 final class TransactionSavepoint implements Transaction
 {
     private string $name;

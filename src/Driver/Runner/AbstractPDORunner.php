@@ -42,14 +42,24 @@ abstract class AbstractPDORunner extends AbstractRunner
     }
 
     /**
+     * Convert exception.
+     */
+    abstract protected function convertPdoError(\PDOException $e): \Throwable;
+
+    /**
      * {@inheritdoc}
      */
     protected function doExecute(string $sql, array $args, array $options): AbstractResultIterator
     {
-        $statement = $this->connection->prepare($sql, [\PDO::ATTR_CURSOR => \PDO::CURSOR_FWDONLY]);
-        $statement->execute($args);
+        try {
+            $statement = $this->connection->prepare($sql, [\PDO::ATTR_CURSOR => \PDO::CURSOR_FWDONLY]);
+            $statement->execute($args);
 
-        return new PDOResultIterator($statement);
+            return new PDOResultIterator($statement);
+
+        } catch (\PDOException $e) {
+            throw $this->convertPdoError($e);
+        }
     }
 
     /**
@@ -57,10 +67,15 @@ abstract class AbstractPDORunner extends AbstractRunner
      */
     protected function doPerform(string $sql, array $args, array $options): int
     {
-        $statement = $this->connection->prepare($sql, [\PDO::ATTR_CURSOR => \PDO::CURSOR_FWDONLY]);
-        $statement->execute($args);
+        try {
+            $statement = $this->connection->prepare($sql, [\PDO::ATTR_CURSOR => \PDO::CURSOR_FWDONLY]);
+            $statement->execute($args);
 
-        return $statement->rowCount();
+            return $statement->rowCount();
+
+        } catch (\PDOException $e) {
+            throw $this->convertPdoError($e);
+        }
     }
 
     /**
@@ -91,8 +106,14 @@ abstract class AbstractPDORunner extends AbstractRunner
         \assert($prepared instanceof FormattedQuery);
 
         $args = $prepared->prepareArgumentsWith($this->converter, '', $args);
-        $statement->execute($args);
 
-        return new PDOResultIterator($statement);
+        try {
+            $statement->execute($args);
+
+            return new PDOResultIterator($statement);
+
+        } catch (\PDOException $e) {
+            throw $this->convertPdoError($e);
+        }
     }
 }

@@ -26,7 +26,7 @@ final class DriverFactory
     {
         $realConnection = $connection->getWrappedConnection();
         if (!$realConnection instanceof \PDO) {
-            throw new \InvalidArgumentException("Doctrine connection does not use PDO, goat database runner cannot work on top of it");
+            throw new ConfigurationError("Doctrine connection does not use PDO, goat database runner cannot work on top of it");
         }
 
         $ret = null;
@@ -42,7 +42,7 @@ final class DriverFactory
                 break;
 
             default:
-                throw new \InvalidArgumentException(\sprintf(
+                throw new ConfigurationError(\sprintf(
                     "'%s' Doctrine platform is unsupported, only 'postgresql' and 'mysql' are supported",
                     $platformName
                 ));

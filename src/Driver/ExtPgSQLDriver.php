@@ -69,6 +69,7 @@ class ExtPgSQLDriver extends AbstractDriver
         try {
             $this->connection = $resource = \pg_connect($connectionString, PGSQL_CONNECT_FORCE_NEW);
 
+            \pg_set_error_verbosity($resource,  PGSQL_ERRORS_VERBOSE);
             \pg_query($resource, "SET client_encoding TO ".\pg_escape_literal($configuration->getClientEncoding()));
 
             $this->escaper = new ExtPgSQLEscaper($this, $this->connection);

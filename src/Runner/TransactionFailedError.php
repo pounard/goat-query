@@ -5,9 +5,10 @@ declare(strict_types=1);
 namespace Goat\Runner;
 
 /**
- * Transaction COMMIT operation failed, or a constraint was violated during
- * transaction lifetime.
+ * @deprecated
+ *   Please raise and catch \Goat\Driver\Error\TransactionError instead.
+ * @see \Goat\Driver\Error\TransactionError
  */
-class TransactionFailedError extends TransactionError
+interface TransactionFailedError extends TransactionError
 {
 }

@@ -4,14 +4,13 @@ declare(strict_types=1);
 
 namespace Goat\Runner\Tests;
 
+use Goat\Driver\Error\TransactionError;
+use Goat\Driver\Error\UniqueConstraintViolationError;
 use Goat\Runner\Runner;
 use Goat\Runner\Transaction;
-use Goat\Runner\TransactionError;
-use Goat\Runner\TransactionFailedError;
 use Goat\Runner\TransactionSavepoint;
 use Goat\Runner\Testing\DatabaseAwareQueryTest;
 use Goat\Runner\Testing\TestDriverFactory;
-use Goat\Runner\DatabaseError;
 
 final class TransactionTest extends DatabaseAwareQueryTest
 {
@@ -58,7 +57,7 @@ final class TransactionTest extends DatabaseAwareQueryTest
 
         $runner
             ->getQueryBuilder()
-            ->insertValues('transaction_test')
+            ->insert('transaction_test')
             ->columns(['foo', 'bar'])
             ->values([1, 'a'])
             ->values([2, 'b'])
@@ -95,11 +94,11 @@ final class TransactionTest extends DatabaseAwareQueryTest
             ->execute()
         ;
 
-        $this->assertCount(4, $result);
-        $this->assertSame('a', $result->fetch()['bar']);
-        $this->assertSame('b', $result->fetch()['bar']);
-        $this->assertSame('c', $result->fetch()['bar']);
-        $this->assertSame('d', $result->fetch()['bar']);
+        self::assertCount(4, $result);
+        self::assertSame('a', $result->fetch()['bar']);
+        self::assertSame('b', $result->fetch()['bar']);
+        self::assertSame('c', $result->fetch()['bar']);
+        self::assertSame('d', $result->fetch()['bar']);
     }
 
     /**
@@ -110,7 +109,7 @@ final class TransactionTest extends DatabaseAwareQueryTest
         $runner = $factory->getRunner();
 
         if (!$runner->getPlatform()->supportsTransactionSavepoints()) {
-            $this->markTestSkipped(\sprintf("Driver '%s' does not supports savepoints", $runner->getDriverName()));
+            self::markTestSkipped(\sprintf("Driver '%s' does not supports savepoints", $runner->getDriverName()));
         }
 
         $runner->getQueryBuilder()->delete('transaction_test')->execute();
@@ -119,7 +118,7 @@ final class TransactionTest extends DatabaseAwareQueryTest
 
         $runner
             ->getQueryBuilder()
-            ->insertValues('transaction_test')
+            ->insert('transaction_test')
             ->columns(['foo', 'bar'])
             ->values([789, 'f'])
             ->execute()
@@ -127,13 +126,13 @@ final class TransactionTest extends DatabaseAwareQueryTest
 
         $savepoint = $runner->beginTransaction();
 
-        $this->assertInstanceOf(TransactionSavepoint::class, $savepoint);
-        $this->assertTrue($savepoint->isNested());
-        $this->assertNotNull($savepoint->getSavepointName());
+        self::assertInstanceOf(TransactionSavepoint::class, $savepoint);
+        self::assertTrue($savepoint->isNested());
+        self::assertNotNull($savepoint->getSavepointName());
 
         $runner
             ->getQueryBuilder()
-            ->insertValues('transaction_test')
+            ->insert('transaction_test')
             ->columns(['foo', 'bar'])
             ->values([456, 'g'])
             ->execute()
@@ -148,9 +147,9 @@ final class TransactionTest extends DatabaseAwareQueryTest
             ->execute()
         ;
 
-        $this->assertCount(2, $result);
-        $this->assertSame('g', $result->fetch()['bar']);
-        $this->assertSame('f', $result->fetch()['bar']);
+        self::assertCount(2, $result);
+        self::assertSame('g', $result->fetch()['bar']);
+        self::assertSame('f', $result->fetch()['bar']);
     }
 
     /**
@@ -161,7 +160,7 @@ final class TransactionTest extends DatabaseAwareQueryTest
         $runner = $factory->getRunner();
 
         if (!$runner->getPlatform()->supportsTransactionSavepoints()) {
-            $this->markTestSkipped(\sprintf("Driver '%s' does not supports savepoints", $runner->getDriverName()));
+            self::markTestSkipped(\sprintf("Driver '%s' does not supports savepoints", $runner->getDriverName()));
         }
 
         $runner->getQueryBuilder()->delete('transaction_test')->execute();
@@ -170,7 +169,7 @@ final class TransactionTest extends DatabaseAwareQueryTest
 
         $runner
             ->getQueryBuilder()
-            ->insertValues('transaction_test')
+            ->insert('transaction_test')
             ->columns(['foo', 'bar'])
             ->values([789, 'f'])
             ->execute()
@@ -178,13 +177,13 @@ final class TransactionTest extends DatabaseAwareQueryTest
 
         $savepoint = $runner->beginTransaction();
 
-        $this->assertInstanceOf(TransactionSavepoint::class, $savepoint);
-        $this->assertTrue($savepoint->isNested());
-        $this->assertNotNull($savepoint->getSavepointName());
+        self::assertInstanceOf(TransactionSavepoint::class, $savepoint);
+        self::assertTrue($savepoint->isNested());
+        self::assertNotNull($savepoint->getSavepointName());
 
         $runner
             ->getQueryBuilder()
-            ->insertValues('transaction_test')
+            ->insert('transaction_test')
             ->columns(['foo', 'bar'])
             ->values([456, 'g'])
             ->execute()
@@ -200,8 +199,8 @@ final class TransactionTest extends DatabaseAwareQueryTest
             ->execute()
         ;
 
-        $this->assertCount(1, $result);
-        $this->assertSame('f', $result->fetch()['bar']);
+        self::assertCount(1, $result);
+        self::assertSame('f', $result->fetch()['bar']);
     }
 
     /**
@@ -226,7 +225,7 @@ final class TransactionTest extends DatabaseAwareQueryTest
             // valid
             $runner
                 ->getQueryBuilder()
-                ->insertValues('transaction_test')
+                ->insert('transaction_test')
                 ->columns(['foo', 'bar'])
                 ->values([2, 'd'])
                 ->execute()
@@ -235,27 +234,23 @@ final class TransactionTest extends DatabaseAwareQueryTest
             // This should fail, bar constraint it immediate
             $runner
                 ->getQueryBuilder()
-                ->insertValues('transaction_test')
+                ->insert('transaction_test')
                 ->columns(['foo', 'bar'])
                 ->values([5, 'b'])
                 ->execute()
             ;
 
-            $this->fail();
+            self::fail();
 
-        } catch (TransactionFailedError $e) {
-            // This must not happen because of immediate constraints
-            $this->fail();
+        } catch (TransactionError $e) {
+            self::assertInstanceOf(UniqueConstraintViolationError::class, $e->getPrevious());
         } catch (\Throwable $e) {
-            // This should happen instead, arbitrary SQL error
-            $transaction->rollback();
+            self::fail();
         } finally {
             if ($transaction->isStarted()) {
                 $transaction->rollback();
             }
         }
-
-        $this->assertTrue(true);
     }
 
     /**
@@ -268,7 +263,7 @@ final class TransactionTest extends DatabaseAwareQueryTest
         $runner = $factory->getRunner();
 
         if (!$runner->getPlatform()->supportsDeferingConstraints()) {
-            $this->markTestSkipped("driver does not support defering constraints");
+            self::markTestSkipped("driver does not support defering constraints");
         }
 
         $transaction = $runner
@@ -282,7 +277,7 @@ final class TransactionTest extends DatabaseAwareQueryTest
             // This should pass, foo constraint it deferred
             $runner
                 ->getQueryBuilder()
-                ->insertValues('transaction_test')
+                ->insert('transaction_test')
                 ->columns(['foo', 'bar'])
                 ->values([2, 'd'])
                 ->execute()
@@ -291,27 +286,25 @@ final class TransactionTest extends DatabaseAwareQueryTest
             // This should fail, bar constraint it immediate
             $runner
                 ->getQueryBuilder()
-                ->insertValues('transaction_test')
+                ->insert('transaction_test')
                 ->columns(['foo', 'bar'])
                 ->values([5, 'b'])
                 ->execute()
             ;
 
-            $this->fail();
+            self::fail();
 
-        } catch (TransactionFailedError $e) {
-            // This must not happen because of immediate constraints
-            $this->fail();
+        } catch (TransactionError $e) {
+            self::assertInstanceOf(UniqueConstraintViolationError::class, $e->getPrevious());
         } catch (\Throwable $e) {
-            // This should happen instead, arbitrary SQL error
-            $transaction->rollback();
+            self::fail();
         } finally {
             if ($transaction->isStarted()) {
                 $transaction->rollback();
             }
         }
 
-        $this->assertTrue(true);
+        self::assertTrue(true);
     }
 
     /**
@@ -324,7 +317,7 @@ final class TransactionTest extends DatabaseAwareQueryTest
         $runner = $factory->getRunner();
 
         if (!$runner->getPlatform()->supportsDeferingConstraints()) {
-            $this->markTestSkipped("driver does not support defering constraints");
+            self::markTestSkipped("driver does not support defering constraints");
         }
 
         $transaction = $runner
@@ -337,7 +330,7 @@ final class TransactionTest extends DatabaseAwareQueryTest
             // This should pass, all are deferred
             $runner
                 ->getQueryBuilder()
-                ->insertValues('transaction_test')
+                ->insert('transaction_test')
                 ->columns(['foo', 'bar'])
                 ->values([2, 'd'])
                 ->execute()
@@ -346,7 +339,7 @@ final class TransactionTest extends DatabaseAwareQueryTest
             // This should pass, all are deferred
             $runner
                 ->getQueryBuilder()
-                ->insertValues('transaction_test')
+                ->insert('transaction_test')
                 ->columns(['foo', 'bar'])
                 ->values([5, 'b'])
                 ->execute()
@@ -354,20 +347,17 @@ final class TransactionTest extends DatabaseAwareQueryTest
 
             $transaction->commit();
 
-        } catch (TransactionFailedError $e) {
-            // This is what should happen, error at commit time
-            $transaction->rollback();
-        } catch (DatabaseError $e) {
-            // All constraints are deffered, we should not experience arbitrary
-            // SQL errors at insert time
-            $this->fail();
+        } catch (TransactionError $e) {
+            self::assertInstanceOf(UniqueConstraintViolationError::class, $e->getPrevious());
+        } catch (\Throwable $e) {
+            self::fail();
         } finally {
             if ($transaction->isStarted()) {
                 $transaction->rollback();
             }
         }
 
-        $this->assertTrue(true);
+        self::assertTrue(true);
     }
 
     /**
@@ -397,7 +387,7 @@ final class TransactionTest extends DatabaseAwareQueryTest
             ->execute()
         ;
 
-        $this->assertCount(3, $result);
+        self::assertCount(3, $result);
     }
 
     /**
@@ -414,7 +404,7 @@ final class TransactionTest extends DatabaseAwareQueryTest
         // Fetch another transaction, it should fail
         try {
             $runner->beginTransaction(Transaction::REPEATABLE_READ, false);
-            $this->fail();
+            self::fail();
         } catch (TransactionError $e) {
         }
 
@@ -422,17 +412,17 @@ final class TransactionTest extends DatabaseAwareQueryTest
         $t3 = $runner->beginTransaction(Transaction::REPEATABLE_READ, true);
         // @todo temporary deactivating this test since that the profiling
         //   transaction makes it harder
-        //$this->assertSame($t3, $transaction);
-        $this->assertTrue($t3->isStarted());
+        //self::assertSame($t3, $transaction);
+        self::assertTrue($t3->isStarted());
 
         // Force rollback of the second, ensure previous is stopped too
         $t3->rollback();
-        $this->assertFalse($t3->isStarted());
+        self::assertFalse($t3->isStarted());
         // Still true, because we acquired a savepoint
-        $this->assertTrue($transaction->isStarted());
+        self::assertTrue($transaction->isStarted());
 
         $transaction->rollback();
-        $this->assertFalse($transaction->isStarted());
+        self::assertFalse($transaction->isStarted());
     }
 
     /**
@@ -476,7 +466,7 @@ final class TransactionTest extends DatabaseAwareQueryTest
             ->fetchField()
         ;
         // This should have pass since it's before the savepoint
-        $this->assertSame('z', $oneBar);
+        self::assertSame('z', $oneBar);
 
         $twoBar = $runner
             ->getQueryBuilder()
@@ -487,6 +477,6 @@ final class TransactionTest extends DatabaseAwareQueryTest
             ->fetchField()
         ;
         // This should not have pass thanks to savepoint
-        $this->assertSame('b', $twoBar);
+        self::assertSame('b', $twoBar);
     }
 }

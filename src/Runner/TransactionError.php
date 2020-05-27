@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Goat\Runner;
 
 /**
- * Errors have been raised during a transaction
+ * @deprecated
+ *   Please raise and catch \Goat\Driver\Error\TransactionError instead.
+ * @see \Goat\Driver\Error\TransactionError
  */
-class TransactionError extends \RuntimeException implements DatabaseError
+interface TransactionError extends DatabaseError
 {
 }

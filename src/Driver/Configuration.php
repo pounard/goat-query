@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Goat\Driver;
 
-use Goat\Query\QueryError;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
@@ -62,7 +61,7 @@ final class Configuration
     public function __construct(array $options, array $driverOptions = [])
     {
         if (empty($options['driver'])) {
-            throw new QueryError("Options must contain the 'driver' value");
+            throw new ConfigurationError("Options must contain the 'driver' value");
         }
 
         // Reduce options to allowed ones only.
@@ -74,7 +73,7 @@ final class Configuration
         // Merge disallowed options into driver options.
         foreach (\array_diff_key($options, self::ALLOWED_OPTIONS) as $key => $value) {
             if (\array_key_exists($key, $driverOptions)) {
-                throw new \InvalidArgumentException(\sprintf("'%s' key is duplicated in both \$options and \$driverOptions", $key));
+                throw new ConfigurationError(\sprintf("'%s' key is duplicated in both \$options and \$driverOptions", $key));
             }
             $driverOptions[$key] = $value;
         }
@@ -168,7 +167,7 @@ final class Configuration
             \parse_str($result['query'] ?? '', $ret['options']);
             foreach ($ret['options'] as $key => $value) {
                 if (isset($ret[$key])) {
-                    throw new \InvalidArgumentException(\sprintf(
+                    throw new ConfigurationError(\sprintf(
                         "'%s' cannot be speficied in database URI query string",
                         $key
                     ));
@@ -196,7 +195,7 @@ final class Configuration
         if (\is_string($host)) {
             return self::parseHostString($host);
         }
-        throw new \InvalidArgumentException("Host must be an array or a string");
+        throw new ConfigurationError("Host must be an array or a string");
     }
 
     /**

@@ -7,22 +7,38 @@ namespace Goat\Runner;
 class ServerError extends \RuntimeException implements DatabaseError
 {
     private ?string $rawSQL = null;
-    private ?array $parameters = null;
+    private ?string $sqlState = null;
 
     /**
      * Default constructor
      */
-    public function __construct($rawSQL, $parameters = null, \Throwable $previous = null)
+    public function __construct(string $rawSQL = null, ?string $sqlState = null, \Throwable $previous = null, ?string $errorString = null)
     {
         $this->rawSQL = $rawSQL;
-        $this->parameters = (array)$parameters;
+        $this->sqlState = $sqlState;
 
-        $message = \sprintf("error while querying backend, query is:\n%s", $rawSQL);
+        if (!$errorString) {
+            if ($rawSQL) {
+                $errorString = \sprintf("Error while querying backend, query was:\n%s", $rawSQL);
+            } else {
+                $errorString = \sprintf("Error while querying backend.");
+            }
+        }
 
         if ($previous) {
-            parent::__construct($message, 0, $previous);
+            parent::__construct($errorString, 0, $previous);
         } else {
-            parent::__construct($message);
+            parent::__construct($errorString);
         }
+    }
+
+    public function getRawSql(): ?string
+    {
+        return $this->rawSQL;
+    }
+
+    public function getSqlState(): ?string
+    {
+        return $this->sqlState;
     }
 }

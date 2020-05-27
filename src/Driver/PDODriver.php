@@ -69,7 +69,7 @@ class PDODriver extends AbstractDriver
                 break;
 
             default:
-                throw new \InvalidArgumentException(\sprintf("'%s': unsupported driver", $driver));
+                throw new ConfigurationError(\sprintf("'%s': unsupported driver", $driver));
         }
 
         if ($options['socket']) {
