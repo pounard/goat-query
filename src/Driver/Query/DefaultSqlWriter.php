@@ -584,7 +584,7 @@ class DefaultSqlWriter extends AbstractSqlWriter
         return '(' . \implode(
             ", ",
             \array_map(
-                fn ($value) => $this->format($value),
+                fn ($value) => ($value instanceof Query ? '(' . $this->format($value) . ')' : $this->format($value)),
                 $row->getValues())
         ) . ')';
     }
