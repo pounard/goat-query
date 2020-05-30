@@ -67,6 +67,36 @@ class ExtPgSQLDriver extends AbstractDriver
         $connectionString = $this->buildConnectionString($configuration->getOptions());
 
         try {
+            //
+            // Setting or not \PGSQL_CONNECT_FORCE_NEW which literally means
+            // re-using connections when asked for the same connection string,
+            // this choice should left to the user and not be forced.
+            //
+            // Nevertheless, it's a dangerous thing to do per default: if for
+            // example a Symfony bundle user configures two distinct connections
+            // for avoiding transactions to mix up re-uses the same connection
+            // string for both, transactions will end up being mixed up anyway
+            // because it will internally be the same session in use.
+            //
+            // By sharing PostgreSQL sessions, it will also share the "pg_temp"
+            // namespace as well as temporary tables. This actually make the
+            // unit tests of this library fail because PHPUnit will not run test
+            // isolated each in their processes. Even if we explicitely call
+            // \pg_close() on connection destruct, PHP will kept persistent
+            // sessions anyway.
+            //
+            // Note that this is not \pg_pconnect(), which means connections
+            // will not persist between two PHP run in PHP-FPM context.
+            //
+            // Tests for the PDO driver will not fail because PDO doesn't seem
+            // to implement persistent connections [needs investigation]. That's
+            // why enforcing new connections here seems to be a sane default so
+            // that behaviour remain the same will all drivers.
+            //
+            // If you really wish to re-use connections and have a connection
+            // poool for speeding up your application, use an external proxy
+            // such as pg_bouncer instead: https://www.pgbouncer.org/
+            //
             $this->connection = $resource = \pg_connect($connectionString, PGSQL_CONNECT_FORCE_NEW);
 
             \pg_set_error_verbosity($resource,  PGSQL_ERRORS_VERBOSE);
