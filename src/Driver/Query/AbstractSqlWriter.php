@@ -40,27 +40,13 @@ abstract class AbstractSqlWriter implements SqlWriter
      * This regex is huge, but contain no backward lookup, does not imply
      * any recursivity, it should be fast enough.
      */
-
-    /*
-     * Working, but slow one.
-     *
     const PARAMETER_MATCH = '@
         ESCAPE
-        (\?\:\:([\w]+))|        # Matches ?::WORD placeholders
-        (\?)|                   # Matches ?
-        (\:\:[\w\."]+)|         # Matches valid ::WORD cast
-        (\:[\w]+\:\:([\w]+))|   # Matches :NAME::WORD placeholders
-        (\:[\w]+)               # Matches :NAME placeholders
-        @x';
-     */
-
-    const PARAMETER_MATCH = '@
-        ESCAPE
-        (\?\?)|
-        (\?((\:\:([\w]+))|))|   # Matches ?[::WORD] placeholders
-        (\:\:[\w\."]+)|         # Matches valid ::WORD cast
-        (\:([\w]+)\:\:([\w]+))| # Matches :NAME::WORD placeholders
-        (\:[\w]+)               # Matches :NAME placeholders
+        (\?\?)|                 # Matches ??
+        (\?((\:\:([\w]+))|))|   # Matches ?[::WORD] (placeholders)
+        (\:\:[\w\."]+)|         # Matches ::WORD (pgsql cast we shoud let pass)
+        (\:([\w]+)\:\:([\w]+))| # Matches :NAME::WORD (named placeholders with type)
+        (\:[\w]+)               # Matches :NAME (named placeholders without type)
         @x';
 
     /** @var string */

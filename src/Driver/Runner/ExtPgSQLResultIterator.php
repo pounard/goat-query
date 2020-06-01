@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Goat\Driver\Runner;
 
-use Goat\Query\QueryError;
 use Goat\Runner\AbstractResultIterator;
 use Goat\Runner\InvalidDataAccessError;
 
@@ -140,11 +139,15 @@ class ExtPgSQLResultIterator extends AbstractResultIterator
         //   because we shouldn't return an array, but an iterable (stream).
         $valueColumn = \pg_fetch_all_columns($this->connection, $index);
         if (false === $valueColumn) {
+            // @todo use ExtPgSQLErrorTrait to provide more information
+            //   and nest the SQL error as previous of this one.
             throw new InvalidDataAccessError(\sprintf("column '%d' is out of scope of the current result", $index));
         }
 
         $indexColumn = \pg_fetch_all_columns($this->connection, $keyIndex);
         if (false === $indexColumn) {
+            // @todo use ExtPgSQLErrorTrait to provide more information
+            //   and nest the SQL error as previous of this one.
             throw new InvalidDataAccessError(\sprintf("column '%d' is out of scope of the current result", $keyIndex));
         }
 
@@ -181,6 +184,8 @@ class ExtPgSQLResultIterator extends AbstractResultIterator
 
         $columns = \pg_fetch_all_columns($this->connection, $index);
         if (false === $columns) {
+            // @todo use ExtPgSQLErrorTrait to provide more information
+            //   and nest the SQL error as previous of this one.
             throw new InvalidDataAccessError(\sprintf("column '%d' is out of scope of the current result", $index));
         }
 

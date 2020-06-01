@@ -10,9 +10,9 @@ use Goat\Runner\Runner;
 interface Driver
 {
     /**
-     * Set configuration
+     * Set configuration.
      *
-     * This method will be called once prior to initialization
+     * This method will be called once prior to initialization.
      *
      * @throws ConfigurationError
      *   If this method is called subsenquently to connection
@@ -27,7 +27,7 @@ interface Driver
     public function canBeClosedProperly(): bool;
 
     /**
-     * Run connection
+     * Run connection.
      *
      * This method might actually never be called, the driver/runner combo
      * can handle it by itself and do lazy-initialization.
@@ -40,7 +40,7 @@ interface Driver
     public function getServerVersion(): ?string;
 
     /**
-     * Close connection
+     * Close connection.
      *
      * This method might be honnored, even if connect() was not called and
      * connection was lazy-initialized.
@@ -48,12 +48,12 @@ interface Driver
     public function close(): void;
 
     /**
-     * Get platform
+     * Get platform.
      */
     public function getPlatform(): Platform;
 
     /**
-     * Get runner
+     * Get runner.
      */
     public function getRunner(): Runner;
 }
