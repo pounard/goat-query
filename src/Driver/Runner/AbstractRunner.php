@@ -254,15 +254,6 @@ abstract class AbstractRunner implements Runner, ProfilerAware
     {
         $result->setConverter($this->converter);
 
-        // Normalize options, it might be a string only.
-        if ($options) {
-            if (\is_string($options)) {
-                $options = ['class' => $options];
-            } else if (!\is_array($options)) {
-                throw new QueryError("options must be a valid class name or an array of options");
-            }
-        }
-
         if (isset($options['hydrator'])) {
             if (isset($options['class'])) {
                 $this->logger->warning("'hydrator' option overrides the 'class' option");
@@ -311,6 +302,25 @@ abstract class AbstractRunner implements Runner, ProfilerAware
     }
 
     /**
+     * Normalize options.
+     */
+    private function normalizeOptions($options = null): array
+    {
+        // Normalize options, it might be a string only.
+        if ($options) {
+            if (\is_string($options)) {
+                $options = ['class' => $options];
+            } else if (!\is_array($options)) {
+                throw new QueryError("options must be a valid class name or an array of options");
+            }
+        } else {
+            $options = [];
+        }
+
+        return $options;
+    }
+
+    /**
      * execute() implementation.
      */
     protected abstract function doExecute(string $sql, array $args, array $options): AbstractResultIterator;
@@ -343,7 +353,7 @@ abstract class AbstractRunner implements Runner, ProfilerAware
             }
         }
 
-        $options = $options ?? [];
+        $options = $this->normalizeOptions($options);
         $args = null;
         $rawSQL = '';
         $profiler = $this->startProfilerQuery();
@@ -383,7 +393,7 @@ abstract class AbstractRunner implements Runner, ProfilerAware
      */
     public function perform($query, $arguments = null, $options = null) : int
     {
-        $options = $options ?? [];
+        $options = $this->normalizeOptions($options);
         $args = null;
         $rawSQL = '';
         $profiler = $this->startProfilerQuery();
@@ -460,6 +470,7 @@ abstract class AbstractRunner implements Runner, ProfilerAware
      */
     public function executePreparedQuery(string $identifier, $arguments = null, $options = null): ResultIterator
     {
+        $options = $this->normalizeOptions($options);
         $args = $arguments ?? [];
         $profiler = $this->startProfilerQuery();
 
