@@ -30,7 +30,32 @@ class TestDriverFactory
         $this->envVarName = $envVarName;
         $this->initializer = $initializer;
         $this->logger = new NullLogger();
-        $this->schema = \uniqid('test_schema_');
+        $this->schema = self::getEnv('TEST_SCHEMA') ?? \uniqid('test_schema_');
+    }
+
+    private static function getEnv(string $name, bool $withFallback = false): ?string
+    {
+        $realName = 'GOAT_' . $name;
+        $value = \getenv($realName);
+
+        if (false !== $value) {
+            return $value;
+        }
+
+        if (!$withFallback) {
+            return null;
+        }
+
+        $legacyName = $name;
+        $fallbackValue = \getenv($legacyName);
+
+        if (false !== $fallbackValue) {
+            @\trigger_error(\sprintf("'%s' variable is now named '%s', you should consider fixing your phpunit.xml file.", $legacyName, $realName), E_USER_DEPRECATED);
+
+            return $fallbackValue;
+        }
+
+        return null;
     }
 
     public function setLogger(LoggerInterface $logger): void
@@ -45,7 +70,7 @@ class TestDriverFactory
 
     public static function isApcuEnabled(): bool
     {
-        return \function_exists('apcu_add') && \getenv('ENABLE_APCU');
+        return \function_exists('apcu_add') && self::getEnv('ENABLE_APCU', true);
     }
 
     /** @return array[] */
@@ -53,12 +78,12 @@ class TestDriverFactory
     {
         $ret = [];
 
-        if (\getenv('ENABLE_PDO')) {
+        if (self::getEnv('ENABLE_PDO', true)) {
             $ret[] = [Configuration::DRIVER_PDO_MYSQL, 'MYSQL_57_URI'];
             $ret[] = [Configuration::DRIVER_PDO_MYSQL, 'MYSQL_80_URI'];
             $ret[] = [Configuration::DRIVER_PDO_PGSQL, 'PGSQL_95_URI'];
         }
-        if (\getenv('ENABLE_EXT_PGSQL')) {
+        if (self::getEnv('ENABLE_EXT_PGSQL', true)) {
             $ret[] = [Configuration::DRIVER_EXT_PGSQL, 'PGSQL_95_URI'];
         }
 
@@ -67,7 +92,7 @@ class TestDriverFactory
 
     public function getDriver(): Driver
     {
-        if (!$uri = \getenv($this->envVarName)) {
+        if (!$uri = self::getEnv($this->envVarName, true)) {
             throw new SkippedTestError(\sprintf("'%s' environment variable is missing.", $this->envVarName));
         }
 
