@@ -74,7 +74,7 @@ final class PagerResultIterator extends AbstractResultIteratorProxy
     public function getStopOffset(): int
     {
         $stopOffset = $this->getStartOffset() + $this->getCurrentCount();
-        $totalCount = $this->getTotalCount();
+        $totalCount = $this->getTotalCount() ?? 0;
 
         return ($totalCount < $stopOffset) ? $totalCount : $stopOffset;
     }
@@ -84,7 +84,7 @@ final class PagerResultIterator extends AbstractResultIteratorProxy
      */
     public function getLastPage(): int
     {
-        return $this->limit ? (int)\max(1, \ceil($this->getTotalCount() / $this->limit)) : 1;
+        return $this->limit ? (int)\max(1, \ceil(($this->getTotalCount() ?? 0) / $this->limit)) : 1;
     }
 
     /**
@@ -114,7 +114,7 @@ final class PagerResultIterator extends AbstractResultIteratorProxy
     /**
      * Get the total number of results in all pages
      */
-    public function getTotalCount(): int
+    public function getTotalCount(): ?int
     {
         return $this->count;
     }
