@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Goat\Query;
 
 /**
- * Constant table expression reprense one or more rows of raw arbitrary
+ * Constant table expression reprensent one or more rows of raw arbitrary
  * values, them that you would write in INSERT or MERGE queries after the
  * VALUES () keyword.
  *
