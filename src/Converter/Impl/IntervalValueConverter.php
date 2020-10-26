@@ -61,7 +61,10 @@ class IntervalValueConverter implements ValueConverterInterface
             return \DateInterval::createFromDateString(\sprintf("%d hour %d min %d sec", $hour, $min, $sec));
         } else if (false === \strpos($value, ':')) {
             // Got ourselves a nice "1 year ..." string
-            return \DateInterval::createFromDateString($value);
+            return \DateInterval::createFromDateString(\strtr($value, [
+                'mons' => 'months',
+                'mon' => 'month',
+            ]));
         } else {
             // Mixed PostgreSQL format "1 year... HH:MM:SS"
             $date = \mb_substr($value, 0, $pos);
