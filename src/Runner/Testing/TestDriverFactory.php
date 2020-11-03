@@ -146,7 +146,7 @@ class TestDriverFactory
             return;
         }
 
-        $runner->execute(\sprintf('CREATE SCHEMA "%s"', $schema));
+        $runner->execute(\sprintf('CREATE SCHEMA IF NOT EXISTS "%s"', $schema));
         // @todo this will only work with pgsql
         //   since it's the only database with schema support we do support
         //   it's OK for now.
