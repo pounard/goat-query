@@ -4,7 +4,7 @@ INSERT .. VALUES
 Basics
 ^^^^^^
 
-``INTO`` clause relation is provided in the object constructor:
+``INTO`` clause table is provided in the object constructor:
 
 .. code-block:: php
 

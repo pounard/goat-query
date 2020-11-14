@@ -12,6 +12,7 @@ use Goat\Query\MergeQuery;
 use Goat\Query\Query;
 use Goat\Query\QueryError;
 use Goat\Query\UpdateQuery;
+use Goat\Query\Partial\Join;
 
 /**
  * MySQL <= 5.7
@@ -84,8 +85,8 @@ class MySQLWriter extends DefaultSqlWriter
         $columns = $query->getAllColumns();
         $isIgnore = Query::CONFLICT_IGNORE === $query->getConflictBehaviour();
 
-        if (!$relation = $query->getRelation()) {
-            throw new QueryError("insert query must have a relation");
+        if (!$table = $query->getTable()) {
+            throw new QueryError("Insert query must have a table.");
         }
 
         $output[] = $this->formatWith($query->getAllWith());
@@ -93,13 +94,13 @@ class MySQLWriter extends DefaultSqlWriter
             $output[] = \sprintf(
                 "insert ignore into %s",
                 // From SQL 92 standard, INSERT queries don't have table alias
-                $this->escaper->escapeIdentifier($relation->getName())
+                $this->escaper->escapeIdentifier($table->getName())
             );
         } else {
             $output[] = \sprintf(
                 "insert into %s",
                 // From SQL 92 standard, INSERT queries don't have table alias
-                $this->escaper->escapeIdentifier($relation->getName())
+                $this->escaper->escapeIdentifier($table->getName())
             );
         }
 
@@ -149,27 +150,30 @@ class MySQLWriter extends DefaultSqlWriter
         // alias on the main table, so we are going to give him this always
         // so we won't have to bother about weither or not we have other tables
         // to JOIN.
-        if (!$relation = $query->getRelation()) {
-            throw new QueryError("delete query must have a relation");
+        if (!$table = $query->getTable()) {
+            throw new QueryError("Delete query must have a table.");
         }
 
-        $relationAlias = $relation->getAlias();
-        if (!$relationAlias) {
-            $relationAlias = $relation->getName();
-        }
-
-        $output[] = \sprintf(
-            "delete %s.* from %s",
-            $this->escaper->escapeIdentifier($relationAlias),
-            $this->formatExpressionRelation($relation)
-        );
+        $tableAlias = $table->getAlias() ?? $table->getName();
 
         // MySQL does not have USING clause, and support a non-standard way of
         // writing DELETE directly using FROM .. JOIN clauses, just like you
         // would write a SELECT, so give him that.
-        $joins = $query->getAllJoin();
-        if ($joins) {
-            $output[] = $this->formatJoin($joins);
+        $output[] = \sprintf(
+            "delete %s.* from %s",
+            $this->escaper->escapeIdentifier($tableAlias),
+            $this->formatTableExpression($table)
+        );
+
+        $from = $query->getAllFrom();
+        if ($from) {
+            $output[] = ', ';
+            $output[] = $this->formatFrom($from);
+        }
+
+        $join = $query->getAllJoin();
+        if ($join) {
+            $output[] = $this->formatJoin($join);
         }
 
         $where = $query->getWhere();
@@ -199,16 +203,19 @@ class MySQLWriter extends DefaultSqlWriter
 
         // From the SQL 92 standard (which PostgreSQL does support here) the
         // FROM and JOIN must be written AFTER the SET clause. MySQL does not.
-        if (!$relation = $query->getRelation()) {
-            throw new QueryError("update query must have a relation");
-        }
-        $output[] = \sprintf("update %s", $this->formatExpressionRelation($relation));
+        $output[] = \sprintf("update %s", $this->formatTableExpression($query->getTable()));
 
         // MySQL don't do UPDATE t1 SET [...] FROM t2 but uses the SELECT
         // syntax and just append the set after the JOIN clause.
-        $joins = $query->getAllJoin();
-        if ($joins) {
-            $output[] = $this->formatJoin($query->getAllJoin());
+        $from = $query->getAllFrom();
+        if ($from) {
+            $output[] = ', ';
+            $output[] = $this->formatFrom($from);
+        }
+
+        $join = $query->getAllJoin();
+        if ($join) {
+            $output[] = $this->formatJoin($join);
         }
 
         // SET clause.

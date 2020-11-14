@@ -97,8 +97,10 @@ final class ExpressionFactory
         self::ensureNotNull($expression);
         $expression = self::callable($expression, $context);
 
-        // Callback did not return anything, but had the chance to play with context
-        if ($context && null === $expression) {
+        // Callback did not return anything, but had the chance to play with context.
+        // If $context === $expression, this means that the user used a short arrow
+        // syntax that implicitely returned the value, we consider it as null.
+        if ($context && null === $expression || $context === $expression) {
             return null;
         }
 

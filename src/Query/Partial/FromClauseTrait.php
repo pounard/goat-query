@@ -4,125 +4,158 @@ declare(strict_types=1);
 
 namespace Goat\Query\Partial;
 
+use Goat\Query\Expression;
 use Goat\Query\ExpressionRaw;
 use Goat\Query\Query;
 use Goat\Query\Where;
 
 /**
- * Represents the FROM part of a DELETE, SELECT or UPDATE query.
+ * Represents the FROM part of a SELECT or UPDATE query.
  *
- * It gathers all the FROM and JOIN statements altogether.
+ * A FROM clause is (from PostgreSQL, but also a few other RDBMS):
  *
- * For UPDATE queries, it is used for the FROM clause.
- * For DELETE queries, it is used for the USING clause.
+ *   - starts with a table name, with an alias or not,
+ *   - possibly a comma-separated list of other table names, which can
+ *     have aliases as well,
+ *   - a list of JOIN statements.
+ *
+ * This means that all queries using this trait will have all of this.
  */
 trait FromClauseTrait
 {
     use AliasHolderTrait;
 
+    /** @var Expression */
+    private array $from = [];
     /** @var Join[] */
-    private $joins = [];
+    private array $join = [];
 
     /**
-     * Get join clauses array
+     * Get join clauses array.
+     *
+     * @return Expression[]
+     */
+    final public function getAllFrom(): array
+    {
+        return $this->from;
+    }
+
+    /**
+     * Add FROM table statement
+     *
+     * @param string|\Goat\Query\Expression $table
+     * @param null|string $alias
+     */
+    final public function from($table, ?string $alias = null): self
+    {
+        $this->from[] = $this->normalizeTable($table, $alias);
+
+        return $this;
+    }
+
+    /**
+     * Get join clauses array.
      *
      * @return array
      */
     final public function getAllJoin(): array
     {
-        return $this->joins;
+        return $this->join;
     }
 
     /**
-     * Add join statement
+     * Add join statement.
      *
-     * @param string|\Goat\Query\ExpressionRelation $relation
+     * @param string|\Goat\Query\Expression $table
      * @param string|Where|ExpressionRaw $condition
      * @param string $alias
      * @param int $mode
      */
-    final public function join($relation, $condition = null, ?string $alias = null, ?int $mode = Query::JOIN_INNER): self
+    final public function join($table, $condition = null, ?string $alias = null, ?int $mode = Query::JOIN_INNER): self
     {
-        $relation = $this->normalizeRelation($relation, $alias);
+        $table = $this->normalizeTable($table, $alias);
 
-        $this->joins[] = new Join($relation, $condition, $mode);
+        $this->join[] = new Join($table, $condition, $mode);
 
         return $this;
     }
 
     /**
-     * Add join statement and return the associated Where
+     * Add join statement and return the associated Where.
      *
-     * @param string|\Goat\Query\ExpressionRelation $relation
+     * @param string|\Goat\Query\Expression $table
      * @param string $alias
      * @param int $mode
      */
-    final public function joinWhere($relation, ?string $alias = null, ?int $mode = Query::JOIN_INNER): Where
+    final public function joinWhere($table, ?string $alias = null, ?int $mode = Query::JOIN_INNER): Where
     {
-        $relation = $this->normalizeRelation($relation, $alias);
+        $table = $this->normalizeTable($table, $alias);
 
-        $this->joins[] = new Join($relation, $condition = new Where(), $mode);
+        $this->join[] = new Join($table, $condition = new Where(), $mode);
 
         return $condition;
     }
 
     /**
-     * Add inner statement
+     * Add inner statement.
      *
-     * @param string|\Goat\Query\ExpressionRelation $relation
+     * @param string|\Goat\Query\Expression $table
      * @param string|Where|ExpressionRaw $condition
      * @param string $alias
      */
-    final public function innerJoin($relation, $condition = null, ?string $alias = null): self
+    final public function innerJoin($table, $condition = null, ?string $alias = null): self
     {
-        $this->join($relation, $condition, $alias, Query::JOIN_INNER);
+        $this->join($table, $condition, $alias, Query::JOIN_INNER);
 
         return $this;
     }
 
     /**
-     * Add left outer join statement
+     * Add left outer join statement.
      *
-     * @param string|\Goat\Query\ExpressionRelation $relation
+     * @param string|\Goat\Query\Expression $table
      * @param string|Where|ExpressionRaw $condition
      * @param string $alias
      */
-    final public function leftJoin($relation, $condition = null, ?string $alias = null): self
+    final public function leftJoin($table, $condition = null, ?string $alias = null): self
     {
-        $this->join($relation, $condition, $alias, Query::JOIN_LEFT_OUTER);
+        $this->join($table, $condition, $alias, Query::JOIN_LEFT_OUTER);
 
         return $this;
     }
 
     /**
-     * Add inner statement and return the associated Where
+     * Add inner statement and return the associated Where.
      *
-     * @param string|\Goat\Query\ExpressionRelation $relation
+     * @param string|\Goat\Query\Expression $table
      * @param string $alias
      */
-    final public function innerJoinWhere($relation, string $alias = null): Where
+    final public function innerJoinWhere($table, string $alias = null): Where
     {
-        return $this->joinWhere($relation, $alias, Query::JOIN_INNER);
+        return $this->joinWhere($table, $alias, Query::JOIN_INNER);
     }
 
     /**
-     * Add left outer join statement and return the associated Where
+     * Add left outer join statement and return the associated Where.
      *
-     * @param string|\Goat\Query\ExpressionRelation $relation
+     * @param string|\Goat\Query\Expression $table
      * @param string $alias
      */
-    final public function leftJoinWhere($relation, string $alias = null): Where
+    final public function leftJoinWhere($table, string $alias = null): Where
     {
-        return $this->joinWhere($relation, $alias, Query::JOIN_LEFT_OUTER);
+        return $this->joinWhere($table, $alias, Query::JOIN_LEFT_OUTER);
     }
 
     /**
      * Deep clone support.
      */
-    protected function cloneJoins()
+    protected function cloneFrom()
     {
-        foreach ($this->joins as $index => $join) {
-            $this->joins[$index] = clone $join;
+        foreach ($this->from as $index => $expression) {
+            $this->from[$index] = clone $expression;
+        }
+        foreach ($this->join as $index => $join) {
+            $this->join[$index] = clone $join;
         }
     }
 }

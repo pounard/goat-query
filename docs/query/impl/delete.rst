@@ -4,7 +4,7 @@ DELETE
 Basics
 ^^^^^^
 
-``FROM`` clause relation is provided in the object constructor:
+``FROM`` clause table is provided in the object constructor:
 
 .. code-block:: php
 

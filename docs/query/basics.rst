@@ -12,13 +12,13 @@ A query created from its runner:
 
       /** @var \Goat\Runner\Runner $runner */
 
-      $select = $runner->getQueryBuilder()->select($relation, $alias);
+      $select = $runner->getQueryBuilder()->select($table, $alias);
 
-      $update = $runner->getQueryBuilder()->update($relation, $alias);
+      $update = $runner->getQueryBuilder()->update($table, $alias);
 
-      $merge = $runner->getQueryBuilder()->merge($relation);
+      $merge = $runner->getQueryBuilder()->merge($table);
 
-      $delete = $runner->getQueryBuilder()->delete($relation, $alias);
+      $delete = $runner->getQueryBuilder()->delete($table, $alias);
 
 Generated SQL
 ^^^^^^^^^^^^^
@@ -35,12 +35,14 @@ during query execution in tyhe RDBMS side.
 Identifiers and arbitrary expressions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Relation and column references are not validated during query building: you can always
+Table and column references are not validated during query building: you can always
 write arbitrary identifiers, they will be left untouched within the generated SQL.
 
-**Each identifier, value, predicate, relation, ... any method parameter can be replaced**
-**by ``\Goat\Query\Expression`` instances: those objects will be considered as raw SQL**
-**and place as-is without any escaping within the SQL queries.**
+.. note::
+
+   **Each identifier, value, predicate, table, ... any method parameter can be replaced**
+   **by ``\Goat\Query\Expression`` instances: those objects will be considered as raw SQL**
+   **and formated as they should be independently of the context they were passed.**
 
 This explicitely allow you to go beyond the query builder capabilities and write
 custom or specific arbitrary SQL.
@@ -163,10 +165,10 @@ Will be formatted as:
 
    "some.table"."some.column"
 
-ExpressionRelation
-##################
+TableExpression
+###############
 
-This expression allows you to identify a table, relation, constant table with
+This expression allows you to identify a table, table, constant table with
 alias, WITH statement.
 
 **Simple example**:
@@ -175,7 +177,7 @@ alias, WITH statement.
 
    <?php
 
-   \Goat\Query\ExpressionRelation::create('some_table');
+   \Goat\Query\Expression\TableExpression::create('some_table');
 
 Will be formatted as:
 
@@ -189,7 +191,7 @@ Will be formatted as:
 
    <?php
 
-   \Goat\Query\ExpressionRelation::create('some_table', 'foo');
+   \Goat\Query\Expression\TableExpression::create('some_table', 'foo');
 
 Will be formatted as:
 
@@ -203,7 +205,7 @@ Will be formatted as:
 
    <?php
 
-   \Goat\Query\ExpressionRelation::create('my_schema.some_table', 'foo');
+   \Goat\Query\Expression\TableExpression::create('my_schema.some_table', 'foo');
 
 Will be formatted as:
 
@@ -217,7 +219,7 @@ Will be formatted as:
 
    <?php
 
-   \Goat\Query\ExpressionRelation::create('some_table', 'foo', 'my_schema');
+   \Goat\Query\Expression\TableExpression::create('some_table', 'foo', 'my_schema');
 
 Will be formatted as:
 
@@ -231,7 +233,7 @@ Will be formatted as:
 
    <?php
 
-   \Goat\Query\ExpressionRelation::escape('some.table', 'some.alias', 'my.schema');
+   \Goat\Query\Expression\TableExpression::escape('some.table', 'some.alias', 'my.schema');
 
 Will be formatted as:
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Goat\Query;
 
+use Goat\Query\Expression\TableExpression;
 use Goat\Query\Partial\FromClauseTrait;
 use Goat\Query\Partial\ReturningQueryTrait;
 use Goat\Query\Partial\WhereClauseTrait;
@@ -17,29 +18,38 @@ final class UpdateQuery extends AbstractQuery
     use ReturningQueryTrait;
     use WhereClauseTrait;
 
-    private $columns = [];
+    private TableExpression $table;
+    /** @var ExpressionColumn[] */
+    private array $columns = [];
 
     /**
-     * Build a new query
+     * Build a new query.
      *
-     * @param string|ExpressionRelation $relation
-     *   SQL from statement relation name
+     * @param string|Expression $table
+     *   SQL FROM clause table name or expression.
      * @param string $alias
-     *   Alias for from clause relation
+     *   Alias for FROM clause table.
      */
-    public function __construct($relation, ?string $alias = null)
+    public function __construct($table, ?string $alias = null)
     {
-        parent::__construct($relation, $alias);
-
+        $this->table = $this->normalizeStrictTable($table, $alias);
         $this->where = new Where();
     }
 
     /**
-     * Set a column value to update
+     * Get FROM table.
+     */
+    public function getTable(): TableExpression
+    {
+        return $this->table;
+    }
+
+    /**
+     * Set a column value to update.
      *
      * @param string $columnName
      *   Must be, as the SQL-92 standard states, a single column name without
-     *   the table prefix or alias, it cannot be an expression
+     *   the table prefix or alias, it cannot be an expression.
      * @param string|Statement|SelectQuery $expression
      *   The column value, if it's a string it can be a reference to any other
      *   field from the table or the FROM clause, as well as it can be raw
@@ -61,7 +71,7 @@ final class UpdateQuery extends AbstractQuery
     }
 
     /**
-     * Set multiple column values to update
+     * Set multiple column values to update.
      *
      * @param string[]|Expression[] $values
      *   Keys are column names, as specified in the ::value() method, and values
@@ -77,10 +87,10 @@ final class UpdateQuery extends AbstractQuery
     }
 
     /**
-     * Get all updated columns
+     * Get all updated columns.
      *
      * @return string[]|Expression[]
-     *   Keys are column names, values are either strings or Expression instances
+     *   Keys are column names, values are either strings or Expression instances.
      */
     public function getUpdatedColumns(): array
     {
@@ -94,9 +104,11 @@ final class UpdateQuery extends AbstractQuery
     {
         $arguments = new ArgumentBag();
 
-        foreach ($this->getAllWith() as $selectQuery) {
-            $arguments->append($selectQuery[1]->getArguments());
+        foreach ($this->getAllWith() as $with) {
+            $arguments->append($with->table->getArguments());
         }
+
+        $arguments->append($this->table->getArguments());
 
         foreach ($this->columns as $statement) {
             if ($statement instanceof Statement) {
@@ -106,8 +118,12 @@ final class UpdateQuery extends AbstractQuery
             }
         }
 
-        foreach ($this->joins as $join) {
-            $arguments->append($join->relation->getArguments());
+        foreach ($this->from as $expression) {
+            $arguments->append($expression->getArguments());
+        }
+
+        foreach ($this->join as $join) {
+            $arguments->append($join->table->getArguments());
             $arguments->append($join->condition->getArguments());
         }
 
@@ -123,14 +139,14 @@ final class UpdateQuery extends AbstractQuery
      */
     public function __clone()
     {
-        $this->cloneJoins();
-
+        $this->cloneWith();
+        $this->cloneFrom();
+        $this->table = clone $this->table;
         foreach ($this->columns as $column => $statement) {
             if (\is_object($statement)) {
                 $this->columns[$column] = clone $statement;
             }
         }
-
         $this->where = clone $this->where;
     }
 }

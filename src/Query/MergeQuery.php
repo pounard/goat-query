@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Goat\Query;
 
+use Goat\Query\Expression\TableExpression;
 use Goat\Query\Partial\InsertTrait;
 use Goat\Query\Partial\MergeTrait;
 use Goat\Query\Partial\ReturningQueryTrait;
@@ -18,6 +19,29 @@ class MergeQuery extends AbstractQuery
     use MergeTrait;
     use ReturningQueryTrait;
 
+    private TableExpression $table;
+
+    /**
+     * Build a new query.
+     *
+     * @param string|TableExpression $table
+     *   SQL INTO clause table name.
+     * @param string $alias
+     *   Alias for FROM clause table.
+     */
+    public function __construct($table, ?string $alias = null)
+    {
+        $this->table = $this->normalizeStrictTable($table, $alias);
+    }
+
+     /**
+     * Get INTO table.
+     */
+    public function getTable(): TableExpression
+    {
+        return $this->table;
+    }
+
     /**
      * {@inheritdoc}
      */
@@ -25,12 +49,23 @@ class MergeQuery extends AbstractQuery
     {
         $arguments = new ArgumentBag();
 
-        foreach ($this->getAllWith() as $selectQuery) {
-            $arguments->append($selectQuery[1]->getArguments());
+        foreach ($this->getAllWith() as $with) {
+            $arguments->append($with->table->getArguments());
         }
 
         $arguments->append($this->getQuery()->getArguments());
 
         return $arguments;
+    }
+
+    /**
+     * Deep clone support.
+     */
+    public function __clone()
+    {
+        $this->cloneWith();
+        $this->table = clone $this->table;
+        $this->query = clone $this->query;
+        $this->where = clone $this->where;
     }
 }

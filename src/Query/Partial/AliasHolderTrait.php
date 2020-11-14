@@ -4,97 +4,127 @@ declare(strict_types=1);
 
 namespace Goat\Query\Partial;
 
-use Goat\Query\ExpressionRelation;
+use Goat\Query\Expression;
 use Goat\Query\QueryError;
+use Goat\Query\Expression\AliasedExpression;
+use Goat\Query\Expression\TableExpression;
 
 /**
- * Aliasing and conflict dedupe logic.
+ * Aliasing and conflict deduplication logic.
  */
 trait AliasHolderTrait
 {
-    private $aliasIndex = 0;
-    private $relationIndex = [];
+    private int $aliasIndex = 0;
+    /** @var array<string,Expression> */
+    private array $tableIndex = [];
 
     /**
-     * Normalize relation reference
+     * Normalize table to an expression with a given or generated alias.
      *
-     * @param string|ExpressionRelation $relation
-     * @param string $alias
+     * @param string|Expression $table
+     *   A table name, a local alias, or an arbitrary expression instance.
      */
-    protected function normalizeRelation($relation, ?string $alias = null): ExpressionRelation
+    protected function normalizeTable($table, ?string $alias = null): Expression
     {
-        if ($relation instanceof ExpressionRelation) {
-            if ($relation->getAlias() && $alias) {
-                throw new QueryError(\sprintf(
-                    "relation %s is already prefixed by %s, conflicts with %s",
-                    $relation->getName(),
-                    $relation->getAlias(),
-                    $alias
-                ));
-            }
-        } else {
-            if (null === $alias) {
-                $alias = $this->getAliasFor($relation);
+        if ($table instanceof TableExpression) {
+            $tableAlias = $table->getAlias();
+            if ($schema = $table->getSchema()) {
+                $tableName = $schema . '.' . $table->getName();
             } else {
-                if ($this->aliasExists($alias)) {
-                    throw new QueryError(\sprintf("%s alias is already registered for relation %s", $alias, $this->relations[$alias]));
-                }
+                $tableName = $table->getName();
             }
 
-            $relation = ExpressionRelation::create($relation, $alias);
+            $alias = $this->createAliasForName($tableName, $alias ?? $tableAlias);
+
+            return TableExpression::create($tableName, $alias, $table->getSchema());
         }
 
-        return $relation;
+        if ($table instanceof Expression) {
+            $expressionAlias = null;
+            if ($table instanceof WithAlias) {
+                $expressionAlias = $table->getAlias();
+            }
+            // Name needs to be unique, we will lookup for table names.
+            $expressionName = '<nested raw expression ' . \uniqid(null, true) . '>';
+
+            $alias = $this->createAliasForName($expressionName, $alias ?? $expressionAlias);
+
+            return new AliasedExpression($alias, $table);
+        }
+
+        if (\is_string($table)) {
+            return TableExpression::create($table, $this->createAliasForName($table, $alias));
+        }
+
+        throw new QueryError(\sprintf("\$table must be a string or an instance of %s", Expression::class));
     }
 
     /**
-     * Get alias for relation, if none registered add a new one
+     * Normalize table to an table expression with a given or generated alias.
      *
-     * @param string $relationName
-     * @param string $userAlias
-     *   Existing alias if any
+     * @param string|TableExpression $table
+     *   A table name, a local alias, or an arbitrary expression instance.
      */
-    protected function getAliasFor(string $relationName, ?string $userAlias = null): string
+    protected function normalizeStrictTable($table, ?string $alias = null): Expression
     {
-        if ($userAlias) {
-            if (isset($this->relationIndex[$userAlias])) {
-                throw new QueryError(\sprintf(
-                    "cannot use alias %s for relation %s, already in use for table %s",
-                    $userAlias, $relationName, $this->relationIndex[$userAlias]
-                ));
+        if ($table instanceof TableExpression) {
+            $tableAlias = $table->getAlias();
+            if ($schema = $table->getSchema()) {
+                $tableName = $schema . '.' . $table->getName();
             } else {
-                $this->relationIndex[$userAlias] = $relationName;
-
-                return $userAlias;
+                $tableName = $table->getName();
             }
+
+            $alias = $this->createAliasForName($tableName, $alias ?? $tableAlias);
+
+            return TableExpression::create($tableName, $alias, $table->getSchema());
         }
 
-        $index = \array_search($relationName, $this->relationIndex);
-
-        if (false !== $index) {
-            $alias = 'goat_' . ++$this->aliasIndex;
-        } else {
-            $alias = $relationName;
+        if (\is_string($table)) {
+            return TableExpression::create($table, $this->createAliasForName($table, $alias));
         }
 
-        $this->relationIndex[$alias] = $relationName;
+        throw new QueryError(\sprintf("\$table must be a string or an instance of %s", TableExpression::class));
+    }
+
+    protected function createArbitraryAlias(string $name): string
+    {
+        $alias = 'goat_' . ++$this->aliasIndex;
+        $this->tableIndex[$alias] = $name;
 
         return $alias;
     }
 
-    /**
-     * Remove alias
-     */
-    protected function removeAlias(string $alias): void
+    protected function createAliasForName(string $name, ?string $alias = null): string
     {
-        unset($this->relationIndex[$alias]);
+        if ($alias) {
+            if (isset($this->tableIndex[$alias])) {
+                throw new QueryError(\sprintf(
+                    "Alias '%s' is already registered for table '%s'",
+                    $alias,
+                    $this->tableIndex[$alias]
+                ));
+            }
+
+            $this->tableIndex[$alias] = $name;
+
+            return $alias;
+        }
+
+        // Avoid conflicting table names.
+        if (false === \array_search($name, $this->tableIndex)) {
+            $this->tableIndex[$name] = $name;
+
+            return $name;
+        }
+
+        // Worst case scenario, we have to create an arbitry alias that the
+        // user cannot guess, but which will prevent conflicts.
+        return $this->createArbitraryAlias($name);
     }
 
-    /**
-     * Does alias exists
-     */
-    protected function aliasExists(string $alias): bool
+    protected function removeAlias(string $alias): void
     {
-        return isset($this->relationIndex[$alias]);
+        unset($this->tableIndex[$alias]);
     }
 }

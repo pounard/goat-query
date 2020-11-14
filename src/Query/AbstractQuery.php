@@ -4,35 +4,21 @@ declare(strict_types=1);
 
 namespace Goat\Query;
 
+use Goat\Query\Expression\TableExpression;
 use Goat\Query\Partial\AliasHolderTrait;
 use Goat\Query\Partial\WithClauseTrait;
-use Goat\Runner\Runner;
 use Goat\Runner\ResultIterator;
+use Goat\Runner\Runner;
 
 abstract class AbstractQuery implements Query
 {
     use AliasHolderTrait;
     use WithClauseTrait;
 
-    private $identifier;
-    private $options = [];
-    private $relation;
-    private $runner;
-
-    /**
-     * Build a new query
-     *
-     * @param null|string|ExpressionRelation $relation
-     *   SQL from statement relation name
-     * @param string $alias
-     *   Alias for from clause relation
-     */
-    public function __construct($relation = null, ?string $alias = null)
-    {
-        if ($relation) {
-            $this->relation = $this->normalizeRelation($relation, $alias);
-        }
-    }
+    private ?string $identifier = null;
+    /** @var array<string,mixed> */
+    private array $options = [];
+    private ?Runner $runner = null;
 
     /**
      * {@inheritdoc}
@@ -62,10 +48,13 @@ abstract class AbstractQuery implements Query
 
     /**
      * {@inheritdoc}
+     * @deprecated
      */
-    final public function getRelation(): ?ExpressionRelation
+    public function getRelation(): ?TableExpression
     {
-        return $this->relation;
+        @\trigger_error(\sprintf("%s is deprecated.", __METHOD__), E_USER_DEPRECATED);
+
+        return null;
     }
 
     /**

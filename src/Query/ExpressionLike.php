@@ -11,30 +11,27 @@ final class ExpressionLike implements Expression
 {
     const DEFAULT_WIDCARD = '?';
 
-    private $column;
-    private $operator;
-    private $pattern;
-    private $value;
-    private $wildcard;
+    private ExpressionColumn $column;
+    private ?string $operator = null;
+    private string $pattern;
+    private ?string $value = null;
+    private string $wildcard;
 
-    /**
-     * Default constructor
-     */
     private function __construct()
     {
     }
 
     /**
-     * Create instance
+     * Create instance.
      *
      * @param string|Expression $column
-     *   Column, or expression that can be compared against, anything will do
+     *   Column, or expression that can be compared against, anything will do.
      * @param string $pattern
-     *   Any string with % and _ inside, and  for value, use ? for value replacement
+     *   Any string with % and _ inside, and  for value, use ? for value replacement.
      * @param ?string $value
-     *   Any value to replace within pattern
+     *   Any value to replace within pattern.
      * @param ?string $wildcard
-     *   Wilcard if different, default is ?
+     *   Wilcard if different, default is '?'.
      */
     public static function like($column, string $pattern, ?string $value = null, ?string $wildcard = null): self
     {
@@ -42,7 +39,7 @@ final class ExpressionLike implements Expression
         $wildcard = $wildcard ?? self::DEFAULT_WIDCARD;
 
         if ($value && false === \strpos($pattern, $wildcard)) {
-            throw new QueryError("you provided a value but wildcard could not be found in pattern");
+            throw new QueryError("You provided a value but wildcard could not be found in pattern.");
         }
 
         $ret = new self;
@@ -56,7 +53,7 @@ final class ExpressionLike implements Expression
     }
 
     /**
-     * Create not like instance
+     * Create not like instance.
      *
      * @see ExpressionLike::like()
      *   For parameters documentation.
@@ -70,7 +67,7 @@ final class ExpressionLike implements Expression
     }
 
     /**
-     * Create case insensitive like instance
+     * Create case insensitive like instance.
      *
      * @see ExpressionLike::like()
      *   For parameters documentation.
@@ -84,7 +81,7 @@ final class ExpressionLike implements Expression
     }
 
     /**
-     * Create case insensitive not like instance
+     * Create case insensitive not like instance.
      *
      * @see ExpressionLike::like()
      *   For parameters documentation.
@@ -98,7 +95,7 @@ final class ExpressionLike implements Expression
     }
 
     /**
-     * Get relation
+     * Get column.
      */
     public function getColumn(): Expression
     {
@@ -106,7 +103,7 @@ final class ExpressionLike implements Expression
     }
 
     /**
-     * Is there a value
+     * Is there a value.
      */
     public function hasValue(): bool
     {
@@ -114,7 +111,7 @@ final class ExpressionLike implements Expression
     }
 
     /**
-     * Get user-provided value
+     * Get user-provided value.
      */
     public function getUnsaveValue(): ?string
     {
@@ -122,7 +119,7 @@ final class ExpressionLike implements Expression
     }
 
     /**
-     * Proceed to value replacement and get pattern
+     * Proceed to value replacement and get pattern.
      */
     public function getPattern(?string $escapedValue = null): string
     {
@@ -134,7 +131,7 @@ final class ExpressionLike implements Expression
     }
 
     /**
-     * Get schema
+     * Get operator.
      */
     public function getOperator(): string
     {

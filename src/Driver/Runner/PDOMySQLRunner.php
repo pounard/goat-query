@@ -52,12 +52,12 @@ class PDOMySQLRunner extends AbstractPDORunner
 
             /*
             case '1050':
-                // Relation exists.
+                // Table exists.
              */
 
             case '1051':
             case '1146':
-                return new Error\RelationDoesNotExistError($error->getMessage(), $errorCode, $error);
+                return new Error\TableDoesNotExistError($error->getMessage(), $errorCode, $error);
 
             case '1216':
             case '1217':

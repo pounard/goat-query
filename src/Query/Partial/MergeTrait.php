@@ -12,27 +12,28 @@ use Goat\Query\QueryError;
  */
 trait MergeTrait
 {
-    private $conflictBehaviour = Query::CONFLICT_UPDATE;
-    private $primaryKey = [];
+    private int $conflictBehaviour = Query::CONFLICT_UPDATE;
+    private array $primaryKey = [];
+    private ?string $usingTableAlias;
 
     /**
      * Use this only if your RDBMS supports standard SQL:2003 MERGE query,
-     * this sets the USING clause relation alias.
+     * this sets the USING clause table alias.
      *
      * If you don't set one, one will be generated for you.
      */
-    public function setUsingRelationAlias(string $alias): self
+    public function setUsingTableAlias(string $alias): self
     {
-        $this->usingRelationAlias = $alias;
+        $this->usingTableAlias = $alias;
     }
 
     /**
-     * Get using relation alias.
+     * Get using table alias.
      */
-    public function getUsingRelationAlias(): string
+    public function getUsingTableAlias(): string
     {
-        return $this->usingRelationAlias ?? (
-            $this->usingRelationAlias = $this->getAliasFor('upsert')
+        return $this->usingTableAlias ?? (
+            $this->usingTableAlias = $this->createAliasForName('upsert')
         );
     }
 

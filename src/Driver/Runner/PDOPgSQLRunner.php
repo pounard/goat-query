@@ -80,11 +80,11 @@ class PDOPgSQLRunner extends AbstractPDORunner
              */
 
             case '42P01':
-                return new Error\RelationDoesNotExistError($error->getMessage(), $errorCode, $error);
+                return new Error\TableDoesNotExistError($error->getMessage(), $errorCode, $error);
 
             /*
             case '42P07':
-                // Relation exists.
+                // Table exists.
              */
 
             /*

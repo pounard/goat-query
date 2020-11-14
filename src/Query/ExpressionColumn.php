@@ -5,84 +5,78 @@ declare(strict_types=1);
 namespace Goat\Query;
 
 /**
- * Represents a raw value
+ * Represents a table column identifier.
  */
 final class ExpressionColumn implements Expression
 {
-    private $columnName;
-    private $relationAlias;
+    private string $columnName;
+    private ?string $tableAlias = null;
 
     /**
-     * Default constructor
-     *
-     * @param string $columnName
-     * @param string $relationAlias
-     *
      * @deprecated
      *   Use static create() method instead.
      */
-    public function __construct(string $columnName, string $relationAlias = null)
+    public function __construct(string $columnName, ?string $tableAlias = null)
     {
-        if (null === $relationAlias) {
+        if (null === $tableAlias) {
             if (false !== \strpos($columnName, '.')) {
-                list($relationAlias, $columnName) = \explode('.', $columnName, 2);
+                list($tableAlias, $columnName) = \explode('.', $columnName, 2);
             }
         }
 
         $this->columnName = $columnName;
-        $this->relationAlias = $relationAlias;
+        $this->tableAlias = $tableAlias;
     }
 
     /**
-     * Create instance from name and alias
+     * Create instance from name and alias.
      */
-    public static function create(string $columnName, string $relationAlias = null): self
+    public static function create(string $columnName, ?string $tableAlias = null): self
     {
-        return new self($columnName, $relationAlias);
+        return new self($columnName, $tableAlias);
     }
 
     /**
-     * Creates an instance without automatic split using '.' notation
-     *
-     * @param string $relationName
-     * @param string $alias
-     * @param string $schema
-     *
-     * @return ExpressionRelation
+     * Creates an instance without automatic split using '.' notation.
      */
-    public static function escape(string $columnName, string $relationAlias = null) : ExpressionColumn
+    public static function escape(string $columnName, ?string $tableAlias = null): self
     {
         $instance = self::create('');
         $instance->columnName = $columnName;
-        $instance->relationAlias = $relationAlias;
+        $instance->tableAlias = $tableAlias;
 
         return $instance;
     }
 
     /**
-     * Get value
-     *
-     * @return string
+     * Get column name.
      */
-    public function getName() : string
+    public function getName(): string
     {
         return $this->columnName;
     }
 
     /**
-     * Get value type
-     *
-     * @return null|string
+     * Get table alias.
      */
-    public function getRelationAlias()
+    public function getTableAlias(): ?string
     {
-        return $this->relationAlias;
+        return $this->tableAlias;
+    }
+
+    /**
+     * @deprected
+     * @see \Goat\Query\ExpressionColumn::getTableAlias()
+     */
+    public function getRelationAlias(): ?string
+    {
+        return $this->tableAlias;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function getArguments() : ArgumentBag
+    public function getArguments(): ArgumentBag
     {
         return new ArgumentBag();
     }

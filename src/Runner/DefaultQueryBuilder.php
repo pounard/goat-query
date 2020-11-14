@@ -47,37 +47,25 @@ class DefaultQueryBuilder implements QueryBuilder
     /**
      * {@inheritdoc}
      */
-    final public function select($relation = null, ?string $alias = null): SelectQuery
+    final public function select($table = null, ?string $alias = null): SelectQuery
     {
-        return $this->setQueryRunner(new SelectQuery($relation, $alias));
+        return $this->setQueryRunner(new SelectQuery($table, $alias));
     }
 
     /**
      * {@inheritdoc}
      */
-    final public function update($relation, ?string $alias = null): UpdateQuery
+    final public function update($table, ?string $alias = null): UpdateQuery
     {
-        return $this->setQueryRunner(new UpdateQuery($relation, $alias));
+        return $this->setQueryRunner(new UpdateQuery($table, $alias));
     }
 
     /**
      * {@inheritdoc}
      */
-    public function insert($relation): InsertQuery
+    public function insert($table): InsertQuery
     {
-        return $this->setQueryRunner(new InsertQuery($relation));
-    }
-
-    /**
-     * {@inheritdoc}
-     *
-     * @deprecated
-     * @see self::insert()
-     * @todo trigger deprecation notice
-     */
-    final public function insertQuery($relation): InsertQuery
-    {
-        return $this->insert($relation);
+        return $this->setQueryRunner(new InsertQuery($table));
     }
 
     /**
@@ -87,17 +75,9 @@ class DefaultQueryBuilder implements QueryBuilder
      * @see self::insert()
      * @todo trigger deprecation notice
      */
-    final public function insertValues($relation): InsertQuery
+    final public function insertQuery($table): InsertQuery
     {
-        return $this->insert($relation);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function merge($relation): MergeQuery
-    {
-        return $this->setQueryRunner(new MergeQuery($relation));
+        return $this->insert($table);
     }
 
     /**
@@ -107,9 +87,17 @@ class DefaultQueryBuilder implements QueryBuilder
      * @see self::insert()
      * @todo trigger deprecation notice
      */
-    public function upsertValues($relation): MergeQuery
+    final public function insertValues($table): InsertQuery
     {
-        return $this->merge($relation);
+        return $this->insert($table);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function merge($table): MergeQuery
+    {
+        return $this->setQueryRunner(new MergeQuery($table));
     }
 
     /**
@@ -119,16 +107,28 @@ class DefaultQueryBuilder implements QueryBuilder
      * @see self::insert()
      * @todo trigger deprecation notice
      */
-    public function upsertQuery($relation): MergeQuery
+    public function upsertValues($table): MergeQuery
     {
-        return $this->merge($relation);
+        return $this->merge($table);
+    }
+
+    /**
+     * {@inheritdoc}
+     *
+     * @deprecated
+     * @see self::insert()
+     * @todo trigger deprecation notice
+     */
+    public function upsertQuery($table): MergeQuery
+    {
+        return $this->merge($table);
     }
 
     /**
      * {@inheritdoc}
      */
-    final public function delete($relation, ?string $alias = null): DeleteQuery
+    final public function delete($table, ?string $alias = null): DeleteQuery
     {
-        return $this->setQueryRunner(new DeleteQuery($relation, $alias));
+        return $this->setQueryRunner(new DeleteQuery($table, $alias));
     }
 }

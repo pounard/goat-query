@@ -2,51 +2,55 @@
 
 declare(strict_types=1);
 
-namespace Goat\Query;
+namespace Goat\Query\Expression;
 
-/**
- * Represents a raw value
- */
-final class ExpressionRelation implements Expression
+use Goat\Query\ArgumentBag;
+use Goat\Query\Expression;
+use Goat\Query\QueryError;
+use Goat\Query\Partial\WithAlias;
+use Goat\Query\Partial\WithAliasTrait;
+
+class TableExpression implements Expression, WithAlias
 {
-    private $alias;
-    private $relation;
-    private $schema;
+    use WithAliasTrait;
 
-    /**
-     * Default constructor
-     */
+    private string $name;
+    private ?string $schema = null;
+
     private function __construct()
     {
     }
 
     /**
-     * Creates an instance without automatic split using '.' notation
+     * Creates an instance without automatic split using '.' notation.
      */
     public static function escape(string $name, ?string $alias = null, ?string $schema = null): self
     {
         $ret = new self;
         $ret->alias = $alias;
-        $ret->relation = $name;
+        $ret->name = $name;
         $ret->schema = $schema;
 
         return $ret;
     }
 
     /**
-     * Create instance from arbitrary input value
+     * Create instance from arbitrary input value.
      */
-    public static function from($relation): self
+    public static function from($table): self
     {
-        if (!$relation instanceof ExpressionRelation) {
-            $relation = self::create($relation);
+        if (\is_string($table)) {
+            return self::create($table);
+        }
+        if ($table instanceof self) {
+            return $table;
         }
 
-        return $relation;
+        throw new QueryError(\sprintf("\$table argument must be a string or an instanceof of %s", __CLASS__));
     }
 
     /**
-     * Create instance from name and alias
+     * Create instance from name and alias.
      */
     public static function create(string $name, ?string $alias = null, ?string $schema = null): self
     {
@@ -60,23 +64,15 @@ final class ExpressionRelation implements Expression
     }
 
     /**
-     * Get relation
+     * Get table name.
      */
     public function getName(): string
     {
-        return $this->relation;
+        return $this->name;
     }
 
     /**
-     * Get alias
-     */
-    public function getAlias(): ?string
-    {
-        return $this->alias;
-    }
-
-    /**
-     * Get schema
+     * Get schema.
      */
     public function getSchema(): ?string
     {

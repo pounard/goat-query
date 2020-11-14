@@ -129,11 +129,11 @@ trait ExtPgSQLErrorTrait
              */
 
             case '42P01':
-                return new Error\RelationDoesNotExistError($errorString);
+                return new Error\TableDoesNotExistError($errorString);
 
             /*
             case '42P07':
-                // Relation exists.
+                // Table exists.
              */
 
             /*

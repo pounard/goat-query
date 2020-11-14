@@ -4,32 +4,55 @@ declare(strict_types=1);
 
 namespace Goat\Query;
 
+use Goat\Query\Expression\TableExpression;
 use Goat\Query\Partial\FromClauseTrait;
 use Goat\Query\Partial\ReturningQueryTrait;
 use Goat\Query\Partial\WhereClauseTrait;
 
 /**
- * Represents an DELETE query
+ * Represents an DELETE query.
+ *
+ * Here FROM clause trait represents the USING clause.
  */
 final class DeleteQuery extends AbstractQuery
 {
-    use FromClauseTrait;
     use ReturningQueryTrait;
+    use FromClauseTrait;
     use WhereClauseTrait;
 
-    /**
-     * Build a new query
-     *
-     * @param string|ExpressionRelation $relation
-     *   SQL from statement relation name
-     * @param string $alias
-     *   Alias for from clause relation
-     */
-    public function __construct($relation, ?string $alias = null)
-    {
-        parent::__construct($relation, $alias);
+    private TableExpression $table;
 
+    /**
+     * Build a new query.
+     *
+     * @param string|TableExpression $table
+     *   SQL FROM clause table name.
+     * @param string $alias
+     *   Alias for FROM clause table.
+     */
+    public function __construct($table, ?string $alias = null)
+    {
+        $this->table = $this->normalizeStrictTable($table, $alias);
         $this->where = new Where();
+    }
+
+    /**
+     * Get FROM table.
+     */
+    public function getTable(): TableExpression
+    {
+        return $this->table;
+    }
+
+    /**
+     * {@inheritdoc}
+     * @deprecated
+     */
+    public function getRelation(): ?TableExpression
+    {
+        @\trigger_error(\sprintf("%s is deprecated.", __METHOD__), E_USER_DEPRECATED);
+
+        return $this->table;
     }
 
     /**
@@ -39,12 +62,18 @@ final class DeleteQuery extends AbstractQuery
     {
         $arguments = new ArgumentBag();
 
-        foreach ($this->getAllWith() as $selectQuery) {
-            $arguments->append($selectQuery[1]->getArguments());
+        foreach ($this->getAllWith() as $with) {
+            $arguments->append($with->table->getArguments());
         }
 
-        foreach ($this->joins as $join) {
-            $arguments->append($join->relation->getArguments());
+        $arguments->append($this->table->getArguments());
+
+        foreach ($this->from as $expression) {
+            $arguments->append($expression->getArguments());
+        }
+
+        foreach ($this->join as $join) {
+            $arguments->append($join->table->getArguments());
             $arguments->append($join->condition->getArguments());
         }
 
@@ -60,7 +89,9 @@ final class DeleteQuery extends AbstractQuery
      */
     public function __clone()
     {
-        $this->cloneJoins();
+        $this->cloneWith();
+        $this->cloneFrom();
+        $this->table = clone $this->table;
         $this->where = clone $this->where;
     }
 }

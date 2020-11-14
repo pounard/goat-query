@@ -16,8 +16,7 @@ use Goat\Query\Where;
  */
 trait WhereClauseTrait
 {
-    /** @var Where */
-    private $where;
+    private Where $where;
 
     /**
      * Get WHERE clause.

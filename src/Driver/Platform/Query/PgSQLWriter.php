@@ -47,15 +47,15 @@ class PgSQLWriter extends DefaultSqlWriter
 
         $columns = $query->getAllColumns();
 
-        if (!$relation = $query->getRelation()) {
-            throw new QueryError("insert query must have a relation");
+        if (!$table = $query->getTable()) {
+            throw new QueryError("Insert query must have a table.");
         }
 
         $output[] = $this->formatWith($query->getAllWith());
         $output[] = \sprintf(
             "insert into %s",
             // From SQL 92 standard, INSERT queries don't have table alias
-            $this->escaper->escapeIdentifier($relation->getName())
+            $this->escaper->escapeIdentifier($table->getName())
         );
 
         // @todo skip column names if numerical

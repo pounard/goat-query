@@ -22,7 +22,7 @@ This API allows you to set any number of table expressions, with two different w
 
  * either create a select query using a runner, and set it as a with statement using
    the ``with($alias, $select)`` method,
- * or call the ``createWith($alias, $relation)`` method.
+ * or call the ``createWith($alias, $table)`` method.
 
 Consider the following SQL query (from PostgreSQL official documentation):
 
@@ -110,5 +110,5 @@ Or using the ``createWith()`` method:
    ;
 
 Once set, table expressions aliases can be used as any other normal table whenever
-the query builder exposes a ``$relation`` parameter, for every method without any
+the query builder exposes a ``$table`` parameter, for every method without any
 exception.

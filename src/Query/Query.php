@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Goat\Query;
 
+use Goat\Query\Expression\TableExpression;
 use Goat\Runner\ResultIterator;
 use Goat\Runner\Runner;
 
@@ -63,9 +64,11 @@ interface Query extends Statement
     public function setIdentifier(string $identifier): Query;
 
     /**
-     * Get SQL from relation
+     * @deprecated
+     *   This method is not supported anymore, yet implementations will continue
+     *   to implement it for backward compatibility.
      */
-    public function getRelation(): ?ExpressionRelation;
+    public function getRelation(): ?TableExpression;
 
     /**
      * Set a single query options

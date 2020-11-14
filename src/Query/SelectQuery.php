@@ -13,7 +13,7 @@ use Goat\Query\Partial\WhereClauseTrait;
  * Represents a SELECT query
  *
  * @todo
- *   - support a SelectQuery as FROM relation
+ *   - support a SelectQuery as FROM table
  *   - implement __clone() once this done
  */
 final class SelectQuery extends AbstractQuery implements Expression
@@ -23,27 +23,27 @@ final class SelectQuery extends AbstractQuery implements Expression
     use WhereClauseTrait;
 
     /** @var Column[] */
-    private $columns = [];
-    private $forUpdate = false;
-    private $groups = [];
-    private $limit = 0;
-    private $offset = 0;
-    private $orders = [];
-    private $performOnly = false;
-    private $relation;
-    private $relationAlias;
+    private array $columns = [];
+    private bool $forUpdate = false;
+    private array $groups = [];
+    private int $limit = 0;
+    private int $offset = 0;
+    private array $orders = [];
+    private bool $performOnly = false;
 
     /**
-     * Build a new query
+     * Build a new query.
      *
-     * @param null|string|ExpressionRelation $relation
-     *   SQL from statement relation name, if null, select from no table
+     * @param null|string|Expression $table
+     *   SQL from statement table name, if null, select from no table
      * @param string $alias
-     *   Alias for from clause relation
+     *   Alias for from clause table
      */
-    public function __construct($relation = null, ?string $alias = null)
+    public function __construct($table = null, ?string $alias = null)
     {
-        parent::__construct($relation, $alias);
+        if ($table) {
+            $this->from($table, $alias);
+        }
 
         $this->having = new Where();
         $this->where = new Where();
@@ -332,28 +332,27 @@ final class SelectQuery extends AbstractQuery implements Expression
     {
         $arguments = new ArgumentBag();
 
-        // WITH
-        foreach ($this->getAllWith() as $selectQuery) {
-            $arguments->append($selectQuery[1]->getArguments());
+        foreach ($this->getAllWith() as $with) {
+            $arguments->append($with->table->getArguments());
         }
 
-        // SELECT
         foreach ($this->columns as $column) {
             $arguments->append($column->expression->getArguments());
         }
 
-        // JOIN
-        foreach ($this->joins as $join) {
-            $arguments->append($join->relation->getArguments());
+        foreach ($this->from as $expression) {
+            $arguments->append($expression->getArguments());
+        }
+
+        foreach ($this->join as $join) {
+            $arguments->append($join->table->getArguments());
             $arguments->append($join->condition->getArguments());
         }
 
-        // WHERE
         if (!$this->where->isEmpty()) {
             $arguments->append($this->where->getArguments());
         }
 
-        // GROUP BY
         foreach ($this->orders as $order) {
             if ($order[0] instanceof Statement) {
                 $arguments->append($order[0]->getArguments());
@@ -405,17 +404,15 @@ final class SelectQuery extends AbstractQuery implements Expression
      */
     public function __clone()
     {
-        $this->cloneJoins();
-
+        $this->cloneWith();
+        $this->cloneFrom();
+        $this->where = clone $this->where;
+        $this->having = clone $this->having;
         foreach ($this->columns as $index => $column) {
             $this->columns[$index] = clone $column;
         }
-
         foreach ($this->orders as $index => $order) {
             $this->orders[$index][0] = clone $order[0];
         }
-
-        $this->where = clone $this->where;
-        $this->having = clone $this->having;
     }
 }

@@ -78,7 +78,7 @@ final class QuerySelectUnitTest extends TestCase
         );
     }
 
-    public function testColumnWithRelationAndName()
+    public function testColumnWithTableAndName()
     {
         $select = new SelectQuery('some_table');
 

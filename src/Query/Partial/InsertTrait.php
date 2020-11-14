@@ -14,12 +14,13 @@ use Goat\Query\QueryError;
  */
 trait InsertTrait
 {
-    private $query = null;
-    private $queryIsConstantTable = false;
-    private $columns = [];
+    private ?Expression $query = null;
+    private bool $queryIsConstantTable = false;
+    /** @var string[] */
+    private array $columns = [];
 
     /**
-     * Get select columns array
+     * Get select columns array.
      *
      * @return string[]
      */
@@ -29,10 +30,10 @@ trait InsertTrait
     }
 
     /**
-     * Add columns
+     * Add columns.
      *
      * @param string[] $columns
-     *   List of columns names
+     *   List of columns names.
      */
     public function columns(array $columns): self
     {
@@ -90,7 +91,7 @@ trait InsertTrait
      * @param array $values
      *   Either values are numerically indexed, case in which they must match
      *   the internal columns order, or they can be key-value pairs case in
-     *   which matching will be dynamically be done
+     *   which matching will be dynamically be done.
      */
     public function values(array $values): self
     {

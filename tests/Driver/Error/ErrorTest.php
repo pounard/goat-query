@@ -13,11 +13,11 @@ class ErrorTest extends DatabaseAwareQueryTest
     /**
      * @dataProvider runnerDataProvider
      */
-    public function testRelationDoesNotExist(TestDriverFactory $factory)
+    public function testTableDoesNotExist(TestDriverFactory $factory)
     {
         $runner = $factory->getRunner();
 
-        self::expectException(Error\RelationDoesNotExistError::class);
+        self::expectException(Error\TableDoesNotExistError::class);
 
         $runner->execute(
             <<<SQL

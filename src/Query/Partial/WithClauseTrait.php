@@ -11,43 +11,44 @@ use Goat\Query\SelectQuery;
  */
 trait WithClauseTrait
 {
-    private $withs = [];
+    /** @var With[] */
+    private array $with = [];
 
     /**
-     * Get with clauses array
+     * Get WITH clauses array.
      *
      * @return array
      */
     final public function getAllWith(): array
     {
-        return $this->withs;
+        return $this->with;
     }
 
     /**
-     * Add with statement
+     * Add with statement.
      */
     final public function with(string $alias, SelectQuery $select, bool $isRecursive = false): self
     {
-        $this->withs[] = [$alias, $select, $isRecursive];
+        $this->with[] = new With($alias, $select, $isRecursive);
 
         return $this;
     }
 
     /**
-     * Create new with statement
+     * Create new with statement.
      *
      * @param string $alias
-     *    Alias for the with clause
-     * @param string|\Goat\Query\ExpressionRelation $relation
-     *   SQL from statement relation name
-     * @param string $relationAlias
-     *   Alias for from clause relation of the select query
+     *    Alias for the with clause.
+     * @param string|\Goat\Query\Expression $table
+     *   SQL FROM clause table name.
+     * @param string $tableAlias
+     *   Alias for FROM clause table of the select query.
      * @param bool $isRecursive
      */
-    final public function createWith(string $alias, $relation, ?string $relationAlias = null, bool $isRecursive = false): SelectQuery
+    final public function createWith(string $alias, $table, ?string $tableAlias = null, bool $isRecursive = false): SelectQuery
     {
-        $select = new SelectQuery($relation, $relationAlias);
-        $this->with($alias, $select, $isRecursive);
+        $select = new SelectQuery($table, $tableAlias);
+        $this->with[] = new With($alias, $select, $isRecursive);
 
         return $select;
     }
@@ -55,10 +56,10 @@ trait WithClauseTrait
     /**
      * Deep clone support.
      */
-    protected function cloneJoins()
+    protected function cloneWith()
     {
-        foreach ($this->withs as $index => $with) {
-            $this->withs[$index][1] = clone $with[1];
+        foreach ($this->with as $index => $with) {
+            $this->with[$index] = clone $with;
         }
     }
 }

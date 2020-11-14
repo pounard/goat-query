@@ -1,7 +1,7 @@
 SELECT
 ======
 
-``FROM`` clause relation is provided in the object constructor accompagnied by the main
+``FROM`` clause table is provided in the object constructor accompagnied by the main
 from table alias:
 
 .. code-block:: php

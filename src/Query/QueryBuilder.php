@@ -7,7 +7,7 @@ namespace Goat\Query;
 interface QueryBuilder
 {
     /**
-     * Creates and prepare a query
+     * Creates and prepare a query.
      *
      * Using this method, calling the same query more than once will only
      * format it once.
@@ -29,73 +29,73 @@ interface QueryBuilder
     public function prepare(callable $callback, ?string $identifier = null): Query;
 
     /**
-     * Create a SELECT query builder
+     * Create a SELECT query builder.
      *
-     * @param null|string|ExpressionRelation $relation
-     *   SQL from statement relation name
+     * @param null|string|Expression $table
+     *   SQL FROM clause table name
      * @param string $alias
-     *   Alias for from clause relation
+     *   Alias for FROM clause table
      */
-    public function select($relation = null, ?string $alias = null): SelectQuery;
+    public function select($table = null, ?string $alias = null): SelectQuery;
 
     /**
-     * Create an UPDATE query builder
+     * Create an UPDATE query builder.
      *
-     * @param string|ExpressionRelation $relation
-     *   SQL from statement relation name
+     * @param string|Expression $table
+     *   SQL FROM clause table name
      * @param string $alias
-     *   Alias for from clause relation
+     *   Alias for FROM clause table
      */
-    public function update($relation, ?string $alias = null): UpdateQuery;
+    public function update($table, ?string $alias = null): UpdateQuery;
 
     /**
-     * Create an INSERT query builder
+     * Create an INSERT query builder.
      *
-     * @param string|ExpressionRelation $relation
-     *   SQL from statement relation name
+     * @param string|Expression $table
+     *   SQL FROM clause table name
      */
-    public function insert($relation): InsertQuery;
+    public function insert($table): InsertQuery;
 
     /**
      * @deprecated
      * @see self::insert()
      */
-    public function insertValues($relation): InsertQuery;
+    public function insertValues($table): InsertQuery;
 
     /**
      * @deprecated
      * @see self::insert()
      */
-    public function insertQuery($relation): InsertQuery;
+    public function insertQuery($table): InsertQuery;
 
     /**
      * Create an INSERT ... ON CONFLICT DO ... or MERGE ... query builder which
      * uses a constant table expression (i.e. VALUES (...), ...) as source.
      *
-     * @param string|ExpressionRelation $relation
-     *   SQL from statement relation name
+     * @param string|Expression $table
+     *   SQL FROM clause table name
      */
-    public function merge($relation): MergeQuery;
+    public function merge($table): MergeQuery;
 
     /**
      * @deprecated
      * @see self::insert()
      */
-    public function upsertValues($relation): MergeQuery;
+    public function upsertValues($table): MergeQuery;
 
     /**
      * @deprecated
      * @see self::insert()
      */
-    public function upsertQuery($relation): MergeQuery;
+    public function upsertQuery($table): MergeQuery;
 
     /**
-     * Create a DELETE query builder
+     * Create a DELETE query builder.
      *
-     * @param string|ExpressionRelation $relation
-     *   SQL from statement relation name
+     * @param string|Expression $table
+     *   SQL FROM clause table name
      * @param string $alias
-     *   Alias for from clause relation
+     *   Alias for FROM clause table
      */
-    public function delete($relation, ?string $alias = null): DeleteQuery;
+    public function delete($table, ?string $alias = null): DeleteQuery;
 }

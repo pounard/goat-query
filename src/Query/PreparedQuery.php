@@ -4,22 +4,22 @@ declare(strict_types=1);
 
 namespace Goat\Query;
 
+use Goat\Query\Expression\TableExpression;
 use Goat\Runner\ResultIterator;
 use Goat\Runner\Runner;
 
 final class PreparedQuery implements Query
 {
-    private $arguments;
-    private $identifier;
-    private $initializer;
-    private $options = [];
-    private $runner;
-    private $sqlIdentifier;
-    private $willReturnRows = false;
+    private ?ArgumentBag $arguments = null;
+    private ?string $identifier = null;
+    /** @var null|callable */
+    private $initializer = null;
+    /** @var array<string,mixed> */
+    private array $options = [];
+    private Runner $runner;
+    private ?string $sqlIdentifier = null;
+    private bool $willReturnRows = false;
 
-    /**
-     * Default constructor
-     */
     public function __construct(Runner $runner, callable $callback, ?string $identifier = null)
     {
         $this->identifier = $identifier;
@@ -42,10 +42,10 @@ final class PreparedQuery implements Query
             $query = \call_user_func($initializer, $this->runner->getQueryBuilder());
 
             if (!$query) {
-                throw new QueryError(\sprintf("Initializer callback did not return a %s instance", Query::class));
+                throw new QueryError(\sprintf("Initializer callback did not return a %s instance.", Query::class));
             }
             if ($query instanceof PreparedQuery) {
-                throw new QueryError(\sprintf("%s cannot nest %s instances", __CLASS__, __CLASS__));
+                throw new QueryError(\sprintf("%s cannot nest %s instances.", __CLASS__, __CLASS__));
             }
 
             $this->arguments = $query->getArguments();
@@ -70,9 +70,7 @@ final class PreparedQuery implements Query
      */
     public function setRunner(Runner $runner): void
     {
-        if ($this->runner->isDebugEnabled()) {
-            throw new \BadMethodCallException("Object is immutable");
-        }
+        throw new \BadMethodCallException("Prepared object is immutable.");
     }
 
     /**
@@ -90,19 +88,25 @@ final class PreparedQuery implements Query
      */
     public function setIdentifier(string $identifier): Query
     {
-        if ($this->runner->isDebugEnabled()) {
-            throw new \BadMethodCallException("Object is immutable");
-        }
+        throw new \BadMethodCallException("Prepared object is immutable.");
     }
 
     /**
      * {@inheritdoc}
+     * @deprecated
      */
-    public function getRelation(): ?ExpressionRelation
+    public function getTable(): ?Expression
     {
-        if ($this->runner->isDebugEnabled()) {
-            throw new \BadMethodCallException("Relation cannot be fetched on an already prepared object");
-        }
+        throw new \BadMethodCallException("Table cannot be fetched on an already prepared object.");
+    }
+
+    /**
+     * {@inheritdoc}
+     * @deprecated
+     */
+    public function getRelation(): ?TableExpression
+    {
+        throw new \BadMethodCallException("Table cannot be fetched on an already prepared object.");
     }
 
     /**
@@ -110,7 +114,7 @@ final class PreparedQuery implements Query
      */
     public function setOption(string $name, $value): Query
     {
-        throw new \BadMethodCallException("Object is immutable");
+        throw new \BadMethodCallException("Prepared object is immutable.");
     }
 
     /**
@@ -118,9 +122,7 @@ final class PreparedQuery implements Query
      */
     public function setOptions(array $options): Query
     {
-        if ($this->runner->isDebugEnabled()) {
-            throw new \BadMethodCallException("Object is immutable");
-        }
+        throw new \BadMethodCallException("Prepared object is immutable.");
     }
 
     /**

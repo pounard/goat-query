@@ -10,7 +10,6 @@ use Goat\Query\ExpressionColumn;
 use Goat\Query\ExpressionConstantTable;
 use Goat\Query\ExpressionLike;
 use Goat\Query\ExpressionRaw;
-use Goat\Query\ExpressionRelation;
 use Goat\Query\ExpressionRow;
 use Goat\Query\ExpressionValue;
 use Goat\Query\InsertQuery;
@@ -21,8 +20,10 @@ use Goat\Query\SelectQuery;
 use Goat\Query\Statement;
 use Goat\Query\UpdateQuery;
 use Goat\Query\Where;
+use Goat\Query\Expression\TableExpression;
 use Goat\Query\Partial\Column;
 use Goat\Query\Partial\Join;
+use Goat\Query\Partial\With;
 
 /**
  * Standard SQL query formatter: this implementation conforms as much as it
@@ -82,6 +83,7 @@ class DefaultSqlWriter extends AbstractSqlWriter
      */
     protected function formatSelectItem(Column $column): string
     {
+        // @todo Add parenthesis when necessary.
         $output = $this->format($column->expression);
 
         // We cannot alias columns with a numeric identifier;
@@ -99,12 +101,9 @@ class DefaultSqlWriter extends AbstractSqlWriter
     }
 
     /**
-     * Format the whole projection.
+     * Format SELECT columns.
      *
-     * @param array $columns
-     *   Each column is an array that must contain:
-     *     - 0: string or Statement: column name or SQL statement
-     *     - 1: column alias, can be empty or null for no aliasing
+     * @param Column[] $columns
      */
     protected function formatSelect(array $columns): string
     {
@@ -122,7 +121,7 @@ class DefaultSqlWriter extends AbstractSqlWriter
     }
 
     /**
-     * Format projection for a single returning column or statement.
+     * Format single SELECT column.
      */
     protected function formatReturningItem(Column $column): string
     {
@@ -183,6 +182,8 @@ class DefaultSqlWriter extends AbstractSqlWriter
     /**
      * Format the whole order by clause.
      *
+     * @todo Convert $orders items to an Order class.
+     *
      * @param array $orders
      *   Each order is an array that must contain:
      *     - 0: Expression
@@ -209,7 +210,7 @@ class DefaultSqlWriter extends AbstractSqlWriter
      * Format the whole group by clause.
      *
      * @param Expression[] $groups
-     *   Array of column names or aliases
+     *   Array of column names or aliases.
      */
     protected function formatGroupBy(array $groups): string
     {
@@ -254,17 +255,18 @@ class DefaultSqlWriter extends AbstractSqlWriter
 
         $condition = $join->condition;
 
+        // @todo parenthesis when necessary
         if ($condition->isEmpty()) {
             return \sprintf(
                 "%s %s",
                 $prefix,
-                $this->formatExpressionRelation($join->relation)
+                $this->formatTableExpression($join->table)
             );
         } else {
             return \sprintf(
                 "%s %s on (%s)",
                 $prefix,
-                $this->formatExpressionRelation($join->relation),
+                $this->formatTableExpression($join->table),
                 $this->formatWhere($condition)
             );
         }
@@ -273,18 +275,42 @@ class DefaultSqlWriter extends AbstractSqlWriter
     /**
      * Format all join statements.
      *
-     * @param Join[] $joins
+     * @param Join[] $join
      */
-    protected function formatJoin(array $joins): string
+    protected function formatJoin(array $join, bool $transformFirstJoinAsFrom = false, ?string $fromPrefix = null, $query = null): string
     {
-        if (!$joins) {
+        if (!$join) {
             return '';
         }
 
         $output = [];
 
-        foreach ($joins as $join) {
-            $output[] = $this->formatJoinItem($join);
+        if ($transformFirstJoinAsFrom) {
+            $first = \array_shift($join);
+            \assert($first instanceof Join);
+
+            // First join must be an inner join, there is no choice, and first join
+            // condition will become a where clause in the global query instead
+            if (!\in_array($first->mode, [Query::JOIN_INNER, Query::JOIN_NATURAL])) {
+                throw new QueryError("First join in an update query must be inner or natural, it will serve as the first FROM or USING table.");
+            }
+
+            if ($fromPrefix) {
+                $output[] = $fromPrefix . ' ' . $this->format($first->table);
+            } else {
+                $output[] = $this->format($first->table);
+            }
+
+            if (!$first->condition->isEmpty()) {
+                if (!$query) {
+                    throw new QueryError("Something very bad happened.");
+                }
+                $query->getWhere()->expression($first->condition);
+            }
+        }
+
+        foreach ($join as $item) {
+            $output[] = $this->formatJoinItem($item);
         }
 
         return \implode("\n", $output);
@@ -293,89 +319,28 @@ class DefaultSqlWriter extends AbstractSqlWriter
     /**
      * Format all update from statement.
      *
-     * @param UpdateQuery $query
-     * @param array $joins
-     *   Each relation is an array that must contain:
-     *     - key must be the relation alias
-     *     - 0: ExpressionRelation relation name
-     *     - 1: Where or null condition
-     *     - 2: Query::JOIN_* constant
+     * @param Expression[] $from
      */
-    protected function formatUpdateFrom(UpdateQuery $query, array $joins): string
+    protected function formatFrom(array $from, ?string $prefix = null): string
     {
-        if (!$joins) {
+        if (!$from) {
             return '';
         }
 
         $output = [];
 
-        $first = \array_shift($joins);
-        \assert($first instanceof Join);
+        foreach ($from as $item) {
+            \assert($item instanceof Expression);
 
-        // First join must be an inner join, there is no choice, and first join
-        // condition will become a where clause in the global query instead
-        if (!\in_array($first->mode, [Query::JOIN_INNER, Query::JOIN_NATURAL])) {
-            throw new QueryError("first join in an update query must be inner or natural, it will serve as the first from table");
+            // @todo parenthesis when necessary
+            $output[] = $this->format($item);
         }
 
-        $output[] = \sprintf("from %s", $this->formatExpressionRelation($first->relation));
-        if (!$first->condition->isEmpty()) {
-            $query->getWhere()->expression($first->condition);
+        if ($prefix) {
+            return $prefix . ' ' . \implode(', ', $output);
         }
 
-        // Format remaining joins normally, most database servers can do that
-        // at least PostgreSQL and SQLServer do
-        if ($joins) {
-            foreach ($joins as $join) {
-                $output[] = $this->formatJoinItem($join);
-            }
-        }
-
-        return \implode("\n", $output);
-    }
-
-    /**
-     * Format all delete using statement.
-     *
-     * @param DeleteQuery $query
-     * @param array $joins
-     *   Each relation is an array that must contain:
-     *     - key must be the relation alias
-     *     - 0: ExpressionRelation relation name
-     *     - 1: Where or null condition
-     *     - 2: Query::JOIN_* constant
-     */
-    protected function formatDeleteUsing(DeleteQuery $query, array $joins): string
-    {
-        if (!$joins) {
-            return '';
-        }
-
-        $output = [];
-
-        $first = \array_shift($joins);
-        \assert($first instanceof Join);
-
-        // First join must be an inner join, there is no choice, and first join
-        // condition will become a where clause in the global query instead
-        if (!\in_array($first->mode, [Query::JOIN_INNER, Query::JOIN_NATURAL])) {
-            throw new QueryError("first join in an delete query must be inner or natural, it will serve as the first using table");
-        }
-
-        $output[] = \sprintf("using %s", $this->formatExpressionRelation($first->relation));
-        if (!$first->condition->isEmpty()) {
-            $query->getWhere()->expression($first->condition);
-        }
-
-        // Format remaining joins normally, most database servers can do that
-        // at least PostgreSQL and SQLServer do
-        if ($joins) {
-            foreach ($joins as $join) {
-                $output[] = $this->formatJoinItem($join);
-            }
-        }
-
-        return \implode("\n", $output);
+        return \implode(", ", $output);
     }
 
     /**
@@ -528,30 +493,23 @@ class DefaultSqlWriter extends AbstractSqlWriter
     /**
      * Format array of with statements.
      *
-     * @param array $withs
-     *   Each join is an array that must contain:
-     *     - key does not matter
-     *     - 0: string temporary table alias
-     *     - 1: SelectQuery
-     *     - 2: bool is recursive or not
+     * @param With[] $with
      */
-    protected function formatWith(array $withs): string
+    protected function formatWith(array $with): string
     {
-        if (!$withs) {
+        if (!$with) {
             return '';
         }
 
         $output = [];
 
-        foreach ($withs as /* $alias => */ $with) {
-            if (false) {
-
-            }
+        foreach ($with as $item) {
+            \assert($item instanceof With);
 
             $output[] = \sprintf(
                 "%s as (%s)",
-                $this->escaper->escapeIdentifier($with[0]),
-                $this->formatQuerySelect($with[1])
+                $this->escaper->escapeIdentifier($item->alias),
+                $this->format($item->table)
             );
         }
 
@@ -612,18 +570,15 @@ class DefaultSqlWriter extends AbstractSqlWriter
     {
         $output = [];
 
-        if (!$relation = $query->getRelation()) {
-            throw new QueryError("Merge query must have a relation.");
-        }
-
+        $table = $query->getTable();
         $columns = $query->getAllColumns();
-        $escapedInsertRelation = $this->escaper->escapeIdentifier($relation->getName());
-        $escapedUsingAlias = $this->escaper->escapeIdentifier($query->getUsingRelationAlias());
+        $escapedInsertTable = $this->escaper->escapeIdentifier($table->getName());
+        $escapedUsingAlias = $this->escaper->escapeIdentifier($query->getUsingTableAlias());
 
         $output[] = $this->formatWith($query->getAllWith());
 
         // From SQL:2003 standard, MERGE queries don't have table alias.
-        $output[] = "merge into " . $escapedInsertRelation;
+        $output[] = "merge into " . $escapedInsertTable;
 
         // USING
         $using = $query->getQuery();
@@ -666,7 +621,7 @@ class DefaultSqlWriter extends AbstractSqlWriter
         // WHEN NOT MATCHED THEN
         $output[] = \sprintf(
             "when not matched then insert into %s (%s)",
-            $escapedInsertRelation,
+            $escapedInsertTable,
             $this->formatColumnNameList($columns)
         );
         $output[] = \sprintf("values (%s)", \implode(', ', $usingColumnMap));
@@ -681,7 +636,7 @@ class DefaultSqlWriter extends AbstractSqlWriter
     }
 
     /**
-     * Format given insert query
+     * Format given insert query.
      */
     protected function formatQueryInsert(InsertQuery $query): string
     {
@@ -689,7 +644,7 @@ class DefaultSqlWriter extends AbstractSqlWriter
 
         $columns = $query->getAllColumns();
 
-        if (!$relation = $query->getRelation()) {
+        if (!$table = $query->getTable()) {
             throw new QueryError("Insert query must target a table.");
         }
 
@@ -697,7 +652,7 @@ class DefaultSqlWriter extends AbstractSqlWriter
         $output[] = \sprintf(
             "insert into %s",
             // From SQL 92 standard, INSERT queries don't have table alias
-            $this->escaper->escapeIdentifier($relation->getName())
+            $this->escaper->escapeIdentifier($table->getName())
         );
 
         // Columns.
@@ -734,8 +689,8 @@ class DefaultSqlWriter extends AbstractSqlWriter
     {
         $output = [];
 
-        if (!$relation = $query->getRelation()) {
-            throw new QueryError("Delete query must target a table");
+        if (!$table = $query->getTable()) {
+            throw new QueryError("Delete query must target a table.");
         }
 
         $output[] = $this->formatWith($query->getAllWith());
@@ -743,12 +698,21 @@ class DefaultSqlWriter extends AbstractSqlWriter
         // do joins in the DELETE query, which is not accepted by the standard.
         $output[] = \sprintf(
             "delete from %s",
-            $this->formatExpressionRelation($relation)
+            $this->formatTableExpression($table)
         );
 
-        $joins = $query->getAllJoin();
-        if ($joins) {
-            $output[] = $this->formatDeleteUsing($query, $joins);
+        $transformFirstJoinAsFrom = true;
+
+        $from = $query->getAllFrom();
+        if ($from) {
+            $transformFirstJoinAsFrom = false;
+            $output[] = ', ';
+            $output[] = $this->formatFrom($from, 'using');
+        }
+
+        $join = $query->getAllJoin();
+        if ($join) {
+            $output[] = $this->formatJoin($join, $transformFirstJoinAsFrom, 'using', $query);
         }
 
         $where = $query->getWhere();
@@ -776,22 +740,51 @@ class DefaultSqlWriter extends AbstractSqlWriter
             throw new QueryError("Cannot run an update query without any columns to update.");
         }
 
-        if (!$relation = $query->getRelation()) {
-            throw new QueryError("update query must have a relation");
+        if (!$table = $query->getTable()) {
+            throw new QueryError("Update query must have a table.");
         }
 
+        //
+        // Specific use case for DELETE, there might be JOIN, this valid for
+        // all of PostgreSQL, MySQL and MSSQL.
+        //
+        // We have three variants to implement:
+        //
+        //  - PgSQL: UPDATE FROM a SET x = y FROM b, c JOIN d WHERE (SQL-92),
+        //
+        //  - MySQL: UPDATE FROM a, b, c, JOIN d SET x = y WHERE
+        //
+        //  - MSSQL: UPDATE SET x = y FROM a, b, c JOIN d WHERE
+        //
+        // Current implementation is PgSQL (SQL-92 standard) and arguments 
+        // order in ArgumentBag of UpdateQuery will also be, which may cause
+        // other implementations to break if user uses placeholders elsewhere
+        // than in the WHERE clause.
+        //
+        // Also note that MSSQL will allow UPDATE on a CTE query for example,
+        // MySQL will allow UPDATE everywhere, in all cases that's serious
+        // violations of the SQL standard and probably quite a dangerous thing
+        // to use.
+        //
+
         $output[] = $this->formatWith($query->getAllWith());
-        // From the SQL 92 standard (which PostgreSQL does support here) the
-        // FROM and JOIN must be written AFTER the SET clause. MySQL does not.
         $output[] = \sprintf(
             "update %s\nset\n%s",
-            $this->formatExpressionRelation($relation),
+            $this->formatTableExpression($table),
             $this->formatUpdateSet($columns)
         );
 
-        $joins = $query->getAllJoin();
-        if ($joins) {
-            $output[] = $this->formatUpdateFrom($query, $joins);
+        $transformFirstJoinAsFrom = true;
+
+        $from = $query->getAllFrom();
+        if ($from) {
+            $transformFirstJoinAsFrom = false;
+            $output[] = $this->formatFrom($from, 'from');
+        }
+
+        $join = $query->getAllJoin();
+        if ($join) {
+            $output[] = $this->formatJoin($join, $transformFirstJoinAsFrom, 'from', $query);
         }
 
         $where = $query->getWhere();
@@ -814,20 +807,17 @@ class DefaultSqlWriter extends AbstractSqlWriter
     {
         $output = [];
         $output[] = $this->formatWith($query->getAllWith());
+        $output[] = "select";
+        $output[] = $this->formatSelect($query->getAllColumns());
 
-        if ($relation = $query->getRelation()) {
-            $output[] = \sprintf(
-                "select %s\nfrom %s\n%s",
-                $this->formatSelect($query->getAllColumns()),
-                $this->formatExpressionRelation($relation),
-                $this->formatJoin($query->getAllJoin())
-            );
-        } else {
-            $output[] = \sprintf(
-                "select %s\n%s",
-                $this->formatSelect($query->getAllColumns()),
-                $this->formatJoin($query->getAllJoin())
-            );
+        $from = $query->getAllFrom();
+        if ($from) {
+            $output[] = $this->formatFrom($from, 'from');
+        }
+
+        $join = $query->getAllJoin();
+        if ($join) {
+            $output[] = $this->formatJoin($join);
         }
 
         $where = $query->getWhere();
@@ -869,10 +859,10 @@ class DefaultSqlWriter extends AbstractSqlWriter
             $target = $this->escaper->escapeIdentifier($target);
         }
 
-        if ($relation = $column->getRelationAlias()) {
+        if ($table = $column->getTableAlias()) {
             return \sprintf(
                 "%s.%s",
-                $this->escaper->escapeIdentifier($relation),
+                $this->escaper->escapeIdentifier($table),
                 $target
             );
         }
@@ -881,15 +871,15 @@ class DefaultSqlWriter extends AbstractSqlWriter
     }
 
     /**
-     * Format relation expression.
+     * Format table expression.
      */
-    protected function formatExpressionRelation(ExpressionRelation $relation): string
+    protected function formatTableExpression(TableExpression $table): string
     {
-        $table  = $relation->getName();
-        $schema = $relation->getSchema();
-        $alias  = $relation->getAlias();
+        $name = $table->getName();
+        $schema = $table->getSchema();
+        $alias = $table->getAlias();
 
-        if ($alias === $table) {
+        if ($alias === $name) {
             $alias = null;
         }
 
@@ -897,25 +887,25 @@ class DefaultSqlWriter extends AbstractSqlWriter
             return \sprintf(
                 "%s.%s as %s",
                 $this->escaper->escapeIdentifier($schema),
-                $this->escaper->escapeIdentifier($table),
+                $this->escaper->escapeIdentifier($name),
                 $this->escaper->escapeIdentifier($alias)
             );
         } else if ($schema) {
             return \sprintf(
                 "%s.%s",
                 $this->escaper->escapeIdentifier($schema),
-                $this->escaper->escapeIdentifier($table)
+                $this->escaper->escapeIdentifier($name)
             );
         } else if ($alias) {
             return \sprintf(
                 "%s as %s",
-                $this->escaper->escapeIdentifier($table),
+                $this->escaper->escapeIdentifier($name),
                 $this->escaper->escapeIdentifier($alias)
             );
         } else {
             return \sprintf(
                 "%s",
-                $this->escaper->escapeIdentifier($table)
+                $this->escaper->escapeIdentifier($name)
             );
         }
     }
@@ -966,8 +956,8 @@ class DefaultSqlWriter extends AbstractSqlWriter
             return $this->formatExpressionColumn($query);
         } else if ($query instanceof ExpressionRaw) {
             return $this->formatExpressionRaw($query);
-        } else if ($query instanceof ExpressionRelation) {
-            return $this->formatExpressionRelation($query);
+        } else if ($query instanceof TableExpression) {
+            return $this->formatTableExpression($query);
         } else if ($query instanceof ExpressionValue) {
             return $this->formatExpressionValue($query);
         } else if ($query instanceof ExpressionLike) {
