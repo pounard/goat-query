@@ -22,7 +22,7 @@ final class Column
         $this->alias = $alias;
     }
 
-    public static function name($expression, ?string $alias) 
+    public static function name($expression, ?string $alias)
     {
         return new self(ExpressionFactory::column($expression), $alias);
     }

@@ -44,7 +44,7 @@ class MySQLWriter extends DefaultSqlWriter
     protected function writeCast(string $placeholder, string $type): string
     {
         // This is supposedly SQL-92 standard compliant, but can be overriden
-        return \sprintf("cast(%s as %s)", $placeholder, $type);
+        return 'cast(' . $placeholder . ' as ' . $type . ')';
     }
 
     /**
@@ -90,21 +90,15 @@ class MySQLWriter extends DefaultSqlWriter
 
         $output[] = $this->formatWith($query->getAllWith());
         if ($isIgnore) {
-            $output[] = \sprintf(
-                "insert ignore into %s",
-                // From SQL 92 standard, INSERT queries don't have table alias
-                $this->escaper->escapeIdentifier($table->getName())
-            );
+            // From SQL 92 standard, INSERT queries don't have table alias
+            $output[] = 'insert ignore into ' . $this->escaper->escapeIdentifier($table->getName());
         } else {
-            $output[] = \sprintf(
-                "insert into %s",
-                // From SQL 92 standard, INSERT queries don't have table alias
-                $this->escaper->escapeIdentifier($table->getName())
-            );
+            // From SQL 92 standard, INSERT queries don't have table alias
+            $output[] = 'insert into ' . $this->escaper->escapeIdentifier($table->getName());
         }
 
         if ($columns) {
-            $output[] = \sprintf("(%s)", $this->formatColumnNameList($columns));
+            $output[] = '(' . $this->formatColumnNameList($columns) . ')';
         }
 
         $output[] = $this->format($query->getQuery());
@@ -157,12 +151,10 @@ class MySQLWriter extends DefaultSqlWriter
 
         // MySQL does not have USING clause, and support a non-standard way of
         // writing DELETE directly using FROM .. JOIN clauses, just like you
-        // would write a SELECT, so give him that.
-        $output[] = \sprintf(
-            "delete %s.* from %s",
-            $this->escaper->escapeIdentifier($tableAlias),
-            $this->formatTableExpression($table)
-        );
+        // would write a SELECT, so give him that. Beware that some MySQL
+        // versions will DELETE FROM all tables matching rows in the FROM,
+        // hence the "table_alias.*" statement here.
+        $output[] = 'delete ' . $this->escaper->escapeIdentifier($tableAlias) .  '.* from ' . $this->formatTableExpression($table);
 
         $from = $query->getAllFrom();
         if ($from) {
@@ -177,7 +169,7 @@ class MySQLWriter extends DefaultSqlWriter
 
         $where = $query->getWhere();
         if (!$where->isEmpty()) {
-            $output[] = \sprintf('where %s', $this->formatWhere($where));
+            $output[] = 'where ' . $this->formatWhere($where);
         }
 
         $return = $query->getAllReturn();
@@ -202,7 +194,7 @@ class MySQLWriter extends DefaultSqlWriter
 
         // From the SQL 92 standard (which PostgreSQL does support here) the
         // FROM and JOIN must be written AFTER the SET clause. MySQL does not.
-        $output[] = \sprintf("update %s", $this->formatTableExpression($query->getTable()));
+        $output[] = 'update ' . $this->formatTableExpression($query->getTable());
 
         // MySQL don't do UPDATE t1 SET [...] FROM t2 but uses the SELECT
         // syntax and just append the set after the JOIN clause.
@@ -218,11 +210,11 @@ class MySQLWriter extends DefaultSqlWriter
         }
 
         // SET clause.
-        $output[] = \sprintf("set\n%s", $this->formatUpdateSet($columns));
+        $output[] = 'set ' . $this->formatUpdateSet($columns) . "\n";
 
         $where = $query->getWhere();
         if (!$where->isEmpty()) {
-            $output[] = \sprintf('where %s', $this->formatWhere($where));
+            $output[] = 'where ' . $this->formatWhere($where);
         }
 
         $return = $query->getAllReturn();

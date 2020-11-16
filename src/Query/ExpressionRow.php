@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Goat\Query;
 
 /**
- * Represent a single value row, such as (VAL1, VAL2, ...). 
+ * Represent a single value row, such as (VAL1, VAL2, ...).
  */
 final class ExpressionRow implements Expression
 {

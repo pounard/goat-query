@@ -28,7 +28,7 @@ final class AliasedExpression implements Expression, WithAlias
         }
 
         $this->alias = $alias;
-        $this->expression = $expression; 
+        $this->expression = $expression;
     }
 
     public function getExpression(): Expression

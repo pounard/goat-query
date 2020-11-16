@@ -34,7 +34,7 @@ interface SchemaIntrospector
     /**
      * Get a single table metadata
      *
-     * If no schema provided use the default one in case of conflict. 
+     * If no schema provided use the default one in case of conflict.
      */
     public function fetchTableMetadata(string $database, string $name, ?string $schema = null): TableMetadata;
 

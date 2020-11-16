@@ -180,7 +180,7 @@ final class QueryPagerResultIterator extends AbstractResultIteratorProxy
      */
     public function getTotalCount(): ?int
     {
-        return $this->totalCount ?? ( 
+        return $this->totalCount ?? (
             $this->totalCount = ($this->countQuery ?? $this->query->getCountQuery())
                 ->execute($this->queryArguments, $this->queryOptions)
                 ->fetchField()

@@ -54,12 +54,12 @@ class DefaultSqlWriter extends AbstractSqlWriter
         $columnString = $this->escaper->escapeIdentifier($columnName);
 
         if ($expression instanceof Expression) {
-            return \sprintf("%s = %s", $columnString, $this->format($expression));
-        } else if ($expression instanceof Statement) {
-            return \sprintf("%s = (%s)", $columnString, $this->format($expression));
-        } else {
-            return \sprintf("%s = %s", $columnString, $this->escaper->escapeLiteral($expression));
+            return $columnString . ' = ' . $this->format($expression);
         }
+        if ($expression instanceof Statement) {
+            return $columnString . ' = (' . $this->format($expression) . ')';
+        }
+        return $columnString . ' = ' . $this->escaper->escapeLiteral($expression);
     }
 
     /**
@@ -147,9 +147,9 @@ class DefaultSqlWriter extends AbstractSqlWriter
      *
      * @param string|Expression $column
      * @param int $order
-     *   Query::ORDER_* constant
+     *   Query::ORDER_* constant.
      * @param int $null
-     *   Query::NULL_* constant
+     *   Query::NULL_* constant.
      */
     protected function formatOrderByItem($column, int $order, int $null): string
     {
@@ -164,20 +164,16 @@ class DefaultSqlWriter extends AbstractSqlWriter
         switch ($null) {
 
             case Query::NULL_FIRST:
-                $nullStr = ' nulls first';
+                return $column . ' ' . $orderStr . ' nulls first';
                 break;
 
             case Query::NULL_LAST:
-                $nullStr = ' nulls last';
-                break;
+                return $column . ' ' . $orderStr . ' nulls last';
 
             case Query::NULL_IGNORE:
             default:
-                $nullStr = '';
-                break;
+                return $column . ' ' . $orderStr;
         }
-
-        return \sprintf('%s %s%s', $column, $orderStr, $nullStr);
     }
 
     /**
@@ -258,18 +254,9 @@ class DefaultSqlWriter extends AbstractSqlWriter
 
         // @todo parenthesis when necessary
         if ($condition->isEmpty()) {
-            return \sprintf(
-                "%s %s",
-                $prefix,
-                $this->formatTableExpression($join->table)
-            );
+            return $prefix . ' ' . $this->format($join->table);
         } else {
-            return \sprintf(
-                "%s %s on (%s)",
-                $prefix,
-                $this->formatTableExpression($join->table),
-                $this->formatWhere($condition)
-            );
+            return $prefix . ' ' . $this->format($join->table) . ' on (' . $this->formatWhere($condition) . ')';
         }
     }
 
@@ -355,12 +342,12 @@ class DefaultSqlWriter extends AbstractSqlWriter
     protected function formatRange(int $limit = 0, int $offset = 0): string
     {
         if ($limit) {
-            return \sprintf('limit %d offset %d', $limit, $offset);
-        } else if ($offset) {
-            return \sprintf('offset %d', $offset);
-        } else {
-            return '';
+            return 'limit ' . $limit . ' offset ' . $offset;
         }
+        if ($offset) {
+            return 'offset ' . $offset;
+        }
+        return '';
     }
 
     /**
@@ -376,13 +363,7 @@ class DefaultSqlWriter extends AbstractSqlWriter
         return \implode(
             ', ',
             \array_map(
-                function ($value) {
-                    if ($value instanceof Statement) {
-                        return $this->format($value);
-                    } else {
-                        return '?';
-                    }
-                },
+                fn ($value) => $value instanceof Statement ? $this->format($value) : '?',
                 $arguments
             )
         );
@@ -427,13 +408,13 @@ class DefaultSqlWriter extends AbstractSqlWriter
             }
 
             if ($value instanceof Query) {
-                $valueString = \sprintf('(%s)', $this->format($value));
+                $valueString = '(' . $this->format($value) . ')';
             } else if ($value instanceof Expression) {
                 $valueString = $this->format($value);
             } else if ($value instanceof Statement) {
-                $valueString = \sprintf('(%s)', $this->format($value));
+                $valueString = '(' . $this->format($value) . ')';
             } else if (\is_array($value)) {
-                $valueString = \sprintf("(%s)", $this->formatValueList($value));
+                $valueString = '(' . $this->formatValueList($value) . ')';
             } else {
                 $valueString = $this->formatPlaceholder($value);
             }
@@ -443,12 +424,12 @@ class DefaultSqlWriter extends AbstractSqlWriter
 
                     case Where::EXISTS:
                     case Where::NOT_EXISTS:
-                        $output[] = \sprintf('%s %s', $operator, $valueString);
+                        $output[] = $operator . ' ' . $valueString;
                         break;
 
                     case Where::IS_NULL:
                     case Where::NOT_IS_NULL:
-                        $output[] = \sprintf('%s %s', $valueString, $operator);
+                        $output[] = $valueString . ' ' . $operator;
                         break;
 
                     default:
@@ -460,21 +441,21 @@ class DefaultSqlWriter extends AbstractSqlWriter
 
                     case Where::EXISTS:
                     case Where::NOT_EXISTS:
-                        $output[] = \sprintf('%s %s', $operator, $valueString);
+                        $output[] = $operator . ' ' . $valueString;
                         break;
 
                     case Where::IS_NULL:
                     case Where::NOT_IS_NULL:
-                        $output[] = \sprintf('%s %s', $columnString, $operator);
+                        $output[] = $columnString . ' ' . $operator;
                         break;
 
                     case Where::BETWEEN:
                     case Where::NOT_BETWEEN:
-                        $output[] = \sprintf('%s %s ? and ?', $columnString, $operator);
+                        $output[] = $columnString . ' ' . $operator . ' ? and ?';
                         break;
 
                     default:
-                        $output[] = \sprintf('%s %s %s', $columnString, $operator, $valueString);
+                        $output[] = $columnString . ' ' . $operator . ' ' . $valueString;
                         break;
                 }
             }
@@ -507,14 +488,10 @@ class DefaultSqlWriter extends AbstractSqlWriter
         foreach ($with as $item) {
             \assert($item instanceof With);
 
-            $output[] = \sprintf(
-                "%s as (%s)",
-                $this->escaper->escapeIdentifier($item->alias),
-                $this->format($item->table)
-            );
+            $output[] = $this->escaper->escapeIdentifier($item->alias) . ' as (' . $this->format($item->table) . ')';
         }
 
-        return \sprintf('with %s', \implode(', ', $output));
+        return 'with ' . \implode(', ', $output);
     }
 
     /**
@@ -584,9 +561,9 @@ class DefaultSqlWriter extends AbstractSqlWriter
         // USING
         $using = $query->getQuery();
         if ($using instanceof ExpressionConstantTable) {
-            $output[] = \sprintf("using %s as %s", $this->format($using), $escapedUsingAlias);
+            $output[] = 'using ' . $this->format($using) . ' as ' . $escapedUsingAlias;
         } else {
-            $output[] = \sprintf("using (%s) as %s", $this->format($using), $escapedUsingAlias);
+            $output[] = 'using (' . $this->format($using) . ') as ' . $escapedUsingAlias;
         }
 
         // Build USING columns map.
@@ -620,17 +597,14 @@ class DefaultSqlWriter extends AbstractSqlWriter
         }
 
         // WHEN NOT MATCHED THEN
-        $output[] = \sprintf(
-            "when not matched then insert into %s (%s)",
-            $escapedInsertTable,
-            $this->formatColumnNameList($columns)
-        );
-        $output[] = \sprintf("values (%s)", \implode(', ', $usingColumnMap));
+        $output[] = 'when not matched then insert into ' . $escapedInsertTable;
+        $output[] = '(' . $this->formatColumnNameList($columns) . ')';
+        $output[] = 'values (' . \implode(', ', $usingColumnMap) . ')';
 
         // RETURNING
         $return = $query->getAllReturn();
         if ($return) {
-            $output[] = \sprintf("returning %s", $this->formatReturning($return));
+            $output[] = 'returning ' . $this->formatReturning($return);
         }
 
         return \implode("\n", $output);
@@ -650,15 +624,12 @@ class DefaultSqlWriter extends AbstractSqlWriter
         }
 
         $output[] = $this->formatWith($query->getAllWith());
-        $output[] = \sprintf(
-            "insert into %s",
-            // From SQL 92 standard, INSERT queries don't have table alias
-            $this->escaper->escapeIdentifier($table->getName())
-        );
+        // From SQL 92 standard, INSERT queries don't have table alias
+        $output[] = 'insert into ' . $this->escaper->escapeIdentifier($table->getName());
 
         // Columns.
         if ($columns) {
-            $output[] = \sprintf("(%s)", $this->formatColumnNameList($columns));
+            $output[] = '(' . $this->formatColumnNameList($columns) . ')';
         }
 
         $using = $query->getQuery();
@@ -677,7 +648,7 @@ class DefaultSqlWriter extends AbstractSqlWriter
 
         $return = $query->getAllReturn();
         if ($return) {
-            $output[] = \sprintf("returning %s", $this->formatReturning($return));
+            $output[] = 'returning ' . $this->formatReturning($return);
         }
 
         return \implode("\n", $output);
@@ -697,10 +668,7 @@ class DefaultSqlWriter extends AbstractSqlWriter
         $output[] = $this->formatWith($query->getAllWith());
         // This is not SQL-92 compatible, we are using USING..JOIN clause to
         // do joins in the DELETE query, which is not accepted by the standard.
-        $output[] = \sprintf(
-            "delete from %s",
-            $this->formatTableExpression($table)
-        );
+        $output[] = 'delete from ' . $this->formatTableExpression($table);
 
         $transformFirstJoinAsFrom = true;
 
@@ -718,12 +686,12 @@ class DefaultSqlWriter extends AbstractSqlWriter
 
         $where = $query->getWhere();
         if (!$where->isEmpty()) {
-            $output[] = \sprintf('where %s', $this->formatWhere($where));
+            $output[] = 'where ' . $this->formatWhere($where);
         }
 
         $return = $query->getAllReturn();
         if ($return) {
-            $output[] = \sprintf("returning %s", $this->formatReturning($return));
+            $output[] = 'returning ' . $this->formatReturning($return);
         }
 
         return \implode("\n", \array_filter($output));
@@ -757,7 +725,7 @@ class DefaultSqlWriter extends AbstractSqlWriter
         //
         //  - MSSQL: UPDATE SET x = y FROM a, b, c JOIN d WHERE
         //
-        // Current implementation is PgSQL (SQL-92 standard) and arguments 
+        // Current implementation is PgSQL (SQL-92 standard) and arguments
         // order in ArgumentBag of UpdateQuery will also be, which may cause
         // other implementations to break if user uses placeholders elsewhere
         // than in the WHERE clause.
@@ -769,11 +737,8 @@ class DefaultSqlWriter extends AbstractSqlWriter
         //
 
         $output[] = $this->formatWith($query->getAllWith());
-        $output[] = \sprintf(
-            "update %s\nset\n%s",
-            $this->formatTableExpression($table),
-            $this->formatUpdateSet($columns)
-        );
+        $output[] = 'update ' . $this->formatTableExpression($table);
+        $output[] = 'set ' . $this->formatUpdateSet($columns);
 
         $transformFirstJoinAsFrom = true;
 
@@ -790,12 +755,12 @@ class DefaultSqlWriter extends AbstractSqlWriter
 
         $where = $query->getWhere();
         if (!$where->isEmpty()) {
-            $output[] = \sprintf('where %s', $this->formatWhere($where));
+            $output[] = 'where ' . $this->formatWhere($where);
         }
 
         $return = $query->getAllReturn();
         if ($return) {
-            $output[] = \sprintf("returning %s", $this->formatReturning($return));
+            $output[] = "returning " . $this->formatReturning($return);
         }
 
         return \implode("\n", \array_filter($output));
@@ -823,7 +788,7 @@ class DefaultSqlWriter extends AbstractSqlWriter
 
         $where = $query->getWhere();
         if (!$where->isEmpty()) {
-            $output[] = \sprintf('where %s', $this->formatWhere($where));
+            $output[] = 'where ' . $this->formatWhere($where);
         }
 
         $output[] = $this->formatGroupBy($query->getAllGroupBy());
@@ -832,7 +797,7 @@ class DefaultSqlWriter extends AbstractSqlWriter
 
         $having = $query->getHaving();
         if (!$having->isEmpty()) {
-            $output[] = \sprintf('having %s', $this->formatWhere($having));
+            $output[] = 'having ' . $this->formatWhere($having);
         }
 
         if ($query->isForUpdate()) {
@@ -861,11 +826,7 @@ class DefaultSqlWriter extends AbstractSqlWriter
         }
 
         if ($table = $column->getTableAlias()) {
-            return \sprintf(
-                "%s.%s",
-                $this->escaper->escapeIdentifier($table),
-                $target
-            );
+            return $this->escaper->escapeIdentifier($table) . '.' . $target;
         }
 
         return $target;
@@ -885,30 +846,16 @@ class DefaultSqlWriter extends AbstractSqlWriter
         }
 
         if ($schema && $alias) {
-            return \sprintf(
-                "%s.%s as %s",
-                $this->escaper->escapeIdentifier($schema),
-                $this->escaper->escapeIdentifier($name),
-                $this->escaper->escapeIdentifier($alias)
-            );
-        } else if ($schema) {
-            return \sprintf(
-                "%s.%s",
-                $this->escaper->escapeIdentifier($schema),
-                $this->escaper->escapeIdentifier($name)
-            );
-        } else if ($alias) {
-            return \sprintf(
-                "%s as %s",
-                $this->escaper->escapeIdentifier($name),
-                $this->escaper->escapeIdentifier($alias)
-            );
-        } else {
-            return \sprintf(
-                "%s",
-                $this->escaper->escapeIdentifier($name)
-            );
+            return $this->escaper->escapeIdentifier($schema) . '.' . $this->escaper->escapeIdentifier($name) . ' as ' . $this->escaper->escapeIdentifier($alias);
         }
+        if ($schema) {
+            return $this->escaper->escapeIdentifier($schema) . '.' . $this->escaper->escapeIdentifier($name);
+        }
+        if ($alias) {
+            return $this->escaper->escapeIdentifier($name) . ' as ' . $this->escaper->escapeIdentifier($alias);
+        }
+
+        return $this->escaper->escapeIdentifier($name);
     }
 
     /**
@@ -917,11 +864,7 @@ class DefaultSqlWriter extends AbstractSqlWriter
     protected function formatExpressionValue(ExpressionValue $value): string
     {
         if ($type = $value->getType()) {
-            return \sprintf(
-                '%s::%s',
-                $this->formatPlaceholder($value->getValue()),
-                $type
-            );
+            return $this->formatPlaceholder($value->getValue()) . '::' . $type;
         }
         return $this->formatPlaceholder($value->getValue());
     }

@@ -24,7 +24,7 @@ class PgSQLWriter extends DefaultSqlWriter
     {
         // No surprises there, PostgreSQL is very straight-forward and just
         // uses the datatypes as it handles it. Very stable and robust.
-        return \sprintf("%s::%s", $placeholder, $type);
+        return $placeholder . '::' . $type;
     }
 
     /**
@@ -52,15 +52,12 @@ class PgSQLWriter extends DefaultSqlWriter
         }
 
         $output[] = $this->formatWith($query->getAllWith());
-        $output[] = \sprintf(
-            "insert into %s",
-            // From SQL 92 standard, INSERT queries don't have table alias
-            $this->escaper->escapeIdentifier($table->getName())
-        );
+        // From SQL 92 standard, INSERT queries don't have table alias
+        $output[] = 'insert into ' . $this->escaper->escapeIdentifier($table->getName());
 
         // @todo skip column names if numerical
         if ($columns) {
-            $output[] = \sprintf("(%s)", $this->formatColumnNameList($columns));
+            $output[] = '(' . $this->formatColumnNameList($columns) . ')';
         }
 
         $output[] = $this->format($query->getQuery());
@@ -85,8 +82,8 @@ class PgSQLWriter extends DefaultSqlWriter
                         $setColumnMap[$column] = ExpressionRaw::create("excluded." . $this->escaper->escapeIdentifier($column));
                     }
                 }
-                $output[] = \sprintf("on conflict (%s)", $this->formatColumnNameList($key));
-                $output[] = "do update set";
+                $output[] = 'on conflict (' . $this->formatColumnNameList($key) . ')';
+                $output[] = 'do update set';
                 $output[] = $this->formatUpdateSet($setColumnMap);
                 break;
 
@@ -96,7 +93,7 @@ class PgSQLWriter extends DefaultSqlWriter
 
         $return = $query->getAllReturn();
         if ($return) {
-            $output[] = \sprintf("returning %s", $this->formatReturning($return));
+            $output[] = 'returning ' . $this->formatReturning($return);
         }
 
         return \implode("\n", $output);

@@ -114,7 +114,7 @@ abstract class AbstractSqlWriter implements SqlWriter
     protected function writeCast(string $placeholder, string $type): string
     {
         // This is supposedly SQL-92 standard compliant, but can be overriden
-        return \sprintf("cast(%s as %s)", $placeholder, $type);
+        return 'cast(' . $placeholder . ' as ' . $type . ')';
     }
 
     /**
