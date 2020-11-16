@@ -45,7 +45,7 @@ trait AliasHolderTrait
                 $expressionAlias = $table->getAlias();
             }
             // Name needs to be unique, we will lookup for table names.
-            $expressionName = '<nested raw expression ' . \uniqid(null, true) . '>';
+            $expressionName = '<nested raw expression ' . \uniqid('', true) . '>';
 
             $alias = $this->createAliasForName($expressionName, $alias ?? $expressionAlias);
 
@@ -112,7 +112,7 @@ trait AliasHolderTrait
         }
 
         // Avoid conflicting table names.
-        if (false === \array_search($name, $this->tableIndex)) {
+        if ('<nested' !== \substr($name, 0, 7) && false === \array_search($name, $this->tableIndex)) {
             $this->tableIndex[$name] = $name;
 
             return $name;

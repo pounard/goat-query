@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Goat\Query\Tests;
 
 use Goat\Query\DeleteQuery;
+use Goat\Query\ExpressionConstantTable;
 use Goat\Query\ExpressionRaw;
 use PHPUnit\Framework\TestCase;
 
@@ -19,6 +20,26 @@ use PHPUnit\Framework\TestCase;
 final class DeleteUnitTest extends TestCase
 {
     use BuilderTestTrait;
+
+    public function testCoverageForClone()
+    {
+        $select = new DeleteQuery('d');
+        $select
+            ->with('sdf', ExpressionConstantTable::create()->row([1, 2]))
+            ->from('a')
+            ->from('b')
+            ->join('c')
+            ->where('foo', 42)
+            ->returning('*')
+        ;
+
+        $cloned = clone $select;
+
+        self::assertSameSql(
+            self::createStandardSqlWriter()->format($select),
+            self::createStandardSqlWriter()->format($cloned)
+        );
+    }
 
     public function testEmptyDelete()
     {

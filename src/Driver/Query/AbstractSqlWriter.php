@@ -49,11 +49,8 @@ abstract class AbstractSqlWriter implements SqlWriter
         (\:[\w]+)               # Matches :NAME (named placeholders without type)
         @x';
 
-    /** @var string */
-    private $matchParametersRegex;
-
-    /** @var Escaper */
-    protected $escaper;
+    private string $matchParametersRegex;
+    protected Escaper $escaper;
 
     public function __construct(Escaper $escaper)
     {

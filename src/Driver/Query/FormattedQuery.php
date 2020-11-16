@@ -81,7 +81,7 @@ final class FormattedQuery
         $count = $argumentList->count();
 
         if (\count($input) !== $count) {
-            throw new QueryError(\sprintf("Invalid parameter number bound"));
+            throw new QueryError(\sprintf("Invalid parameter number bound: expected %d got %d", $count, \count($input)));
         }
 
         for ($i = 0; $i < $count; ++$i) {

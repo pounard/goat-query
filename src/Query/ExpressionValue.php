@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Goat\Query;
 
 /**
- * Represents a raw value
+ * Represents a raw value.
  */
 final class ExpressionValue implements Expression, ValueRepresentation
 {

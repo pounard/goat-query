@@ -20,6 +20,7 @@ use Goat\Query\SelectQuery;
 use Goat\Query\Statement;
 use Goat\Query\UpdateQuery;
 use Goat\Query\Where;
+use Goat\Query\Expression\AliasedExpression;
 use Goat\Query\Expression\TableExpression;
 use Goat\Query\Partial\Column;
 use Goat\Query\Partial\Join;
@@ -940,11 +941,18 @@ class DefaultSqlWriter extends AbstractSqlWriter
             $pattern = $value->getPattern();
         }
 
-        return \sprintf('%s %s %s',
-            $this->format($value->getColumn()),
-            $value->getOperator(),
-            $this->escaper->escapeLiteral($pattern)
-        );
+        return $this->format($value->getColumn()) . ' ' . $value->getOperator() . ' ' . $this->escaper->escapeLiteral($pattern);
+    }
+
+    /**
+     * Format an expression with an alias.
+     */
+    protected function formatAliasedExpression(AliasedExpression $expression): string
+    {
+        if ($alias = $expression->getAlias()) {
+            return '(' . $this->format($expression->getExpression()) . ') as ' . $this->escaper->escapeIdentifier($alias);
+        }
+        return '(' . $this->format($expression->getExpression()) . ')';
     }
 
     /**
@@ -978,6 +986,8 @@ class DefaultSqlWriter extends AbstractSqlWriter
             return $this->formatQueryInsert($query);
         } else if ($query instanceof UpdateQuery) {
             return $this->formatQueryUpdate($query);
+        } else if ($query instanceof AliasedExpression) {
+            return $this->formatAliasedExpression($query);
         }
 
         throw new \InvalidArgumentException();

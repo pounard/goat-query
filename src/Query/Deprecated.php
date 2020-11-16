@@ -8,7 +8,7 @@ use Goat\Query\Expression\TableExpression;
 
 /**
  * @deprecated
- * @see Goat\Query\Expression\TableExpression
+ * @see \Goat\Query\Expression\TableExpression
  */
 final class ExpressionRelation extends TableExpression
 {
@@ -16,9 +16,7 @@ final class ExpressionRelation extends TableExpression
 
 /**
  * @deprecated
- *   Use InsertQuery directly instead.
- * @todo
- *   Add deprecation messages.
+ * @see \Goat\Query\InsertQuery
  */
 final class InsertQueryQuery extends InsertQuery
 {
@@ -26,9 +24,7 @@ final class InsertQueryQuery extends InsertQuery
 
 /**
  * @deprecated
- *   Use InsertQuery directly instead.
- * @todo
- *   Add deprecation messages.
+ * @see \Goat\Query\InsertQuery
  */
 final class InsertValuesQuery extends InsertQuery
 {
@@ -44,11 +40,10 @@ final class InsertValuesQuery extends InsertQuery
     }
 }
 
+
 /**
  * @deprecated
- *   Use MergeQuery directly instead.
- * @todo
- *   Add deprecation messages.
+ * @see \Goat\Query\MergeQuery
  */
 final class UpsertQueryQuery extends MergeQuery
 {
@@ -56,9 +51,7 @@ final class UpsertQueryQuery extends MergeQuery
 
 /**
  * @deprecated
- *   Use MergeQuery directly instead.
- * @todo
- *   Add deprecation messages.
+ * @see \Goat\Query\MergeQuery
  */
 final class UpsertValuesQuery extends MergeQuery
 {
@@ -71,5 +64,49 @@ final class UpsertValuesQuery extends MergeQuery
         }
 
         return 0;
+    }
+}
+
+/**
+ * @deprecated
+ */
+final class Value implements ValueRepresentation
+{
+    private $name;
+    private $type;
+    private $value;
+
+    /**
+     * Build from value
+     */
+    public function __construct($value, ?string $type = null, ?string $name = null)
+    {
+        $this->name = $name;
+        $this->type = $type;
+        $this->value = $value;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getValue()
+    {
+        return $this->value;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getType(): ?string
+    {
+        return $this->type;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getName(): ?string
+    {
+        return $this->name;
     }
 }

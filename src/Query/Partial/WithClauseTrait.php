@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Goat\Query\Partial;
 
+use Goat\Query\Expression;
 use Goat\Query\SelectQuery;
 
 /**
@@ -27,7 +28,7 @@ trait WithClauseTrait
     /**
      * Add with statement.
      */
-    final public function with(string $alias, SelectQuery $select, bool $isRecursive = false): self
+    final public function with(string $alias, Expression $select, bool $isRecursive = false): self
     {
         $this->with[] = new With($alias, $select, $isRecursive);
 

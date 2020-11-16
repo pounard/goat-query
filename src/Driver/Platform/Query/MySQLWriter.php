@@ -12,7 +12,6 @@ use Goat\Query\MergeQuery;
 use Goat\Query\Query;
 use Goat\Query\QueryError;
 use Goat\Query\UpdateQuery;
-use Goat\Query\Partial\Join;
 
 /**
  * MySQL <= 5.7

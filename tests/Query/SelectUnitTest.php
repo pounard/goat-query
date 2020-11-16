@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Goat\Query\Tests;
 
+use Goat\Query\ExpressionConstantTable;
 use Goat\Query\ExpressionRaw;
 use Goat\Query\ExpressionValue;
 use Goat\Query\QueryError;
@@ -14,6 +15,28 @@ use PHPUnit\Framework\TestCase;
 final class QuerySelectUnitTest extends TestCase
 {
     use BuilderTestTrait;
+
+    public function testCoverageForClone()
+    {
+        $select = new SelectQuery();
+        $select
+            ->with('sdf', ExpressionConstantTable::create()->row([1, 2]))
+            ->from('a')
+            ->from('b')
+            ->join('c')
+            ->column('bar')
+            ->orderBy('baz')
+            ->having('fizz', 'buzz')
+            ->where('foo', 42)
+        ;
+
+        $cloned = clone $select;
+
+        self::assertSameSql(
+            self::createStandardSqlWriter()->format($select),
+            self::createStandardSqlWriter()->format($cloned)
+        );
+    }
 
     public function testEmptySelect()
     {
@@ -518,6 +541,130 @@ final class QuerySelectUnitTest extends TestCase
             self::createStandardSqlWriter()->format($select)
         );
     }
+
+    public function testExpressionAsJoin()
+    {
+        $expression = ExpressionConstantTable::create();
+        $expression->row([1, 2, 3]);
+
+        $select = new SelectQuery('foo');
+        $select->join($expression);
+
+        self::assertSameSql(
+            <<<SQL
+            select * from "foo"
+            inner join (
+                values (?, ?, ?)
+            ) as "goat_1"
+            SQL,
+            self::createStandardSqlWriter()->format($select)
+        );
+    }
+
+    public function testExpressionAsJoinWithAlias()
+    {
+        $expression = ExpressionConstantTable::create();
+        $expression->row([1, 2, 3]);
+
+        $select = new SelectQuery('foo');
+        $select->join($expression, null, 'mooh');
+
+        self::assertSameSql(
+            <<<SQL
+            select * from "foo"
+            inner join (
+                values (?, ?, ?)
+            ) as "mooh"
+            SQL,
+            self::createStandardSqlWriter()->format($select)
+        );
+    }
+
+    /*
+     * @todo Fix formatting bug with AliasedExpression
+     *
+    public function testExpressionAsJoinWithAliasInExpression()
+    {
+        $expression = ExpressionConstantTable::create();
+        $expression->row([1, 2, 3]);
+
+        $select = new SelectQuery(new AliasedExpression('f.u.b.a.r.', $expression));
+
+        self::assertSameSql(
+            <<<SQL
+            select *
+            from (
+                values
+                (?, ?, ?)
+            ) as "f.u.b.a.r."
+            SQL,
+            self::createStandardSqlWriter()->format($select)
+        );
+    }
+     */
+
+    public function testExpressionAsTable()
+    {
+        $expression = ExpressionConstantTable::create();
+        $expression->row([1, 2, 3]);
+        $expression->row(["a", "b", "c"]);
+
+        $select = new SelectQuery($expression);
+
+        self::assertSameSql(
+            <<<SQL
+            select *
+            from (
+                values
+                (?, ?, ?),
+                (?, ?, ?)
+            ) as "goat_1"
+            SQL,
+            self::createStandardSqlWriter()->format($select)
+        );
+    }
+
+    public function testExpressionAsTableWithAlias()
+    {
+        $expression = ExpressionConstantTable::create();
+        $expression->row([1, 2, 3]);
+
+        $select = new SelectQuery($expression, 'foobar');
+
+        self::assertSameSql(
+            <<<SQL
+            select *
+            from (
+                values
+                (?, ?, ?)
+            ) as "foobar"
+            SQL,
+            self::createStandardSqlWriter()->format($select)
+        );
+    }
+
+    /*
+     * @todo Fix formatting bug with AliasedExpression
+     *
+    public function testExpressionAsTableWithAliasInExpression()
+    {
+        $expression = ExpressionConstantTable::create();
+        $expression->row([1, 2, 3]);
+
+        $select = new SelectQuery(new AliasedExpression('f.u.b.a.r.', $expression));
+
+        self::assertSameSql(
+            <<<SQL
+            select *
+            from (
+                values
+                (?, ?, ?)
+            ) as "f.u.b.a.r."
+            SQL,
+            self::createStandardSqlWriter()->format($select)
+        );
+    }
+     */
 
     public function testRange()
     {

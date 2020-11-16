@@ -26,7 +26,7 @@ class TableExpression implements Expression, WithAlias
      */
     public static function escape(string $name, ?string $alias = null, ?string $schema = null): self
     {
-        $ret = new self;
+        $ret = new self();
         $ret->alias = $alias;
         $ret->name = $name;
         $ret->schema = $schema;
