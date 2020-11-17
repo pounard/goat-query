@@ -116,7 +116,7 @@ when not matched then
     )
 SQL
             ,
-            self::createStandardSqlWriter()->format($query)
+            self::format($query)
         );
     }
 
@@ -149,7 +149,7 @@ when not matched then
     )
 SQL
             ,
-            self::createStandardSqlWriter()->format($query)
+            self::format($query)
         );
     }
 
@@ -186,7 +186,7 @@ when not matched then
     )
 SQL
             ,
-            self::createStandardSqlWriter()->format($query)
+            self::format($query)
         );
     }
 
@@ -224,7 +224,7 @@ when not matched then
     )
 SQL
             ,
-            self::createStandardSqlWriter()->format($query)
+            self::format($query)
         );
     }
 
@@ -254,7 +254,7 @@ when not matched then
     )
 SQL
             ,
-            self::createStandardSqlWriter()->format($query)
+            self::format($query)
         );
     }
 
@@ -285,7 +285,7 @@ when not matched then
     )
 SQL
             ,
-            self::createStandardSqlWriter()->format($query)
+            self::format($query)
         );
     }
 
@@ -320,7 +320,7 @@ when not matched then
     )
 SQL
             ,
-            self::createStandardSqlWriter()->format($query)
+            self::format($query)
         );
     }
 
@@ -356,7 +356,7 @@ when not matched then
     )
 SQL
             ,
-            self::createStandardSqlWriter()->format($query)
+            self::format($query)
         );
     }
 }

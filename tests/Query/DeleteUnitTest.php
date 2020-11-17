@@ -36,8 +36,8 @@ final class DeleteUnitTest extends TestCase
         $cloned = clone $select;
 
         self::assertSameSql(
-            self::createStandardSqlWriter()->format($select),
-            self::createStandardSqlWriter()->format($cloned)
+            self::format($select),
+            self::format($cloned)
         );
     }
 
@@ -47,7 +47,7 @@ final class DeleteUnitTest extends TestCase
 
         self::assertSameSql(
             'delete from "some_table"',
-            self::createStandardSqlWriter()->format($delete)
+            self::format($delete)
         );
     }
 
@@ -59,7 +59,7 @@ final class DeleteUnitTest extends TestCase
 
         self::assertSameSql(
             'delete from "some_table" where "a" = ?',
-            self::createStandardSqlWriter()->format($delete)
+            self::format($delete)
         );
     }
 
@@ -71,7 +71,7 @@ final class DeleteUnitTest extends TestCase
 
         self::assertSameSql(
             'delete from "some_table" where true',
-            self::createStandardSqlWriter()->format($delete)
+            self::format($delete)
         );
     }
 
@@ -83,7 +83,7 @@ final class DeleteUnitTest extends TestCase
 
         self::assertSameSql(
             'delete from "some_table" returning *',
-            self::createStandardSqlWriter()->format($delete)
+            self::format($delete)
         );
     }
 
@@ -95,7 +95,7 @@ final class DeleteUnitTest extends TestCase
 
         self::assertSameSql(
             'delete from "some_table" returning "a"',
-            self::createStandardSqlWriter()->format($delete)
+            self::format($delete)
         );
     }
 
@@ -107,7 +107,7 @@ final class DeleteUnitTest extends TestCase
 
         self::assertSameSql(
             'delete from "some_table" returning "foo"."a"',
-            self::createStandardSqlWriter()->format($delete)
+            self::format($delete)
         );
     }
 
@@ -119,7 +119,7 @@ final class DeleteUnitTest extends TestCase
 
         self::assertSameSql(
             'delete from "some_table" returning a + 2 as "a_plus_two"',
-            self::createStandardSqlWriter()->format($delete)
+            self::format($delete)
         );
     }
 }

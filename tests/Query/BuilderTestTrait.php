@@ -58,4 +58,9 @@ trait BuilderTestTrait
     {
         return new DefaultSqlWriter(new NullEscaper());
     }
+
+    protected static function format($query): string
+    {
+        return self::createStandardSqlWriter()->format($query);
+    }
 }

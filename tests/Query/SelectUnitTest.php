@@ -16,7 +16,7 @@ final class QuerySelectUnitTest extends TestCase
 {
     use BuilderTestTrait;
 
-    public function testCoverageForClone()
+    public function testCoverageForClone(): void
     {
         $select = new SelectQuery();
         $select
@@ -33,22 +33,22 @@ final class QuerySelectUnitTest extends TestCase
         $cloned = clone $select;
 
         self::assertSameSql(
-            self::createStandardSqlWriter()->format($select),
-            self::createStandardSqlWriter()->format($cloned)
+            self::format($select),
+            self::format($cloned)
         );
     }
 
-    public function testEmptySelect()
+    public function testEmptySelect(): void
     {
         $select = new SelectQuery('some_table');
 
         self::assertSameSql(
             'select * from "some_table"',
-            self::createStandardSqlWriter()->format($select)
+            self::format($select)
         );
     }
 
-    public function testForUpdate()
+    public function testForUpdate(): void
     {
         $select = new SelectQuery('some_table');
         self::assertFalse($select->isForUpdate());
@@ -58,11 +58,11 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select * from "some_table" for update',
-            self::createStandardSqlWriter()->format($select)
+            self::format($select)
         );
     }
 
-    public function testPerformOnly()
+    public function testPerformOnly(): void
     {
         $select = new SelectQuery('some_table');
         self::assertTrue($select->willReturnRows());
@@ -72,12 +72,12 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select * from "some_table"',
-            self::createStandardSqlWriter()->format($select),
+            self::format($select),
             "Will return row does not change formatting"
         );
     }
 
-    public function testColumnWithName()
+    public function testColumnWithName(): void
     {
         $select = new SelectQuery('some_table');
 
@@ -85,11 +85,11 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select "a" from "some_table"',
-            self::createStandardSqlWriter()->format($select)
+            self::format($select)
         );
     }
 
-    public function testColumnWithNameAndAlias()
+    public function testColumnWithNameAndAlias(): void
     {
         $select = new SelectQuery('some_table');
 
@@ -97,11 +97,11 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select "a" as "my_alias" from "some_table"',
-            self::createStandardSqlWriter()->format($select)
+            self::format($select)
         );
     }
 
-    public function testColumnWithTableAndName()
+    public function testColumnWithTableAndName(): void
     {
         $select = new SelectQuery('some_table');
 
@@ -109,11 +109,11 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select "foo"."a" from "some_table"',
-            self::createStandardSqlWriter()->format($select)
+            self::format($select)
         );
     }
 
-    public function testColumnWithExpression()
+    public function testColumnWithExpression(): void
     {
         $select = new SelectQuery('some_table');
 
@@ -121,52 +121,52 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select count(distinct foo) as "bar" from "some_table"',
-            self::createStandardSqlWriter()->format($select)
+            self::format($select)
         );
     }
 
-    public function testColumnExpressionWithColumnNameDoesNotEscape()
+    public function testColumnExpressionWithColumnNameDoesNotEscape(): void
     {
         $select = new SelectQuery('some_table');
         $select->columnExpression('foo.a', 'my_alias');
 
         self::assertSameSql(
             'select foo.a as "my_alias" from "some_table"',
-            self::createStandardSqlWriter()->format($select)
+            self::format($select)
         );
     }
 
-    public function testColumnExpressionWithExpressionInstanceAndArgumentsRaiseException()
+    public function testColumnExpressionWithExpressionInstanceAndArgumentsRaiseException(): void
     {
         $select = new SelectQuery('some_table');
 
-        $this->expectException(QueryError::class);
-        $this->expectExceptionMessageMatches('/arguments/');
+        self::expectException(QueryError::class);
+        self::expectExceptionMessageMatches('/arguments/');
 
         $select->columnExpression(ExpressionRaw::create('count(*)'), null, 12);
     }
 
-    public function testColumnExpressionWithNullRaiseError()
+    public function testColumnExpressionWithNullRaiseError(): void
     {
         $select = new SelectQuery('some_table');
 
-        $this->expectException(QueryError::class);
-        $this->expectExceptionMessageMatches('/Expression cannot be null/');
+        self::expectException(QueryError::class);
+        self::expectExceptionMessageMatches('/Expression cannot be null/');
 
         $select->columnExpression(null);
     }
 
-    public function testColumnExpressionWithEmptyStringRaiseError()
+    public function testColumnExpressionWithEmptyStringRaiseError(): void
     {
         $select = new SelectQuery('some_table');
 
-        $this->expectException(QueryError::class);
-        $this->expectExceptionMessageMatches('/Expression cannot be null/');
+        self::expectException(QueryError::class);
+        self::expectExceptionMessageMatches('/Expression cannot be null/');
 
         $select->columnExpression('');
     }
 
-    public function testColumnExpressionWithNonArrayArguments()
+    public function testColumnExpressionWithNonArrayArguments(): void
     {
         $select = new SelectQuery('some_table');
 
@@ -174,11 +174,11 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select sum(?) from "some_table"',
-            self::createStandardSqlWriter()->format($select)
+            self::format($select)
         );
     }
 
-    public function testColumnWithCallbackWhichReturnsStringGetsEscaped()
+    public function testColumnWithCallbackWhichReturnsStringGetsEscaped(): void
     {
         $select = new SelectQuery('some_table');
 
@@ -191,11 +191,11 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select "foo"."bar" as "result" from "some_table"',
-            self::createStandardSqlWriter()->format($select)
+            self::format($select)
         );
     }
 
-    public function testColumnWithCallbackWhichReturnsExpression()
+    public function testColumnWithCallbackWhichReturnsExpression(): void
     {
         $select = new SelectQuery('some_table');
 
@@ -208,11 +208,11 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select foo.bar as "result" from "some_table"',
-            self::createStandardSqlWriter()->format($select)
+            self::format($select)
         );
     }
 
-    public function testColumnWithCallbackWhichReturnsStringIsNotEscaped()
+    public function testColumnWithCallbackWhichReturnsStringIsNotEscaped(): void
     {
         $select = new SelectQuery('some_table');
 
@@ -225,11 +225,11 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select foo.bar as "result" from "some_table"',
-            self::createStandardSqlWriter()->format($select)
+            self::format($select)
         );
     }
 
-    public function testColumnExpressionWithCallback()
+    public function testColumnExpressionWithCallback(): void
     {
         $select = new SelectQuery('some_table');
 
@@ -242,11 +242,11 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select count(*) as "result" from "some_table"',
-            self::createStandardSqlWriter()->format($select)
+            self::format($select)
         );
     }
 
-    public function testColumns()
+    public function testColumns(): void
     {
         $select = new SelectQuery('some_table');
 
@@ -272,6 +272,12 @@ final class QuerySelectUnitTest extends TestCase
             'd' => function () {
                 return ExpressionRaw::create('count(d)');
             },
+
+            // A short arrow function, no alias
+            fn () => ExpressionRaw::create('count(e) as e'),
+
+            // A short arrow function, with alias
+            'f' => fn () => ExpressionRaw::create('count(f)'),
         ]);
 
         self::assertSameSql('
@@ -281,13 +287,15 @@ final class QuerySelectUnitTest extends TestCase
                 count(a) as a,
                 count(b) as "b",
                 count(c) as c,
-                count(d) as "d"
+                count(d) as "d",
+                count(e) as e,
+                count(f) as "f"
             from "some_table"',
-            self::createStandardSqlWriter()->format($select)
+            self::format($select)
         );
     }
 
-    public function testCondition()
+    public function testCondition(): void
     {
         $select = new SelectQuery('some_table');
 
@@ -295,11 +303,11 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select * from "some_table" where "foo" = ?',
-            self::createStandardSqlWriter()->format($select)
+            self::format($select)
         );
     }
 
-    public function testConditionWithExpression()
+    public function testConditionWithExpression(): void
     {
         $select = new SelectQuery('some_table');
 
@@ -307,11 +315,11 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select * from "some_table" where "bar" = 12',
-            self::createStandardSqlWriter()->format($select)
+            self::format($select)
         );
     }
 
-    public function testConditionWithExpressionValueWillCast()
+    public function testConditionWithExpressionValueWillCast(): void
     {
         $select = new SelectQuery('some_table');
 
@@ -319,11 +327,11 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select * from "some_table" where "baz" = ?::json',
-            self::createStandardSqlWriter()->format($select)
+            self::format($select)
         );
     }
 
-    public function testConditionWithCallbackCastAsArgument()
+    public function testConditionWithCallbackCastAsArgument(): void
     {
         $select = new SelectQuery('some_table');
 
@@ -333,11 +341,11 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select * from "some_table" where "boo" = ?',
-            self::createStandardSqlWriter()->format($select)
+            self::format($select)
         );
     }
 
-    public function testConditionWithWhereInstance()
+    public function testConditionWithWhereInstance(): void
     {
         $select = new SelectQuery('some_table');
 
@@ -348,11 +356,11 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select * from "some_table" where ("foo" is null or "bar" is null)',
-            self::createStandardSqlWriter()->format($select)
+            self::format($select)
         );
     }
 
-    public function testConditionWithWhereInstanceAndValueFails()
+    public function testConditionWithWhereInstanceAndValueFails(): void
     {
         $select = new SelectQuery('some_table');
 
@@ -371,11 +379,11 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select * from "some_table" where ("foo" is null or "bar" is null)',
-            self::createStandardSqlWriter()->format($select)
+            self::format($select)
         );
     }
 
-    public function testConditionWithCallbackReturningExpression()
+    public function testConditionWithCallbackReturningExpression(): void
     {
         $select = new SelectQuery('some_table');
 
@@ -385,15 +393,15 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select * from "some_table" where "baa" < now()',
-            self::createStandardSqlWriter()->format($select)
+            self::format($select)
         );
     }
 
-    public function testConditionWithCallbackReturningNothing()
+    public function testConditionWithCallbackReturningNothing(): void
     {
         $select = new SelectQuery('some_table');
 
-        $select->where(function (\Goat\Query\Where $where) {
+        $select->where(function (Where $where) {
             $where
                 ->isEqual('id', 12)
                 ->isGreaterOrEqual('birthdate', new \DateTimeImmutable('2019-09-24'))
@@ -402,11 +410,23 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select * from "some_table" where "id" = ? and "birthdate" >= ?',
-            self::createStandardSqlWriter()->format($select)
+            self::format($select)
         );
     }
 
-    public function testExpression()
+    public function testConditionWithShortArrowFunction(): void
+    {
+        $select = new SelectQuery('some_table');
+
+        $select->where(fn (Where $where) => $where->isLess('foo', 'bar'));
+
+        self::assertSameSql(
+            'select * from "some_table" where "foo" < ?',
+            self::format($select)
+        );
+    }
+
+    public function testExpression(): void
     {
         $select = new SelectQuery('some_table');
 
@@ -414,11 +434,11 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select * from "some_table" where a < b',
-            self::createStandardSqlWriter()->format($select)
+            self::format($select)
         );
     }
 
-    public function testExpressionWithCallback()
+    public function testExpressionWithCallback(): void
     {
         $select = new SelectQuery('some_table');
 
@@ -428,31 +448,43 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select * from "some_table" where "a" = ?',
-            self::createStandardSqlWriter()->format($select)
+            self::format($select)
         );
     }
 
-    public function testExpressionWithNullRaiseError()
+    public function testExpressionWithShortArrowFunction(): void
     {
         $select = new SelectQuery('some_table');
 
-        $this->expectException(QueryError::class);
-        $this->expectExceptionMessageMatches('/Expression cannot be null/');
+        $select->whereExpression(fn (Where $where) => $where->isLess('foo', 'bar'));
+
+        self::assertSameSql(
+            'select * from "some_table" where "foo" < ?',
+            self::format($select)
+        );
+    }
+
+    public function testExpressionWithNullRaiseError(): void
+    {
+        $select = new SelectQuery('some_table');
+
+        self::expectException(QueryError::class);
+        self::expectExceptionMessageMatches('/Expression cannot be null/');
 
         $select->whereExpression(null);
     }
 
-    public function testExpressionWithEmptyStringRaiseError()
+    public function testExpressionWithEmptyStringRaiseError(): void
     {
         $select = new SelectQuery('some_table');
 
-        $this->expectException(QueryError::class);
-        $this->expectExceptionMessageMatches('/Expression cannot be null/');
+        self::expectException(QueryError::class);
+        self::expectExceptionMessageMatches('/Expression cannot be null/');
 
         $select->whereExpression('');
     }
 
-    public function testHaving()
+    public function testHaving(): void
     {
         $select = new SelectQuery('some_table');
 
@@ -460,11 +492,11 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select * from "some_table" having "foo" = ?',
-            self::createStandardSqlWriter()->format($select)
+            self::format($select)
         );
     }
 
-    public function testHavingWithExpression()
+    public function testHavingWithExpression(): void
     {
         $select = new SelectQuery('some_table');
 
@@ -472,11 +504,11 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select * from "some_table" having "bar" = 12',
-            self::createStandardSqlWriter()->format($select)
+            self::format($select)
         );
     }
 
-    public function testHavingWithExpressionValueWillCast()
+    public function testHavingWithExpressionValueWillCast(): void
     {
         $select = new SelectQuery('some_table');
 
@@ -484,11 +516,11 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select * from "some_table" having "baz" = ?::json',
-            self::createStandardSqlWriter()->format($select)
+            self::format($select)
         );
     }
 
-    public function testHavingWithCallbackCastAsArgument()
+    public function testHavingWithCallbackCastAsArgument(): void
     {
         $select = new SelectQuery('some_table');
 
@@ -498,11 +530,11 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select * from "some_table" having "boo" = ?',
-            self::createStandardSqlWriter()->format($select)
+            self::format($select)
         );
     }
 
-    public function testHavingWithCallbackReturningExpression()
+    public function testHavingWithCallbackReturningExpression(): void
     {
         $select = new SelectQuery('some_table');
 
@@ -512,11 +544,11 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select * from "some_table" having "baa" < now()',
-            self::createStandardSqlWriter()->format($select)
+            self::format($select)
         );
     }
 
-    public function testHavingExpression()
+    public function testHavingExpression(): void
     {
         $select = new SelectQuery('some_table');
 
@@ -524,11 +556,11 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select * from "some_table" having a < b',
-            self::createStandardSqlWriter()->format($select)
+            self::format($select)
         );
     }
 
-    public function testHavingExpressionWithCallback()
+    public function testHavingExpressionWithCallback(): void
     {
         $select = new SelectQuery('some_table');
 
@@ -538,11 +570,11 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select * from "some_table" having "a" = ?',
-            self::createStandardSqlWriter()->format($select)
+            self::format($select)
         );
     }
 
-    public function testExpressionAsJoin()
+    public function testExpressionAsJoin(): void
     {
         $expression = ExpressionConstantTable::create();
         $expression->row([1, 2, 3]);
@@ -557,11 +589,11 @@ final class QuerySelectUnitTest extends TestCase
                 values (?, ?, ?)
             ) as "goat_1"
             SQL,
-            self::createStandardSqlWriter()->format($select)
+            self::format($select)
         );
     }
 
-    public function testExpressionAsJoinWithAlias()
+    public function testExpressionAsJoinWithAlias(): void
     {
         $expression = ExpressionConstantTable::create();
         $expression->row([1, 2, 3]);
@@ -576,7 +608,7 @@ final class QuerySelectUnitTest extends TestCase
                 values (?, ?, ?)
             ) as "mooh"
             SQL,
-            self::createStandardSqlWriter()->format($select)
+            self::format($select)
         );
     }
 
@@ -598,12 +630,12 @@ final class QuerySelectUnitTest extends TestCase
                 (?, ?, ?)
             ) as "f.u.b.a.r."
             SQL,
-            self::createStandardSqlWriter()->format($select)
+            self::format($select)
         );
     }
      */
 
-    public function testExpressionAsTable()
+    public function testExpressionAsTable(): void
     {
         $expression = ExpressionConstantTable::create();
         $expression->row([1, 2, 3]);
@@ -620,11 +652,11 @@ final class QuerySelectUnitTest extends TestCase
                 (?, ?, ?)
             ) as "goat_1"
             SQL,
-            self::createStandardSqlWriter()->format($select)
+            self::format($select)
         );
     }
 
-    public function testExpressionAsTableWithAlias()
+    public function testExpressionAsTableWithAlias(): void
     {
         $expression = ExpressionConstantTable::create();
         $expression->row([1, 2, 3]);
@@ -639,7 +671,7 @@ final class QuerySelectUnitTest extends TestCase
                 (?, ?, ?)
             ) as "foobar"
             SQL,
-            self::createStandardSqlWriter()->format($select)
+            self::format($select)
         );
     }
 
@@ -661,12 +693,12 @@ final class QuerySelectUnitTest extends TestCase
                 (?, ?, ?)
             ) as "f.u.b.a.r."
             SQL,
-            self::createStandardSqlWriter()->format($select)
+            self::format($select)
         );
     }
      */
 
-    public function testRange()
+    public function testRange(): void
     {
         $select = new SelectQuery('some_table');
 
@@ -674,31 +706,31 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select * from "some_table" limit 10 offset 3',
-            self::createStandardSqlWriter()->format($select)
+            self::format($select)
         );
     }
 
-    public function testRangeWithNegativeOffsetRaiseError()
+    public function testRangeWithNegativeOffsetRaiseError(): void
     {
         $select = new SelectQuery('some_table');
 
-        $this->expectException(QueryError::class);
-        $this->expectExceptionMessageMatches('/offset must be a positive integer/');
+        self::expectException(QueryError::class);
+        self::expectExceptionMessageMatches('/offset must be a positive integer/');
 
         $select->range(10, -1);
     }
 
-    public function testRangeWithNegativeLimitRaiseError()
+    public function testRangeWithNegativeLimitRaiseError(): void
     {
         $select = new SelectQuery('some_table');
 
-        $this->expectException(QueryError::class);
-        $this->expectExceptionMessageMatches('/limit must be a positive integer/');
+        self::expectException(QueryError::class);
+        self::expectExceptionMessageMatches('/limit must be a positive integer/');
 
         $select->range(-1, 10);
     }
 
-    public function testPage()
+    public function testPage(): void
     {
         $select = new SelectQuery('some_table');
 
@@ -706,16 +738,16 @@ final class QuerySelectUnitTest extends TestCase
 
         self::assertSameSql(
             'select * from "some_table" limit 10 offset 20',
-            self::createStandardSqlWriter()->format($select)
+            self::format($select)
         );
     }
 
-    public function testPageWith0RaiseError()
+    public function testPageWith0RaiseError(): void
     {
         $select = new SelectQuery('some_table');
 
-        $this->expectException(QueryError::class);
-        $this->expectExceptionMessageMatches('/page must be a positive integer/');
+        self::expectException(QueryError::class);
+        self::expectExceptionMessageMatches('/page must be a positive integer/');
 
         $select->page(10, 0);
     }

@@ -72,7 +72,7 @@ final class InsertQueryUnitTest extends TestCase
 
         self::assertSameSql(
             'insert into "some_table" ("pif", "paf") select "foo", "bar" from "other_table" where "baz" = ?',
-            self::createStandardSqlWriter()->format($insert)
+            self::format($insert)
         );
     }
 
@@ -82,7 +82,7 @@ final class InsertQueryUnitTest extends TestCase
         $insert->columns(['pif', 'paf']);
 
         self::expectException(QueryError::class);
-        self::createStandardSqlWriter()->format($insert);
+        self::format($insert);
     }
 
     public function testInsertValuesUsesColumnsFromFirst(): void
@@ -95,7 +95,7 @@ final class InsertQueryUnitTest extends TestCase
 
         self::assertSameSql(
             'insert into "some_table" ("foo", "int") values (?, ?)',
-            self::createStandardSqlWriter()->format($insert)
+            self::format($insert)
         );
     }
 
@@ -113,7 +113,7 @@ final class InsertQueryUnitTest extends TestCase
 
         self::assertSameSql(
             'insert into "some_table" ("foo", "int") values (?, ?), (?, ?)',
-            self::createStandardSqlWriter()->format($insert)
+            self::format($insert)
         );
     }
 
@@ -132,7 +132,7 @@ final class InsertQueryUnitTest extends TestCase
 
         self::assertSameSql(
             'insert into "some_table" ("a", "b") values (?, ?), (?, ?)',
-            self::createStandardSqlWriter()->format($insert)
+            self::format($insert)
         );
     }
 }
