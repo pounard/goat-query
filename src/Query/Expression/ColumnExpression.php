@@ -2,28 +2,21 @@
 
 declare(strict_types=1);
 
-namespace Goat\Query;
+namespace Goat\Query\Expression;
+
+use Goat\Query\ArgumentBag;
+use Goat\Query\Expression;
 
 /**
  * Represents a table column identifier.
  */
-final class ExpressionColumn implements Expression
+class ColumnExpression implements Expression
 {
     private string $columnName;
     private ?string $tableAlias = null;
 
-    /**
-     * @deprecated
-     *   Use static create() method instead.
-     */
-    public function __construct(string $columnName, ?string $tableAlias = null)
+    protected function __construct(string $columnName, ?string $tableAlias = null)
     {
-        if (null === $tableAlias) {
-            if (false !== \strpos($columnName, '.')) {
-                list($tableAlias, $columnName) = \explode('.', $columnName, 2);
-            }
-        }
-
         $this->columnName = $columnName;
         $this->tableAlias = $tableAlias;
     }
@@ -33,6 +26,12 @@ final class ExpressionColumn implements Expression
      */
     public static function create(string $columnName, ?string $tableAlias = null): self
     {
+        if (null === $tableAlias) {
+            if (false !== \strpos($columnName, '.')) {
+                list($tableAlias, $columnName) = \explode('.', $columnName, 2);
+            }
+        }
+
         return new self($columnName, $tableAlias);
     }
 
@@ -41,11 +40,7 @@ final class ExpressionColumn implements Expression
      */
     public static function escape(string $columnName, ?string $tableAlias = null): self
     {
-        $instance = self::create('');
-        $instance->columnName = $columnName;
-        $instance->tableAlias = $tableAlias;
-
-        return $instance;
+        return new self($columnName, $tableAlias);
     }
 
     /**
@@ -60,15 +55,6 @@ final class ExpressionColumn implements Expression
      * Get table alias.
      */
     public function getTableAlias(): ?string
-    {
-        return $this->tableAlias;
-    }
-
-    /**
-     * @deprected
-     * @see \Goat\Query\ExpressionColumn::getTableAlias()
-     */
-    public function getRelationAlias(): ?string
     {
         return $this->tableAlias;
     }

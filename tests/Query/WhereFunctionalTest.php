@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Goat\Query\Tests;
 
-use Goat\Query\ExpressionColumn;
 use Goat\Query\SelectQuery;
 use Goat\Query\Where;
+use Goat\Query\Expression\ColumnExpression;
 use PHPUnit\Framework\TestCase;
 
 class WhereFunctionalTest extends TestCase
@@ -19,7 +19,7 @@ class WhereFunctionalTest extends TestCase
 
         $select = new SelectQuery('the_universe', 'u');
         $select->column('id');
-        $select->where('id', new ExpressionColumn('parent.id'));
+        $select->where('id', ColumnExpression::create('parent.id'));
 
         $where = (new Where())
             // Simple '<>' operator

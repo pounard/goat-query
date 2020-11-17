@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Goat\Runner\Tests\Query;
 
-use Goat\Query\ExpressionColumn;
 use Goat\Query\ExpressionRaw;
 use Goat\Query\Where;
+use Goat\Query\Expression\ColumnExpression;
 use Goat\Runner\Runner;
 use Goat\Runner\Testing\DatabaseAwareQueryTest;
 use Goat\Runner\Testing\TestDriverFactory;
@@ -234,18 +234,18 @@ class UpdateTest extends DatabaseAwareQueryTest
     }
 
     /**
-     * Update by using SET column = other_table.column from FROM using ExpressionColumn
+     * Update by using SET column = other_table.column from FROM using ColumnExpression
      *
      * @dataProvider runnerDataProvider
      */
-    public function testUpdateSetExpressionColumn(TestDriverFactory $factory)
+    public function testUpdateSetColumnExpression(TestDriverFactory $factory)
     {
         $runner = $factory->getRunner();
 
         $result = $runner
             ->getQueryBuilder()
             ->update('some_table', 't')
-            ->set('foo', new ExpressionColumn('u.id'))
+            ->set('foo', ColumnExpression::create('u.id'))
             ->join('users', "u.id = t.id_user", 'u')
             ->where('u.name', 'admin')
             ->execute()

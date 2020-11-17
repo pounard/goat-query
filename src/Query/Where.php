@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Goat\Query;
 
+use Goat\Query\Expression\ColumnExpression;
+
 /**
  * Where represents the selection of the SQL query
  */
@@ -104,7 +106,7 @@ final class Where implements Statement
     /**
      * Add a condition
      *
-     * @param string|ExpressionColumn $column
+     * @param string|Expression|ColumnExpression $column
      * @param mixed|callable|Statement $value
      * @param string $operator
      *
@@ -243,7 +245,7 @@ final class Where implements Statement
      *
      * If value is an array, this will be converted to a 'in' condition
      *
-     * @param string|ExpressionColumn $column
+     * @param string|Expression|ColumnExpression $column
      * @param mixed $value
      *
      * @return $this
@@ -258,7 +260,7 @@ final class Where implements Statement
      *
      * If value is an array, this will be converted to a 'not in' condition
      *
-     * @param string|ExpressionColumn $column
+     * @param string|Expression|ColumnExpression $column
      * @param mixed $value
      *
      * @return $this
@@ -271,7 +273,7 @@ final class Where implements Statement
     /**
      * 'like' condition
      *
-     * @param string|ExpressionColumn $column
+     * @param string|Expression|ColumnExpression $column
      * @param mixed[] $values
      * @param bool $caseSensitive
      *
@@ -285,7 +287,7 @@ final class Where implements Statement
     /**
      * 'not like' condition
      *
-     * @param string|ExpressionColumn $column
+     * @param string|Expression|ColumnExpression $column
      * @param mixed[] $values
      * @param bool $caseSensitive
      *
@@ -299,7 +301,7 @@ final class Where implements Statement
     /**
      * 'in' condition
      *
-     * @param string|ExpressionColumn $column
+     * @param string|Expression|ColumnExpression $column
      * @param mixed[] $values
      *
      * @return $this
@@ -312,7 +314,7 @@ final class Where implements Statement
     /**
      * 'not in' condition
      *
-     * @param string|ExpressionColumn $column
+     * @param string|Expression|ColumnExpression $column
      * @param mixed[] $values
      *
      * @return $this
@@ -325,7 +327,7 @@ final class Where implements Statement
     /**
      * '>' condition
      *
-     * @param string|ExpressionColumn $column
+     * @param string|Expression|ColumnExpression $column
      * @param mixed $value
      *
      * @return $this
@@ -338,7 +340,7 @@ final class Where implements Statement
     /**
      * '<' condition
      *
-     * @param string|ExpressionColumn $column
+     * @param string|Expression|ColumnExpression $column
      * @param mixed $value
      *
      * @return $this
@@ -351,7 +353,7 @@ final class Where implements Statement
     /**
      * '>=' condition
      *
-     * @param string|ExpressionColumn $column
+     * @param string|Expression|ColumnExpression $column
      * @param mixed $value
      *
      * @return $this
@@ -364,7 +366,7 @@ final class Where implements Statement
     /**
      * '<=' condition
      *
-     * @param string|ExpressionColumn $column
+     * @param string|Expression|ColumnExpression $column
      * @param mixed $value
      *
      * @return $this
@@ -377,7 +379,7 @@ final class Where implements Statement
     /**
      * 'between' condition
      *
-     * @param string|ExpressionColumn $column
+     * @param string|Expression|ColumnExpression $column
      * @param mixed $from
      * @param mixed $to
      *
@@ -391,7 +393,7 @@ final class Where implements Statement
     /**
      * 'not between' condition
      *
-     * @param string|ExpressionColumn $column
+     * @param string|Expression|ColumnExpression $column
      * @param mixed $from
      * @param mixed $to
      *
@@ -405,7 +407,7 @@ final class Where implements Statement
     /**
      * Add an is null condition
      *
-     * @param string|ExpressionColumn $column
+     * @param string|Expression|ColumnExpression $column
      *
      * @return $this
      */
@@ -417,7 +419,7 @@ final class Where implements Statement
     /**
      * Add an is not null condition
      *
-     * @param string|ExpressionColumn $column
+     * @param string|Expression|ColumnExpression $column
      *
      * @return $this
      */

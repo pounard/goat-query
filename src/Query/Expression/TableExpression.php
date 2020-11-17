@@ -17,8 +17,11 @@ class TableExpression implements Expression, WithAlias
     private string $name;
     private ?string $schema = null;
 
-    private function __construct()
+    protected function __construct(string $name, ?string $alias = null, ?string $schema = null)
     {
+        $this->alias = $alias;
+        $this->name = $name;
+        $this->schema = $schema;
     }
 
     /**
@@ -26,12 +29,7 @@ class TableExpression implements Expression, WithAlias
      */
     public static function escape(string $name, ?string $alias = null, ?string $schema = null): self
     {
-        $ret = new self();
-        $ret->alias = $alias;
-        $ret->name = $name;
-        $ret->schema = $schema;
-
-        return $ret;
+        return new self($name, $alias, $schema);
     }
 
     /**

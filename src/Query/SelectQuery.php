@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Goat\Query;
 
+use Goat\Query\Expression\ColumnExpression;
 use Goat\Query\Partial\Column;
 use Goat\Query\Partial\FromClauseTrait;
 use Goat\Query\Partial\HavingClauseTrait;
@@ -239,7 +240,7 @@ final class SelectQuery extends AbstractQuery implements Expression
     public function orderBy($column, int $order = Query::ORDER_ASC, int $null = Query::NULL_IGNORE): self
     {
         if (!$column instanceof Expression) {
-            $column = new ExpressionColumn($column);
+            $column = ColumnExpression::create($column);
         }
 
         $this->orders[] = [$column, $order, $null];
@@ -272,7 +273,7 @@ final class SelectQuery extends AbstractQuery implements Expression
     /**
      * Add a group by clause
      *
-     * @param string|ExpressionColumn $column
+     * @param string|Expression|ColumnExpression $column
      *   Column identifier must contain the table alias, if might be a raw SQL
      *   string if you wish, for example, to write a case when statement
      */

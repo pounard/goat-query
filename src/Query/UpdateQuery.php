@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Goat\Query;
 
+use Goat\Query\Expression\ColumnExpression;
 use Goat\Query\Expression\TableExpression;
 use Goat\Query\Partial\FromClauseTrait;
 use Goat\Query\Partial\ReturningQueryTrait;
@@ -19,7 +20,7 @@ final class UpdateQuery extends AbstractQuery
     use WhereClauseTrait;
 
     private TableExpression $table;
-    /** @var ExpressionColumn[] */
+    /** @var ColumnExpression */
     private array $columns = [];
 
     /**

@@ -4,14 +4,16 @@ declare(strict_types=1);
 
 namespace Goat\Query;
 
+use Goat\Query\Expression\ColumnExpression;
+
 /**
- * Represents a condition/comparison expression
+ * Represents LIKE/ILIKE/SIMILAR TO expression.
  */
 final class ExpressionLike implements Expression
 {
     const DEFAULT_WIDCARD = '?';
 
-    private ExpressionColumn $column;
+    private ColumnExpression $column;
     private ?string $operator = null;
     private string $pattern;
     private ?string $value = null;

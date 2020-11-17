@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Goat\Query\Partial;
 
 use Goat\Query\Expression;
-use Goat\Query\ExpressionColumn;
 use Goat\Query\QueryError;
 use Goat\Query\Where;
+use Goat\Query\Expression\ColumnExpression;
 
 /**
  * Represents the WHERE part of any query.
@@ -43,7 +43,7 @@ trait WhereClauseTrait
      *
      * Default WHERE clause uses AND predicate.
      *
-     * @param string|ExpressionColumn $column
+     * @param string|Expression|ColumnExpression $column
      * @param mixed $value
      * @param string $operator
      */

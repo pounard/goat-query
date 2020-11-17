@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Goat\Query;
 
+use Goat\Query\Expression\ColumnExpression;
+
 /**
  * Input normalization functions
  *
@@ -64,10 +66,10 @@ final class ExpressionFactory
         }
 
         if (\is_string($expression)) {
-            return new ExpressionColumn($expression);
+            return ColumnExpression::create($expression);
         }
 
-        throw new QueryError(\sprintf("column reference must be a string or an instance of %s", ExpressionColumn::class));
+        throw new QueryError(\sprintf("column reference must be a string or an instance of %s", ColumnExpression::class));
     }
 
     /**

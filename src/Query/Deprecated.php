@@ -4,7 +4,39 @@ declare(strict_types=1);
 
 namespace Goat\Query;
 
+use Goat\Query\Expression\ColumnExpression;
 use Goat\Query\Expression\TableExpression;
+
+/**
+ * @deprecated
+ * @see \Goat\Query\Expression\ColumnExpression::create()
+ */
+final class ExpressionColumn extends ColumnExpression
+{
+    /**
+     * @deprecated
+     * @see \Goat\Query\Expression\ColumnExpression::create()
+     */
+    public function __construct(string $columnName, ?string $tableAlias = null)
+    {
+        if (null === $tableAlias) {
+            if (false !== \strpos($columnName, '.')) {
+                list($tableAlias, $columnName) = \explode('.', $columnName, 2);
+            }
+        }
+
+        parent::__construct($columnName, $tableAlias);
+    }
+
+    /**
+     * @deprected
+     * @see \Goat\Query\Expression\ColumnExpression::getTableAlias()
+     */
+    public function getRelationAlias(): ?string
+    {
+        return $this->tableAlias;
+    }
+}
 
 /**
  * @deprecated

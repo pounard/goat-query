@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Goat\Query\Tests;
 
 use Goat\Driver\Query\DefaultSqlWriter;
-use Goat\Query\ExpressionColumn;
 use Goat\Query\ExpressionRaw;
 use Goat\Query\Query;
 use Goat\Query\SelectQuery;
+use Goat\Query\Expression\ColumnExpression;
 use Goat\Runner\Testing\NullEscaper;
 use PHPUnit\Framework\TestCase;
 
@@ -130,7 +130,7 @@ EOT;
         ;
         $query
             ->leftJoinWhere('task_note', 'n')
-            ->condition('n.task_id', new ExpressionColumn('t.id'))
+            ->condition('n.task_id', ColumnExpression::create('t.id'))
         ;
         $where = $query->getWhere()
             ->condition('t.user_id', 12)
