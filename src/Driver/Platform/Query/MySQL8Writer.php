@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Goat\Driver\Platform\Query;
 
 use Goat\Query\Expression;
-use Goat\Query\ExpressionRaw;
+use Goat\Query\Expression\RawExpression;
 
 /**
  * MySQL >= 8
@@ -20,9 +20,9 @@ class MySQL8Writer extends MySQLWriter
         if (\is_string($expression)) {
             // Let pass strings with dot inside, it might already been formatted.
             if (false !== \strpos($expression, ".")) {
-                return ExpressionRaw::create($expression);
+                return RawExpression::create($expression);
             }
-            return ExpressionRaw::create("new." . $this->escaper->escapeIdentifier($expression));
+            return RawExpression::create("new." . $this->escaper->escapeIdentifier($expression));
         }
 
         return $expression;

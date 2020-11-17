@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Goat\Query;
 
 use Goat\Query\Expression\ColumnExpression;
+use Goat\Query\Expression\RawExpression;
 use Goat\Query\Partial\Column;
 use Goat\Query\Partial\FromClauseTrait;
 use Goat\Query\Partial\HavingClauseTrait;
@@ -295,7 +296,7 @@ final class SelectQuery extends AbstractQuery implements Expression
     public function orderByExpression($column, int $order = Query::ORDER_ASC, int $null = Query::NULL_IGNORE): self
     {
         if (!$column instanceof Expression) {
-            $column = new ExpressionRaw($column);
+            $column = RawExpression::create($column);
         }
 
         $this->orders[] = [$column, $order, $null];
@@ -421,7 +422,7 @@ final class SelectQuery extends AbstractQuery implements Expression
             ->removeAllColumns()
             ->removeAllOrder()
             ->range(0, 0)
-            ->column(ExpressionRaw::create("count(*)"), $countAlias)
+            ->column(RawExpression::create("count(*)"), $countAlias)
         ;
     }
 

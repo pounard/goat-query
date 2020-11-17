@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Goat\Query;
 
 use Goat\Query\Expression\ColumnExpression;
+use Goat\Query\Expression\RawExpression;
 use Goat\Query\Expression\TableExpression;
 
 /**
@@ -35,6 +36,22 @@ final class ExpressionColumn extends ColumnExpression
     public function getRelationAlias(): ?string
     {
         return $this->tableAlias;
+    }
+}
+
+/**
+ * @deprecated
+ * @see \Goat\Query\Expression\RawExpression
+ */
+final class ExpressionRaw extends RawExpression
+{
+    /**
+     * @deprecated
+     * @see \Goat\Query\Expression\RawExpression::create()
+     */
+    public function __construct(string $expression, $arguments = [])
+    {
+        parent::__construct($expression, $arguments);
     }
 }
 
@@ -71,7 +88,6 @@ final class InsertValuesQuery extends InsertQuery
         return 0;
     }
 }
-
 
 /**
  * @deprecated

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Goat\Query\Partial;
 
 use Goat\Query\Expression;
-use Goat\Query\ExpressionRaw;
 use Goat\Query\Query;
 use Goat\Query\Where;
 
@@ -43,7 +42,7 @@ trait FromClauseTrait
     /**
      * Add FROM table statement
      *
-     * @param string|\Goat\Query\Expression $table
+     * @param string|Expression $table
      * @param null|string $alias
      */
     final public function from($table, ?string $alias = null): self
@@ -66,8 +65,8 @@ trait FromClauseTrait
     /**
      * Add join statement.
      *
-     * @param string|\Goat\Query\Expression $table
-     * @param string|Where|ExpressionRaw $condition
+     * @param string|Expression $table
+     * @param string|Where|Expression $condition
      * @param string $alias
      * @param int $mode
      */
@@ -99,8 +98,8 @@ trait FromClauseTrait
     /**
      * Add inner statement.
      *
-     * @param string|\Goat\Query\Expression $table
-     * @param string|Where|ExpressionRaw $condition
+     * @param string|Expression $table
+     * @param string|Where|Expression $condition
      * @param string $alias
      */
     final public function innerJoin($table, $condition = null, ?string $alias = null): self
@@ -113,8 +112,8 @@ trait FromClauseTrait
     /**
      * Add left outer join statement.
      *
-     * @param string|\Goat\Query\Expression $table
-     * @param string|Where|ExpressionRaw $condition
+     * @param string|Expression $table
+     * @param string|Where|Expression $condition
      * @param string $alias
      */
     final public function leftJoin($table, $condition = null, ?string $alias = null): self
@@ -127,7 +126,7 @@ trait FromClauseTrait
     /**
      * Add inner statement and return the associated Where.
      *
-     * @param string|\Goat\Query\Expression $table
+     * @param string|Expression $table
      * @param string $alias
      */
     final public function innerJoinWhere($table, string $alias = null): Where
@@ -138,7 +137,7 @@ trait FromClauseTrait
     /**
      * Add left outer join statement and return the associated Where.
      *
-     * @param string|\Goat\Query\Expression $table
+     * @param string|Expression $table
      * @param string $alias
      */
     final public function leftJoinWhere($table, string $alias = null): Where

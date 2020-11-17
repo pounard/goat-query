@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Goat\Query\Partial;
 
-use Goat\Query\ExpressionRaw;
 use Goat\Query\QueryError;
+use Goat\Query\Expression\RawExpression;
 
 /**
  * Represents the RETURNING part of any query.
@@ -49,7 +49,7 @@ trait ReturningQueryTrait
             if ($alias) {
                 throw new QueryError("RETURNING * cannot be aliased.");
             }
-            $expression = ExpressionRaw::create('*');
+            $expression = RawExpression::create('*');
         }
 
         $this->return[] = Column::name($expression, $alias);

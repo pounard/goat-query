@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Goat\Query;
 
 use Goat\Query\Expression\ColumnExpression;
+use Goat\Query\Expression\RawExpression;
 
 /**
  * Input normalization functions
@@ -47,7 +48,7 @@ final class ExpressionFactory
     public static function output($expression, $context = null): Expression
     {
         if ('*' === $expression) {
-            return new ExpressionRaw('*');
+            return RawExpression::create('*');
         }
 
         return self::column($expression);
@@ -114,7 +115,7 @@ final class ExpressionFactory
         }
 
         if (\is_scalar($expression)) {
-            return ExpressionRaw::create($expression, $arguments);
+            return RawExpression::create($expression, $arguments);
         }
 
         throw new QueryError(\sprintf("raw expression must be a scalar or an instance of %s", Expression::class));

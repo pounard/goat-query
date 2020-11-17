@@ -2,31 +2,22 @@
 
 declare(strict_types=1);
 
-namespace Goat\Query;
+namespace Goat\Query\Expression;
+
+use Goat\Query\ArgumentBag;
+use Goat\Query\Expression;
 
 /**
  * Raw user-given SQL string.
  *
  * SECURITY WARNING: THIS WILL NEVER BE ESCAPED, IN ANY CASES.
  */
-final class ExpressionRaw implements Expression
+class RawExpression implements Expression
 {
     private string $expression;
     private ArgumentBag $arguments;
 
-    /**
-     * Default constructor
-     *
-     * @param string $expressionString
-     *   Raw SQL expression string
-     * @param mixed[] $arguments
-     *   Key/value pairs or argument list, anonymous and named parameters
-     *   cannot be mixed up within the same query
-     *
-     * @deprecated
-     *   Use static create() method instead.
-     */
-    public function __construct(string $expression, $arguments = [])
+    protected function __construct(string $expression, $arguments = [])
     {
         if (!\is_array($arguments)) {
             $arguments = [$arguments];
@@ -38,7 +29,7 @@ final class ExpressionRaw implements Expression
     }
 
     /**
-     * Create instance from name and alias
+     * Create instance from name and alias.
      */
     public static function create(string $expression, $arguments = []): self
     {

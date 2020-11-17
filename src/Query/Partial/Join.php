@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Goat\Query\Partial;
 
 use Goat\Query\Expression;
-use Goat\Query\ExpressionRaw;
 use Goat\Query\Query;
 use Goat\Query\QueryError;
 use Goat\Query\Where;
+use Goat\Query\Expression\RawExpression;
 
 final class Join
 {
@@ -31,7 +31,7 @@ final class Join
         //     - and all the other checks
         if (null === $condition) {
             $this->condition = new Where();
-        } else if (\is_string($condition) || $condition instanceof ExpressionRaw) {
+        } else if (\is_string($condition) || $condition instanceof RawExpression) {
             $this->condition = (new Where())->expression($condition);
         } else {
             if (!$condition instanceof Where) {

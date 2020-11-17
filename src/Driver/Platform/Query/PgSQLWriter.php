@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Goat\Driver\Platform\Query;
 
 use Goat\Driver\Query\DefaultSqlWriter;
-use Goat\Query\ExpressionRaw;
 use Goat\Query\MergeQuery;
 use Goat\Query\Query;
 use Goat\Query\QueryError;
+use Goat\Query\Expression\RawExpression;
 
 /**
  * PostgreSQL >= 8.4.
@@ -79,7 +79,7 @@ class PgSQLWriter extends DefaultSqlWriter
                 $setColumnMap = [];
                 foreach ($columns as $column) {
                     if (!\in_array($column, $key)) {
-                        $setColumnMap[$column] = ExpressionRaw::create("excluded." . $this->escaper->escapeIdentifier($column));
+                        $setColumnMap[$column] = RawExpression::create("excluded." . $this->escaper->escapeIdentifier($column));
                     }
                 }
                 $output[] = 'on conflict (' . $this->formatColumnNameList($key) . ')';

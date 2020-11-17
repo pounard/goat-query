@@ -7,11 +7,11 @@ namespace Goat\Driver\Platform\Query;
 use Goat\Driver\Query\DefaultSqlWriter;
 use Goat\Query\DeleteQuery;
 use Goat\Query\Expression;
-use Goat\Query\ExpressionRaw;
 use Goat\Query\MergeQuery;
 use Goat\Query\Query;
 use Goat\Query\QueryError;
 use Goat\Query\UpdateQuery;
+use Goat\Query\Expression\RawExpression;
 
 /**
  * MySQL <= 5.7
@@ -63,9 +63,9 @@ class MySQLWriter extends DefaultSqlWriter
         if (\is_string($expression)) {
             // Let pass strings with dot inside, it might already been formatted.
             if (false !== \strpos($expression, ".")) {
-                return ExpressionRaw::create($expression);
+                return RawExpression::create($expression);
             }
-            return ExpressionRaw::create("values(" . $this->escaper->escapeIdentifier($expression) . ")");
+            return RawExpression::create("values(" . $this->escaper->escapeIdentifier($expression) . ")");
         }
 
         return $expression;

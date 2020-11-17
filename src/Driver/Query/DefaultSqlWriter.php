@@ -8,7 +8,6 @@ use Goat\Query\DeleteQuery;
 use Goat\Query\Expression;
 use Goat\Query\ExpressionConstantTable;
 use Goat\Query\ExpressionLike;
-use Goat\Query\ExpressionRaw;
 use Goat\Query\ExpressionRow;
 use Goat\Query\ExpressionValue;
 use Goat\Query\InsertQuery;
@@ -21,6 +20,7 @@ use Goat\Query\UpdateQuery;
 use Goat\Query\Where;
 use Goat\Query\Expression\AliasedExpression;
 use Goat\Query\Expression\ColumnExpression;
+use Goat\Query\Expression\RawExpression;
 use Goat\Query\Expression\TableExpression;
 use Goat\Query\Partial\Column;
 use Goat\Query\Partial\Join;
@@ -585,7 +585,7 @@ class DefaultSqlWriter extends AbstractSqlWriter
                 $setColumnMap = [];
                 foreach ($usingColumnMap as $column => $usingColumnExpression) {
                     if (!\in_array($column, $key)) {
-                        $setColumnMap[$column] = ExpressionRaw::create($usingColumnExpression);
+                        $setColumnMap[$column] = RawExpression::create($usingColumnExpression);
                     }
                 }
                 $output[] = "when matched then update set";
@@ -814,7 +814,7 @@ class DefaultSqlWriter extends AbstractSqlWriter
     /**
      * Format value expression.
      */
-    protected function formatExpressionRaw(ExpressionRaw $expression): string
+    protected function formatRawExpression(RawExpression $expression): string
     {
         return $expression->getString();
     }
@@ -909,8 +909,8 @@ class DefaultSqlWriter extends AbstractSqlWriter
     {
         if ($query instanceof ColumnExpression) {
             return $this->formatColumnExpression($query);
-        } else if ($query instanceof ExpressionRaw) {
-            return $this->formatExpressionRaw($query);
+        } else if ($query instanceof RawExpression) {
+            return $this->formatRawExpression($query);
         } else if ($query instanceof TableExpression) {
             return $this->formatTableExpression($query);
         } else if ($query instanceof ExpressionValue) {
