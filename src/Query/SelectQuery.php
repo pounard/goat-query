@@ -32,6 +32,7 @@ final class SelectQuery extends AbstractQuery implements Expression
     private $performOnly = false;
     private $relation;
     private $relationAlias;
+    private $unions = [];
 
     /**
      * Build a new query
@@ -47,6 +48,37 @@ final class SelectQuery extends AbstractQuery implements Expression
 
         $this->having = new Where();
         $this->where = new Where();
+    }
+
+    /**
+     * Add another query to UNION with.
+     *
+     * @param string|Expression|SelectQuery $expression
+     */
+    public function union($expression): self
+    {
+        $this->unions[] = ExpressionFactory::raw($expression);
+
+        return $this;
+    }
+
+    /**
+     * Create a new SELECT query object to UNION with.
+     */
+    public function createUnion($relation, ?string $relationAlias = null): SelectQuery
+    {
+        $select = new SelectQuery($relation, $relationAlias);
+        $this->union($select);
+
+        return $select;
+    }
+
+    /**
+     * @return Expression[]
+     */
+    public function getUnion(): array
+    {
+        return $this->unions;
     }
 
     /**
