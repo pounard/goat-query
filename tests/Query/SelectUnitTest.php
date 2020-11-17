@@ -48,7 +48,46 @@ final class QuerySelectUnitTest extends TestCase
         );
     }
 
-    public function testForUpdate(): void
+    public function testUnion(): void
+    {
+        $select = new SelectQuery('some_table');
+
+        $select->createUnion('other_table');
+        $select->createUnion('again_and_again');
+
+        self::assertSameSql(
+            <<<SQL
+            select * from "some_table"
+            union
+            select * from "other_table"
+            union
+            select * from "again_and_again"
+            SQL,
+            self::format($select)
+        );
+    }
+
+    public function testUnionRecursive(): void
+    {
+        $select = new SelectQuery('some_table');
+
+        $other = $select->createUnion('other_table');
+
+        $other->createUnion('another_one');
+
+        self::assertSameSql(
+            <<<SQL
+            select * from "some_table"
+            union
+            select * from "other_table"
+            union
+            select * from "another_one"
+            SQL,
+            self::format($select)
+        );
+    }
+
+    public function testForUpdate()
     {
         $select = new SelectQuery('some_table');
         self::assertFalse($select->isForUpdate());

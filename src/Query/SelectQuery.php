@@ -31,6 +31,8 @@ final class SelectQuery extends AbstractQuery implements Expression
     private int $offset = 0;
     private array $orders = [];
     private bool $performOnly = false;
+    /** @var Expression[] */
+    private array $unions = [];
 
     /**
      * Build a new query.
@@ -48,6 +50,37 @@ final class SelectQuery extends AbstractQuery implements Expression
 
         $this->having = new Where();
         $this->where = new Where();
+    }
+
+    /**
+     * Add another query to UNION with.
+     *
+     * @param string|Expression|SelectQuery $expression
+     */
+    public function union(Expression $select): self
+    {
+        $this->unions[] = $select;
+
+        return $this;
+    }
+
+    /**
+     * Create a new SELECT query object to UNION with.
+     */
+    public function createUnion($table, ?string $tableAlias = null): SelectQuery
+    {
+        $select = new SelectQuery($table, $tableAlias);
+        $this->union($select);
+
+        return $select;
+    }
+
+    /**
+     * @return Expression[]
+     */
+    public function getUnion(): array
+    {
+        return $this->unions;
     }
 
     /**
