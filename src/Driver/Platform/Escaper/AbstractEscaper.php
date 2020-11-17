@@ -17,7 +17,7 @@ abstract class AbstractEscaper implements Escaper
             throw new QueryError("Cannot not format an empty identifier list.");
         }
         if (\is_array($strings)) {
-            return \implode(', ', \array_map([$this, 'escapeIdentifier'], $strings));
+            return \implode(', ', \array_map(fn ($value) => $this->escapeIdentifier($value), $strings));
         }
         return $this->escapeIdentifier($strings);
     }

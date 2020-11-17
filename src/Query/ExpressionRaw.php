@@ -11,8 +11,8 @@ namespace Goat\Query;
  */
 final class ExpressionRaw implements Expression
 {
-    private $expression;
-    private $arguments;
+    private string $expression;
+    private ArgumentBag $arguments;
 
     /**
      * Default constructor
