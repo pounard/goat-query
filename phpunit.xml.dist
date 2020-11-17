@@ -10,8 +10,17 @@
     convertWarningsToExceptions="true"
 >
     <testsuites>
-        <testsuite name="Goat query builder">
-            <directory>./tests</directory>
+        <testsuite name="Converter">
+            <directory>./tests/Converter</directory>
+        </testsuite>
+        <testsuite name="Driver">
+            <directory>./tests/Driver</directory>
+        </testsuite>
+        <testsuite name="Query">
+            <directory>./tests/Query</directory>
+        </testsuite>
+        <testsuite name="Runner">
+            <directory>./tests/Runner</directory>
         </testsuite>
     </testsuites>
 
