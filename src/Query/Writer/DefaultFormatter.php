@@ -979,6 +979,10 @@ class DefaultFormatter extends FormatterBase
             $output[] = \sprintf('having %s', $this->formatWhere($having));
         }
 
+        foreach ($query->getUnion() as $expression) {
+            $output[] = "union " . $this->format($expression);
+        }
+
         if ($query->isForUpdate()) {
             $output[] = "for update";
         }
