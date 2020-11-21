@@ -10,6 +10,7 @@ use Goat\Query\Expression\ConstantTableExpression;
 use Goat\Query\Expression\LikeExpression;
 use Goat\Query\Expression\RawExpression;
 use Goat\Query\Expression\TableExpression;
+use Goat\Query\Expression\ValueExpression;
 
 /**
  * @deprecated
@@ -24,6 +25,14 @@ final class ExpressionConstantTable extends ConstantTableExpression
  * @see \Goat\Query\Expression\ConstantRowExpression
  */
 final class ExpressionRow extends ConstantRowExpression
+{
+}
+
+/**
+ * @deprecated
+ * @see \Goat\Query\Expression\ValueExpression
+ */
+final class ExpressionValue extends ValueExpression
 {
 }
 

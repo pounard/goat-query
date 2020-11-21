@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Goat\Runner\Tests\Query;
 
-use Goat\Query\ExpressionValue;
 use Goat\Query\PreparedQuery;
 use Goat\Query\Query;
 use Goat\Query\QueryBuilder;
 use Goat\Query\QueryError;
+use Goat\Query\Expression\ValueExpression;
 use Goat\Runner\Runner;
 use Goat\Runner\Testing\DatabaseAwareQueryTest;
 use Goat\Runner\Testing\TestDriverFactory;
@@ -124,7 +124,7 @@ class PreparedQueryTest extends DatabaseAwareQueryTest
                 return $builder
                     ->select('some_table')
                     ->column('*')
-                    ->where('id_user', ExpressionValue::create(null, 'int'))
+                    ->where('id_user', ValueExpression::create(null, 'int'))
                     ->orderBy('bar', Query::ORDER_DESC)
                 ;
             }

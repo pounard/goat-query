@@ -292,7 +292,7 @@ the expression:
    ;
 
 You may as well return any ``Expression`` instance, including ``ExpressionColumn``,
-``ExpressionValue`` and so on:
+``ValueExpression`` and so on:
 
 .. code-block:: php
 

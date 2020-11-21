@@ -241,7 +241,7 @@ Will be formatted as:
 
    "my.schema"."some.table" as "foo"
 
-ExpressionValue
+ValueExpression
 ###############
 
 Represents a raw value. **You will need this when the converter is unable**
@@ -257,7 +257,7 @@ converter to deambiguate values types.
 
    <?php
 
-   \Goat\Query\ExpressionValue::create(12);
+   \Goat\Query\Expression\ValueExpression::create(12);
 
 Will be formatted as:
 
@@ -271,7 +271,7 @@ Will be formatted as:
 
    <?php
 
-   \Goat\Query\ExpressionValue::create(12, 'int');
+   \Goat\Query\Expression\ValueExpression::create(12, 'int');
 
 .. code-block:: sql
 
@@ -283,7 +283,7 @@ Will be formatted as:
 
    <?php
 
-   \Goat\Query\ExpressionValue::create(['foo' => 'bar', 'baz' => [1, 2, 3]], 'json');
+   \Goat\Query\Expression\ValueExpression::create(['foo' => 'bar', 'baz' => [1, 2, 3]], 'json');
 
 .. code-block:: sql
 
@@ -295,7 +295,7 @@ Will be formatted as:
 
    <?php
 
-   \Goat\Query\ExpressionValue::create([1, 2, 3], 'int[]');
+   \Goat\Query\Expression\ValueExpression::create([1, 2, 3], 'int[]');
 
 .. code-block:: sql
 

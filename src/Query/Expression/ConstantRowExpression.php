@@ -6,7 +6,6 @@ namespace Goat\Query\Expression;
 
 use Goat\Query\ArgumentBag;
 use Goat\Query\Expression;
-use Goat\Query\ExpressionValue;
 use Goat\Query\Statement;
 
 /**
@@ -29,7 +28,7 @@ class ConstantRowExpression implements Expression
 
         foreach ($values as $value) {
             if (!$value instanceof Statement) {
-                $value = ExpressionValue::create($value);
+                $value = ValueExpression::create($value);
             }
             $ret->values[] = $value;
         }

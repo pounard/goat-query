@@ -2,12 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Goat\Query;
+namespace Goat\Query\Expression;
+
+use Goat\Query\ArgumentBag;
+use Goat\Query\Expression;
+use Goat\Query\ValueRepresentation;
 
 /**
  * Represents a raw value.
  */
-final class ExpressionValue implements Expression, ValueRepresentation
+class ValueExpression implements Expression, ValueRepresentation
 {
     private $bag;
     private $type;

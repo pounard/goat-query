@@ -144,7 +144,7 @@ code, but you can hint the SQL writer as such:
    $runner
        ->getQueryBuilder()
        ->select()
-       ->columnExpression(\Goat\Query\ExpressionValue::create(1, 'int'))
+       ->columnExpression(\Goat\Query\Expression\ValueExpression::create(1, 'int'))
    ;
 
 Which will be converted as:

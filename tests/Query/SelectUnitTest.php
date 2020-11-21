@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Goat\Query\Tests;
 
-use Goat\Query\ExpressionValue;
 use Goat\Query\QueryError;
 use Goat\Query\SelectQuery;
 use Goat\Query\Where;
 use Goat\Query\Expression\ConstantTableExpression;
 use Goat\Query\Expression\RawExpression;
+use Goat\Query\Expression\ValueExpression;
 use PHPUnit\Framework\TestCase;
 
 final class QuerySelectUnitTest extends TestCase
@@ -422,11 +422,11 @@ final class QuerySelectUnitTest extends TestCase
         );
     }
 
-    public function testConditionWithExpressionValueWillCast(): void
+    public function testConditionWithValueExpressionWillCast(): void
     {
         $select = new SelectQuery('some_table');
 
-        $select->where('baz', ExpressionValue::create(12, 'json'));
+        $select->where('baz', ValueExpression::create(12, 'json'));
 
         self::assertSameSql(
             'select * from "some_table" where "baz" = ?::json',
@@ -611,11 +611,11 @@ final class QuerySelectUnitTest extends TestCase
         );
     }
 
-    public function testHavingWithExpressionValueWillCast(): void
+    public function testHavingWithValueExpressionWillCast(): void
     {
         $select = new SelectQuery('some_table');
 
-        $select->having('baz', ExpressionValue::create(12, 'json'));
+        $select->having('baz', ValueExpression::create(12, 'json'));
 
         self::assertSameSql(
             'select * from "some_table" having "baz" = ?::json',

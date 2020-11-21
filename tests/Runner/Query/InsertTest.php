@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Goat\Runner\Tests\Query;
 
-use Goat\Query\ExpressionValue;
 use Goat\Query\Query;
 use Goat\Query\Expression\RawExpression;
+use Goat\Query\Expression\ValueExpression;
 use Goat\Runner\Runner;
 use Goat\Runner\Testing\DatabaseAwareQueryTest;
 use Goat\Runner\Testing\TestDriverFactory;
@@ -103,7 +103,7 @@ class InsertTest extends DatabaseAwareQueryTest
             ])
             ->values([
                 42,
-                ExpressionValue::create('a'),
+                ValueExpression::create('a'),
                 RawExpression::create('current_timestamp'),
             ])
             ->execute()

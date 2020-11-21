@@ -6,6 +6,7 @@ namespace Goat\Query;
 
 use Goat\Query\Expression\ColumnExpression;
 use Goat\Query\Expression\RawExpression;
+use Goat\Query\Expression\ValueExpression;
 
 /**
  * Input normalization functions
@@ -87,7 +88,7 @@ final class ExpressionFactory
             return $expression;
         }
 
-        return ExpressionValue::create($expression);
+        return ValueExpression::create($expression);
     }
 
     /**

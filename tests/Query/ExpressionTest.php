@@ -6,9 +6,9 @@ namespace Goat\Query\Tests;
 
 use Goat\Query\ArgumentBag;
 use Goat\Query\ExpressionFactory;
-use Goat\Query\ExpressionValue;
 use Goat\Query\QueryError;
 use Goat\Query\Expression\RawExpression;
+use Goat\Query\Expression\ValueExpression;
 use PHPUnit\Framework\TestCase;
 
 class ExpressionTest extends TestCase
@@ -26,16 +26,16 @@ class ExpressionTest extends TestCase
     /**
      * Test expression value object
      */
-    public function testExpressionValue()
+    public function testValueExpression()
     {
-        $simple = ExpressionValue::create(42);
+        $simple = ValueExpression::create(42);
         self::assertNull($simple->getType());
         self::assertSame(42, $simple->getValue());
         $arguments = $simple->getArguments();
         self::assertTrue($arguments instanceof ArgumentBag);
         self::assertSame([42], $arguments->getAll());
 
-        $string = ExpressionValue::create('some:string:_ouy"" \\\\é \#\'jiretj @');
+        $string = ValueExpression::create('some:string:_ouy"" \\\\é \#\'jiretj @');
         self::assertNull($string->getType());
         self::assertSame('some:string:_ouy"" \\\\é \#\'jiretj @', $string->getValue());
         $arguments = $string->getArguments();
