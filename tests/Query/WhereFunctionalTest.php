@@ -13,7 +13,7 @@ class WhereFunctionalTest extends TestCase
 {
     use BuilderTestTrait;
 
-    public function testWhere()
+    public function testWhere(): void
     {
         $formatter = self::createStandardSqlWriter();
 
@@ -109,7 +109,7 @@ and "universe_id" in (
 )
 EOT;
 
-        $this->assertSameSql($reference, $formatter->format($where));
+        self::assertSameSql($reference, $formatter->format($where));
 
         // And now the exact same where, using convenience methods
         $where = (new Where())
@@ -150,30 +150,45 @@ EOT;
         ;
 
         // Expected is the exact same
-        $this->assertSameSql($reference, $formatter->format($where));
+        self::assertSameSql($reference, $formatter->format($where));
     }
 
-    public function testWhereWhenEmpty()
+    public function testLike(): void
+    {
+        $where = (new Where())->isLike('a', 'a?%', 'b');
+        self::assertSameSql('"a" like \'ab%\'', self::format($where));
+
+        $where = (new Where())->isNotLike('a', 'a?%', 'b');
+        self::assertSameSql('"a" not like \'ab%\'', self::format($where));
+
+        $where = (new Where())->isLikeInsensitive('a', 'a?%', 'b');
+        self::assertSameSql('"a" ilike \'ab%\'', self::format($where));
+
+        $where = (new Where())->isNotLikeInsensitive('a', 'a?%', 'b');
+        self::assertSameSql('"a" not ilike \'ab%\'', self::format($where));
+    }
+
+    public function testWhereWhenEmpty(): void
     {
         $formatter = self::createStandardSqlWriter();
 
         $where = (new Where());
 
         // Where is empty
-        $this->assertTrue($where->isEmpty());
-        $this->assertSameSql("1", $formatter->format($where));
+        self::assertTrue($where->isEmpty());
+        self::assertSameSql("1", $formatter->format($where));
 
         // Where is not empty anymore
         $where->isNotNull('a');
-        $this->assertFalse($where->isEmpty());
-        $this->assertSameSql("\"a\" is not null", $formatter->format($where));
+        self::assertFalse($where->isEmpty());
+        self::assertSameSql("\"a\" is not null", $formatter->format($where));
 
         // Statement is empty
         $statement = $where->and();
-        $this->assertTrue($statement->isEmpty());
-        $this->assertSameSql("1", $formatter->format($statement));
+        self::assertTrue($statement->isEmpty());
+        self::assertSameSql("1", $formatter->format($statement));
 
         // Statement is ignored, because empty
-        $this->assertSameSql("\"a\" is not null", $formatter->format($where));
+        self::assertSameSql("\"a\" is not null", $formatter->format($where));
     }
 }

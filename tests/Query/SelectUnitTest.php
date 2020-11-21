@@ -151,7 +151,7 @@ final class QuerySelectUnitTest extends TestCase
         );
     }
 
-    public function testForUpdate()
+    public function testForUpdate(): void
     {
         $select = new SelectQuery('some_table');
         self::assertFalse($select->isForUpdate());

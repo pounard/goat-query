@@ -279,13 +279,51 @@ final class Where implements Statement
      *
      * @return $this
      */
-    public function isLike($column, $values, bool $caseSensitive = true)
+    public function isLike($column, string $pattern, ?string $value = null, ?string $wildcard = null)
     {
-        return $this->condition($column, $values, $caseSensitive ? Where::LIKE : Where::ILIKE);
+        return $this->expression(ExpressionLike::like($column, $pattern, $value, $wildcard));
     }
 
     /**
      * 'not like' condition
+     *
+     * @param string|Expression $column
+     *   Column, or expression that can be compared against, anything will do.
+     * @param string $pattern
+     *   Any string with % and _ inside, and  for value, use ? for value replacement.
+     * @param ?string $value
+     *   Any value to replace within pattern.
+     * @param ?string $wildcard
+     *   Wilcard if different, default is '?'.
+     *
+     * @return $this
+     */
+    public function isNotLike($column, string $pattern, ?string $value = null, ?string $wildcard = null)
+    {
+        return $this->expression(ExpressionLike::notLike($column, $pattern, $value, $wildcard));
+    }
+
+    /**
+     * 'ilike' condition
+     *
+     * @param string|Expression $column
+     *   Column, or expression that can be compared against, anything will do.
+     * @param string $pattern
+     *   Any string with % and _ inside, and  for value, use ? for value replacement.
+     * @param ?string $value
+     *   Any value to replace within pattern.
+     * @param ?string $wildcard
+     *   Wilcard if different, default is '?'.
+     *
+     * @return $this
+     */
+    public function isLikeInsensitive($column, string $pattern, ?string $value = null, ?string $wildcard = null)
+    {
+        return $this->expression(ExpressionLike::iLike($column, $pattern, $value, $wildcard));
+    }
+
+    /**
+     * 'not ilike' condition
      *
      * @param string|Expression|ColumnExpression $column
      * @param mixed[] $values
@@ -293,9 +331,9 @@ final class Where implements Statement
      *
      * @return $this
      */
-    public function isNotLike($column, $values, bool $caseSensitive = true)
+    public function isNotLikeInsensitive($column, string $pattern, ?string $value = null, ?string $wildcard = null)
     {
-        return $this->condition($column, $values, $caseSensitive ? Where::NOT_LIKE : Where::NOT_ILIKE);
+        return $this->expression(ExpressionLike::notILike($column, $pattern, $value, $wildcard));
     }
 
     /**
