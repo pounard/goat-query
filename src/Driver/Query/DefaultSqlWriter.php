@@ -6,7 +6,6 @@ namespace Goat\Driver\Query;
 
 use Goat\Query\DeleteQuery;
 use Goat\Query\Expression;
-use Goat\Query\ExpressionLike;
 use Goat\Query\ExpressionValue;
 use Goat\Query\InsertQuery;
 use Goat\Query\MergeQuery;
@@ -20,6 +19,7 @@ use Goat\Query\Expression\AliasedExpression;
 use Goat\Query\Expression\ColumnExpression;
 use Goat\Query\Expression\ConstantRowExpression;
 use Goat\Query\Expression\ConstantTableExpression;
+use Goat\Query\Expression\LikeExpression;
 use Goat\Query\Expression\RawExpression;
 use Goat\Query\Expression\TableExpression;
 use Goat\Query\Partial\Column;
@@ -876,7 +876,7 @@ class DefaultSqlWriter extends AbstractSqlWriter
     /**
      * Format like expression.
      */
-    protected function formatExpressionLike(ExpressionLike $value): string
+    protected function formatLikeExpression(LikeExpression $value): string
     {
         if ($value->hasValue()) {
             $pattern = $value->getPattern(
@@ -915,8 +915,8 @@ class DefaultSqlWriter extends AbstractSqlWriter
             return $this->formatTableExpression($query);
         } else if ($query instanceof ExpressionValue) {
             return $this->formatExpressionValue($query);
-        } else if ($query instanceof ExpressionLike) {
-            return $this->formatExpressionLike($query);
+        } else if ($query instanceof LikeExpression) {
+            return $this->formatLikeExpression($query);
         } else if ($query instanceof ConstantTableExpression) {
             return $this->formatConstantTableExpression($query);
         } else if ($query instanceof ConstantRowExpression) {

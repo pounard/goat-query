@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Goat\Query;
 
 use Goat\Query\Expression\ColumnExpression;
+use Goat\Query\Expression\LikeExpression;
 
 /**
  * Where represents the selection of the SQL query
@@ -281,7 +282,7 @@ final class Where implements Statement
      */
     public function isLike($column, string $pattern, ?string $value = null, ?string $wildcard = null)
     {
-        return $this->expression(ExpressionLike::like($column, $pattern, $value, $wildcard));
+        return $this->expression(LikeExpression::like($column, $pattern, $value, $wildcard));
     }
 
     /**
@@ -300,7 +301,7 @@ final class Where implements Statement
      */
     public function isNotLike($column, string $pattern, ?string $value = null, ?string $wildcard = null)
     {
-        return $this->expression(ExpressionLike::notLike($column, $pattern, $value, $wildcard));
+        return $this->expression(LikeExpression::notLike($column, $pattern, $value, $wildcard));
     }
 
     /**
@@ -319,7 +320,7 @@ final class Where implements Statement
      */
     public function isLikeInsensitive($column, string $pattern, ?string $value = null, ?string $wildcard = null)
     {
-        return $this->expression(ExpressionLike::iLike($column, $pattern, $value, $wildcard));
+        return $this->expression(LikeExpression::iLike($column, $pattern, $value, $wildcard));
     }
 
     /**
@@ -333,7 +334,7 @@ final class Where implements Statement
      */
     public function isNotLikeInsensitive($column, string $pattern, ?string $value = null, ?string $wildcard = null)
     {
-        return $this->expression(ExpressionLike::notILike($column, $pattern, $value, $wildcard));
+        return $this->expression(LikeExpression::notILike($column, $pattern, $value, $wildcard));
     }
 
     /**

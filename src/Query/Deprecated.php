@@ -7,6 +7,7 @@ namespace Goat\Query;
 use Goat\Query\Expression\ColumnExpression;
 use Goat\Query\Expression\ConstantRowExpression;
 use Goat\Query\Expression\ConstantTableExpression;
+use Goat\Query\Expression\LikeExpression;
 use Goat\Query\Expression\RawExpression;
 use Goat\Query\Expression\TableExpression;
 
@@ -23,6 +24,18 @@ final class ExpressionConstantTable extends ConstantTableExpression
  * @see \Goat\Query\Expression\ConstantRowExpression
  */
 final class ExpressionRow extends ConstantRowExpression
+{
+}
+
+/**
+ * @deprecated
+ * @see \Goat\Query\Expression\LikeExpression
+ * @see \Goat\Query\Where::isLike()
+ * @see \Goat\Query\Where::isLikeInsensitive()
+ * @see \Goat\Query\Where::isNoteLike()
+ * @see \Goat\Query\Where::isNoteLikeInsensitive()
+ */
+final class ExpressionLike extends LikeExpression
 {
 }
 

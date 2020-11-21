@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Goat\Query\Tests;
 
-use Goat\Query\ExpressionLike;
 use Goat\Query\QueryError;
+use Goat\Query\Expression\LikeExpression;
 use PHPUnit\Framework\TestCase;
 
 class LikeUnitTest extends TestCase
@@ -17,7 +17,7 @@ class LikeUnitTest extends TestCase
      */
     public function testLikeWithValue(): void
     {
-        $expression = ExpressionLike::like('some column', '%foo?_', 'b%a_r');
+        $expression = LikeExpression::like('some column', '%foo?_', 'b%a_r');
 
         self::assertSameSql("\"some column\" like '%foob\\%a\\_r_'", self::format($expression));
     }
@@ -27,7 +27,7 @@ class LikeUnitTest extends TestCase
      */
     public function testLikeWithValueWithDifferentWildcard(): void
     {
-        $expression = ExpressionLike::like('some column', '%foo#BOUH#_', 'b%a_r', '#BOUH#');
+        $expression = LikeExpression::like('some column', '%foo#BOUH#_', 'b%a_r', '#BOUH#');
 
         self::assertSameSql("\"some column\" like '%foob\\%a\\_r_'", self::format($expression));
     }
@@ -37,7 +37,7 @@ class LikeUnitTest extends TestCase
      */
     public function testLikeWithoutValue(): void
     {
-        $expression = ExpressionLike::like('some column', '%foo?_');
+        $expression = LikeExpression::like('some column', '%foo?_');
 
         self::assertSameSql("\"some column\" like '%foo?_'", self::format($expression));
     }
@@ -49,7 +49,7 @@ class LikeUnitTest extends TestCase
     {
         self::expectException(QueryError::class);
 
-        ExpressionLike::like('some column', '%foo_', 'some value');
+        LikeExpression::like('some column', '%foo_', 'some value');
     }
 
     /**
@@ -59,7 +59,7 @@ class LikeUnitTest extends TestCase
     {
         self::expectException(QueryError::class);
 
-        ExpressionLike::like('some column', '%foo?_', 'some value', 'bouya');
+        LikeExpression::like('some column', '%foo?_', 'some value', 'bouya');
     }
 
     /**
@@ -67,7 +67,7 @@ class LikeUnitTest extends TestCase
      */
     public function testNotLike(): void
     {
-        $expression = ExpressionLike::notLike('some column', '?%', 'b%ar');
+        $expression = LikeExpression::notLike('some column', '?%', 'b%ar');
 
         self::assertSameSql("\"some column\" not like 'b\\%ar%'", self::format($expression));
     }
@@ -77,7 +77,7 @@ class LikeUnitTest extends TestCase
      */
     public function testILike(): void
     {
-        $expression = ExpressionLike::iLike('some column', '?%', 'b%ar');
+        $expression = LikeExpression::iLike('some column', '?%', 'b%ar');
 
         self::assertSameSql("\"some column\" ilike 'b\\%ar%'", self::format($expression));
     }
@@ -87,7 +87,7 @@ class LikeUnitTest extends TestCase
      */
     public function testNotILike(): void
     {
-        $expression = ExpressionLike::notILike('some column', '?%', 'b%ar');
+        $expression = LikeExpression::notILike('some column', '?%', 'b%ar');
 
         self::assertSameSql("\"some column\" not ilike 'b\\%ar%'", self::format($expression));
     }

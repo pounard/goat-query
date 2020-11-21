@@ -2,14 +2,18 @@
 
 declare(strict_types=1);
 
-namespace Goat\Query;
+namespace Goat\Query\Expression;
 
-use Goat\Query\Expression\ColumnExpression;
+use Goat\Query\ArgumentBag;
+use Goat\Query\Expression;
+use Goat\Query\ExpressionFactory;
+use Goat\Query\QueryError;
+use Goat\Query\Where;
 
 /**
  * Represents LIKE/ILIKE/SIMILAR TO expression.
  */
-final class ExpressionLike implements Expression
+class LikeExpression implements Expression
 {
     const DEFAULT_WIDCARD = '?';
 
@@ -57,7 +61,7 @@ final class ExpressionLike implements Expression
     /**
      * Create not like instance.
      *
-     * @see ExpressionLike::like()
+     * @see self::like()
      *   For parameters documentation.
      */
     public static function notLike($column, string $pattern, ?string $value = null, ?string $wildcard = null): self
@@ -71,7 +75,7 @@ final class ExpressionLike implements Expression
     /**
      * Create case insensitive like instance.
      *
-     * @see ExpressionLike::like()
+     * @see self::like()
      *   For parameters documentation.
      */
     public static function iLike($column, string $pattern, ?string $value = null, ?string $wildcard = null): self
@@ -85,7 +89,7 @@ final class ExpressionLike implements Expression
     /**
      * Create case insensitive not like instance.
      *
-     * @see ExpressionLike::like()
+     * @see self::like()
      *   For parameters documentation.
      */
     public static function notILike($column, string $pattern, ?string $value = null, ?string $wildcard = null): self
