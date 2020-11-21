@@ -27,6 +27,32 @@ trait WhereClauseTrait
     }
 
     /**
+     * Open OR statement with parenthesis.
+     *
+     * @param callable $callback
+     *   First argument of callback is the nested Where instance.
+     */
+    public function whereOr(callable $callback): self
+    {
+        $this->where->or($callback);
+
+        return $this;
+    }
+
+    /**
+     * Open AND statement with parenthesis.
+     *
+     * @param callable $callback
+     *   First argument of callback is the nested Where instance.
+     */
+    public function whereAnd(callable $callback): self
+    {
+        $this->where->and($callback);
+
+        return $this;
+    }
+
+    /**
      * @codeCoverageIgnore
      * @deprecated
      *   Please use self::where() instead.

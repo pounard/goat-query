@@ -16,8 +16,7 @@ use Goat\Query\Expression\ColumnExpression;
  */
 trait HavingClauseTrait
 {
-    /** @var Where */
-    private $having;
+    private Where $having;
 
     /**
      * Get HAVING clause.
@@ -25,6 +24,32 @@ trait HavingClauseTrait
     public function getHaving(): Where
     {
         return $this->having;
+    }
+
+    /**
+     * Open OR statement with parenthesis.
+     *
+     * @param callable $callback
+     *   First argument of callback is the nested Where instance.
+     */
+    public function havingOr(callable $callback): self
+    {
+        $this->having->or($callback);
+
+        return $this;
+    }
+
+    /**
+     * Open AND statement with parenthesis.
+     *
+     * @param callable $callback
+     *   First argument of callback is the nested Where instance.
+     */
+    public function havingAnd(callable $callback): self
+    {
+        $this->having->and($callback);
+
+        return $this;
     }
 
     /**

@@ -48,6 +48,70 @@ final class QuerySelectUnitTest extends TestCase
         );
     }
 
+    public function testWhereAnd(): void
+    {
+        $select = (new SelectQuery('a'))
+            ->whereAnd(fn (Where $where) => $where
+                ->condition('c', 13)
+                ->condition('d', 14)
+            )
+            ->where('b', 12)
+        ;
+
+        self::assertSameSql(
+            'select * from "a" where ("c" = ? and "d" = ?) and "b" = ?',
+            self::format($select)
+        );
+    }
+
+    public function testWhereOr(): void
+    {
+        $select = (new SelectQuery('a'))
+            ->whereOr(fn (Where $where) => $where
+                ->condition('c', 13)
+                ->condition('d', 14)
+            )
+            ->where('b', 12)
+        ;
+
+        self::assertSameSql(
+            'select * from "a" where ("c" = ? or "d" = ?) and "b" = ?',
+            self::format($select)
+        );
+    }
+
+    public function testHavingAnd(): void
+    {
+        $select = (new SelectQuery('a'))
+            ->havingAnd(fn (Where $where) => $where
+                ->condition('c', 13)
+                ->condition('d', 14)
+            )
+            ->having('b', 12)
+        ;
+
+        self::assertSameSql(
+            'select * from "a" having ("c" = ? and "d" = ?) and "b" = ?',
+            self::format($select)
+        );
+    }
+
+    public function testHavingOr(): void
+    {
+        $select = (new SelectQuery('a'))
+            ->havingOr(fn (Where $where) => $where
+                ->condition('c', 13)
+                ->condition('d', 14)
+            )
+            ->having('b', 12)
+        ;
+
+        self::assertSameSql(
+            'select * from "a" having ("c" = ? or "d" = ?) and "b" = ?',
+            self::format($select)
+        );
+    }
+
     public function testUnion(): void
     {
         $select = new SelectQuery('some_table');

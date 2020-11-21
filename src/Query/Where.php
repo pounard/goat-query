@@ -429,23 +429,41 @@ final class Where implements Statement
     }
 
     /**
-     * Open an and clause
+     * Open an and clause.
+     *
+     * @param ?callable $callback
+     *   First argument of callback is the nested Where instance.
      *
      * @return Where
      */
-    public function and() : Where
+    public function and(?callable $callback = null) : Where
     {
-        return $this->open(Where::AND);
+        $nestedWhere = $this->open(Where::AND);
+
+        if ($callback) {
+            $callback($nestedWhere);
+        }
+
+        return $nestedWhere;
     }
 
     /**
-     * Open an or clause
+     * Open an or clause.
+     *
+     * @param ?callable $callback
+     *   First argument of callback is the nested Where instance.
      *
      * @return Where
      */
-    public function or() : Where
+    public function or(?callable $callback = null) : Where
     {
-        return $this->open(Where::OR);
+        $nestedWhere = $this->open(Where::OR);
+
+        if ($callback) {
+            $callback($nestedWhere);
+        }
+
+        return $nestedWhere;
     }
 
     /**
