@@ -28,14 +28,6 @@ final class ExpressionRow extends ConstantRowExpression
 
 /**
  * @deprecated
- * @see \Goat\Query\Expression\RawExpression
- */
-final class ExpressionRaw extends RawExpression
-{
-}
-
-/**
- * @deprecated
  * @see \Goat\Query\Expression\ColumnExpression
  */
 final class ExpressionColumn extends ColumnExpression
