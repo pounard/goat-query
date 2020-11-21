@@ -6,9 +6,7 @@ namespace Goat\Driver\Query;
 
 use Goat\Query\DeleteQuery;
 use Goat\Query\Expression;
-use Goat\Query\ExpressionConstantTable;
 use Goat\Query\ExpressionLike;
-use Goat\Query\ExpressionRow;
 use Goat\Query\ExpressionValue;
 use Goat\Query\InsertQuery;
 use Goat\Query\MergeQuery;
@@ -20,6 +18,8 @@ use Goat\Query\UpdateQuery;
 use Goat\Query\Where;
 use Goat\Query\Expression\AliasedExpression;
 use Goat\Query\Expression\ColumnExpression;
+use Goat\Query\Expression\ConstantRowExpression;
+use Goat\Query\Expression\ConstantTableExpression;
 use Goat\Query\Expression\RawExpression;
 use Goat\Query\Expression\TableExpression;
 use Goat\Query\Partial\Column;
@@ -497,7 +497,7 @@ class DefaultSqlWriter extends AbstractSqlWriter
     /**
      * Format a constant table expression.
      */
-    protected function formatExpressionConstantTable(ExpressionConstantTable $constantTable): string
+    protected function formatConstantTableExpression(ConstantTableExpression $constantTable): string
     {
         if (!$constantTable->getRowCount()) {
             return "values ()";
@@ -506,7 +506,7 @@ class DefaultSqlWriter extends AbstractSqlWriter
         return "values " . \implode(
             ", ",
             \array_map(
-                fn ($row) => $this->formatExpressionRow($row),
+                fn ($row) => $this->formatConstantRowExpression($row),
                 $constantTable->getRows(),
             )
         );
@@ -515,7 +515,7 @@ class DefaultSqlWriter extends AbstractSqlWriter
     /**
      * Format an arbitrary row of values.
      */
-    protected function formatExpressionRow(ExpressionRow $row): string
+    protected function formatConstantRowExpression(ConstantRowExpression $row): string
     {
         return '(' . \implode(
             ", ",
@@ -560,7 +560,7 @@ class DefaultSqlWriter extends AbstractSqlWriter
 
         // USING
         $using = $query->getQuery();
-        if ($using instanceof ExpressionConstantTable) {
+        if ($using instanceof ConstantTableExpression) {
             $output[] = 'using ' . $this->format($using) . ' as ' . $escapedUsingAlias;
         } else {
             $output[] = 'using (' . $this->format($using) . ') as ' . $escapedUsingAlias;
@@ -633,7 +633,7 @@ class DefaultSqlWriter extends AbstractSqlWriter
         }
 
         $using = $query->getQuery();
-        if ($using instanceof ExpressionConstantTable) {
+        if ($using instanceof ConstantTableExpression) {
             if (\count($columns)) {
                 $output[] = $this->format($using);
             } else {
@@ -917,10 +917,10 @@ class DefaultSqlWriter extends AbstractSqlWriter
             return $this->formatExpressionValue($query);
         } else if ($query instanceof ExpressionLike) {
             return $this->formatExpressionLike($query);
-        } else if ($query instanceof ExpressionConstantTable) {
-            return $this->formatExpressionConstantTable($query);
-        } else if ($query instanceof ExpressionRow) {
-            return $this->formatExpressionRow($query);
+        } else if ($query instanceof ConstantTableExpression) {
+            return $this->formatConstantTableExpression($query);
+        } else if ($query instanceof ConstantRowExpression) {
+            return $this->formatConstantRowExpression($query);
         } else if ($query instanceof Where) {
             return $this->formatWhere($query);
         } else if ($query instanceof DeleteQuery) {

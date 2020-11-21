@@ -145,7 +145,7 @@ Mixing an array with numeric and string keys when calling ``columns()``:
        ->columns([
            'a' => 'column1',
            'column2',
-           'count_foo' => new \Goat\Query\ExpressionRaw('COUNT(foo)'),
+           'count_foo' => new \Goat\Query\Expression\RawExpression::create('COUNT(foo)'),
        ])
    ;
 
@@ -185,7 +185,7 @@ Is equivalent to:
 
    Please note that **you can pass any SQL including invalid one**.
 
-You can also use ``ExpressionRaw`` instances:
+You can also use ``RawExpression`` instances:
 
 .. code-block:: php
 
@@ -194,7 +194,7 @@ You can also use ``ExpressionRaw`` instances:
    $select = $runner
        ->getQueryBuilder()
        ->select('some_table', 't')
-       ->column(new \Goat\Query\ExpressionRaw('COUNT(foo)'), 'count_foo')
+       ->column(new \Goat\Query\Expression\RawExpression('COUNT(foo)'), 'count_foo')
    ;
 
 Is equivalent to:

@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Goat\Query\Partial;
 
 use Goat\Query\Expression;
-use Goat\Query\ExpressionConstantTable;
 use Goat\Query\Query;
 use Goat\Query\QueryError;
+use Goat\Query\Expression\ConstantTableExpression;
 
 /**
  * Handles values for INSERT and MERGE queries.
@@ -49,7 +49,7 @@ trait InsertTrait
     /**
      * Get query.
      *
-     * @return ExpressionConstantTable|Query
+     * @return ConstantTableExpression|Query
      */
     public function getQuery(): Expression
     {
@@ -73,10 +73,10 @@ trait InsertTrait
         }
 
         if (!$query instanceof Query) {
-            if ($query instanceof ExpressionConstantTable) {
+            if ($query instanceof ConstantTableExpression) {
                 $this->queryIsConstantTable = true;
             } else {
-                throw new QueryError(\sprintf("Query must be a %s or %s instance.", Query::class, ExpressionConstantTable::class));
+                throw new QueryError(\sprintf("Query must be a %s or %s instance.", Query::class, ConstantTableExpression::class));
             }
         }
 
@@ -96,7 +96,7 @@ trait InsertTrait
     public function values(array $values): self
     {
         if (null === $this->query) {
-            $this->query = ExpressionConstantTable::create();
+            $this->query = ConstantTableExpression::create();
             $this->queryIsConstantTable = true;
         } else if (!$this->queryIsConstantTable) {
             throw new QueryError(\sprintf("%s::query() and %s::values() are mutually exclusive.", __CLASS__, __CLASS__));

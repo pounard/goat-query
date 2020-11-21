@@ -2,7 +2,7 @@
 
 namespace Goat\Runner\Tests;
 
-use Goat\Query\ExpressionRaw;
+use Goat\Query\Expression\RawExpression;
 use Goat\Runner\Testing\DatabaseAwareQueryTest;
 use Goat\Runner\Testing\TestDriverFactory;
 
@@ -30,7 +30,7 @@ class SimpleQueryTest extends DatabaseAwareQueryTest
             $runner
                 ->getQueryBuilder()
                 ->select()
-                ->columnExpression(ExpressionRaw::create('42'))
+                ->columnExpression(RawExpression::create('42'))
                 ->execute()
                 ->fetchField()
         );

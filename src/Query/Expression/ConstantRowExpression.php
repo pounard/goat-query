@@ -2,12 +2,17 @@
 
 declare(strict_types=1);
 
-namespace Goat\Query;
+namespace Goat\Query\Expression;
+
+use Goat\Query\ArgumentBag;
+use Goat\Query\Expression;
+use Goat\Query\ExpressionValue;
+use Goat\Query\Statement;
 
 /**
  * Represent a single value row, such as (VAL1, VAL2, ...).
  */
-final class ExpressionRow implements Expression
+class ConstantRowExpression implements Expression
 {
     /** @var Statement[] */
     private array $values = [];

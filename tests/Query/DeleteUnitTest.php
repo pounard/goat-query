@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Goat\Query\Tests;
 
 use Goat\Query\DeleteQuery;
-use Goat\Query\ExpressionConstantTable;
-use Goat\Query\ExpressionRaw;
+use Goat\Query\Expression\ConstantTableExpression;
+use Goat\Query\Expression\RawExpression;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -25,7 +25,7 @@ final class DeleteUnitTest extends TestCase
     {
         $select = new DeleteQuery('d');
         $select
-            ->with('sdf', ExpressionConstantTable::create()->row([1, 2]))
+            ->with('sdf', ConstantTableExpression::create()->row([1, 2]))
             ->from('a')
             ->from('b')
             ->join('c')
@@ -115,7 +115,7 @@ final class DeleteUnitTest extends TestCase
     {
         $delete = new DeleteQuery('some_table');
 
-        $delete->returning(ExpressionRaw::create('a + 2'), 'a_plus_two');
+        $delete->returning(RawExpression::create('a + 2'), 'a_plus_two');
 
         self::assertSameSql(
             'delete from "some_table" returning a + 2 as "a_plus_two"',

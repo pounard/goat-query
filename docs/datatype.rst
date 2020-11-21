@@ -155,7 +155,7 @@ Which will be converted as:
 
 .. note::
 
-   Arbitrary SQL code in ``\Goat\Query\ExpressionRaw`` instances will inherit
+   Arbitrary SQL code in ``\Goat\Query\Expression\RawExpression`` instances will inherit
    from the same rules as casting in raw SQL.
 
 Let SQL do the cast

@@ -2,7 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Goat\Query;
+namespace Goat\Query\Expression;
+
+use Goat\Query\ArgumentBag;
+use Goat\Query\Expression;
+use Goat\Query\QueryError;
+use Goat\Query\Statement;
 
 /**
  * Constant table expression reprensent one or more rows of raw arbitrary
@@ -13,12 +18,12 @@ namespace Goat\Query;
  * in place of tables in queries. This class allows you to build such
  * expressions.
  */
-final class ExpressionConstantTable implements Expression
+class ConstantTableExpression implements Expression
 {
     private int $columnCount = 0;
     private int $rowCount = 0;
     private bool $rowsInitialized = false;
-    /** @var ExpressionRow[] */
+    /** @var ConstantRowExpression[] */
     private array $rows = [];
 
     public static function create(): self
@@ -56,16 +61,16 @@ final class ExpressionConstantTable implements Expression
      * First call determines the column count, subsequent calls are checked
      * upon the column count and will raise error in case of count mismatch.
      *
-     * @param iterable|ExpressionRow $row
+     * @param iterable|ConstantRowExpression $row
      */
     public function row($row): self
     {
-        if (!$row instanceof ExpressionRow) {
+        if (!$row instanceof ConstantRowExpression) {
             if (!\is_iterable($row)) {
-                throw new QueryError(\sprintf("Values must be an iterable or an %s instance", ExpressionRow::class));
+                throw new QueryError(\sprintf("Values must be an iterable or an %s instance", ConstantRowExpression::class));
             }
 
-            $row = ExpressionRow::create($row);
+            $row = ConstantRowExpression::create($row);
         }
 
         $columnCount = $row->getColumnCount();

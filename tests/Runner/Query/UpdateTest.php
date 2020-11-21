@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Goat\Runner\Tests\Query;
 
-use Goat\Query\ExpressionRaw;
 use Goat\Query\Where;
 use Goat\Query\Expression\ColumnExpression;
+use Goat\Query\Expression\RawExpression;
 use Goat\Runner\Runner;
 use Goat\Runner\Testing\DatabaseAwareQueryTest;
 use Goat\Runner\Testing\TestDriverFactory;
@@ -270,18 +270,18 @@ class UpdateTest extends DatabaseAwareQueryTest
     }
 
     /**
-     * Update by using SET column = other_table.column from FROM using ExpressionRaw
+     * Update by using SET column = other_table.column from FROM using RawExpression
      *
      * @dataProvider runnerDataProvider
      */
-    public function testUpdateSetExpressionRaw(TestDriverFactory $factory)
+    public function testUpdateSetRawExpression(TestDriverFactory $factory)
     {
         $runner = $factory->getRunner();
 
         $result = $runner
             ->getQueryBuilder()
             ->update('some_table', 't')
-            ->set('foo', new ExpressionRaw('u.id'))
+            ->set('foo', RawExpression::create('u.id'))
             ->join('users', "u.id = t.id_user", 'u')
             ->where('u.name', 'admin')
             ->execute()
@@ -368,7 +368,7 @@ class UpdateTest extends DatabaseAwareQueryTest
         $affectedRows = $runner
             ->getQueryBuilder()
             ->update('some_table')
-            ->set('foo', new ExpressionRaw('id_user * 2'))
+            ->set('foo', RawExpression::create('id_user * 2'))
             ->join('users', 'u.id = id_user', 'u')
             ->where('id_user', self::ID_JEAN)
             ->perform()

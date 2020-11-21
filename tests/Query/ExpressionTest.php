@@ -6,9 +6,9 @@ namespace Goat\Query\Tests;
 
 use Goat\Query\ArgumentBag;
 use Goat\Query\ExpressionFactory;
-use Goat\Query\ExpressionRaw;
 use Goat\Query\ExpressionValue;
 use Goat\Query\QueryError;
+use Goat\Query\Expression\RawExpression;
 use PHPUnit\Framework\TestCase;
 
 class ExpressionTest extends TestCase
@@ -53,7 +53,7 @@ class ExpressionTest extends TestCase
 
     public function testExpressionFactoryWithExpressionPassthrough()
     {
-        $expression = ExpressionRaw::create('foo');
+        $expression = RawExpression::create('foo');
         $returned = ExpressionFactory::raw($expression);
         self::assertSame($expression, $returned);
     }
@@ -71,6 +71,6 @@ class ExpressionTest extends TestCase
         self::expectException(QueryError::class);
         self::expectExceptionMessageMatches('/instance and arguments along/');
 
-        ExpressionFactory::raw(ExpressionRaw::create('foo'), ['a']);
+        ExpressionFactory::raw(RawExpression::create('foo'), ['a']);
     }
 }

@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Goat\Query\Tests;
 
 use Goat\Driver\Query\DefaultSqlWriter;
-use Goat\Query\ExpressionRaw;
 use Goat\Query\Query;
 use Goat\Query\SelectQuery;
 use Goat\Query\Expression\ColumnExpression;
+use Goat\Query\Expression\RawExpression;
 use Goat\Runner\Testing\NullEscaper;
 use PHPUnit\Framework\TestCase;
 
@@ -56,18 +56,18 @@ EOT;
         $query = new SelectQuery('task', 't');
         $query->column('t.*');
         $query->column('n.type');
-        $query->column(new ExpressionRaw('count(n.id)'), 'comment_count');
+        $query->column(RawExpression::create('count(n.id)'), 'comment_count');
         // Add and remove a column for fun
         $query->column('some_field', 'some_alias')->removeColumn('some_alias');
         $query->leftJoin('task_note', 'n.task_id = t.id', 'n');
         $query->groupBy('t.id');
         $query->groupBy('n.type');
         $query->orderBy('n.type');
-        $query->orderBy(new ExpressionRaw('count(n.nid)'), Query::ORDER_DESC);
+        $query->orderBy(RawExpression::create('count(n.nid)'), Query::ORDER_DESC);
         $query->range(7, 42);
         $where = $query->getWhere();
         $where->condition('t.user_id', 12);
-        $where->condition('t.deadline', new ExpressionRaw('now()'), '<');
+        $where->condition('t.deadline', RawExpression::create('now()'), '<');
         $having = $query->getHaving();
         $having->expression('count(n.nid) < ?', 3);
 
@@ -134,7 +134,7 @@ EOT;
         ;
         $where = $query->getWhere()
             ->condition('t.user_id', 12)
-            ->condition('t.deadline', new ExpressionRaw('now()'), '<')
+            ->condition('t.deadline', RawExpression::create('now()'), '<')
         ;
         $having = $query->getHaving()
             ->expression('count(n.nid) < ?', 3)

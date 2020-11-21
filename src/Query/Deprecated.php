@@ -5,12 +5,38 @@ declare(strict_types=1);
 namespace Goat\Query;
 
 use Goat\Query\Expression\ColumnExpression;
+use Goat\Query\Expression\ConstantRowExpression;
+use Goat\Query\Expression\ConstantTableExpression;
 use Goat\Query\Expression\RawExpression;
 use Goat\Query\Expression\TableExpression;
 
 /**
  * @deprecated
- * @see \Goat\Query\Expression\ColumnExpression::create()
+ * @see \Goat\Query\Expression\ConstantTableExpression
+ */
+final class ExpressionConstantTable extends ConstantTableExpression
+{
+}
+
+/**
+ * @deprecated
+ * @see \Goat\Query\Expression\ConstantRowExpression
+ */
+final class ExpressionRow extends ConstantRowExpression
+{
+}
+
+/**
+ * @deprecated
+ * @see \Goat\Query\Expression\RawExpression
+ */
+final class ExpressionRaw extends RawExpression
+{
+}
+
+/**
+ * @deprecated
+ * @see \Goat\Query\Expression\ColumnExpression
  */
 final class ExpressionColumn extends ColumnExpression
 {
@@ -81,7 +107,7 @@ final class InsertValuesQuery extends InsertQuery
     {
         $query = $this->getQuery();
 
-        if ($query instanceof ExpressionConstantTable) {
+        if ($query instanceof ConstantTableExpression) {
             return $query->getRowCount();
         }
 
@@ -107,7 +133,7 @@ final class UpsertValuesQuery extends MergeQuery
     {
         $query = $this->getQuery();
 
-        if ($query instanceof ExpressionConstantTable) {
+        if ($query instanceof ConstantTableExpression) {
             return $query->getRowCount();
         }
 

@@ -49,12 +49,12 @@ custom or specific arbitrary SQL.
 
 .. warning::
 
-   **Never allow arbitrary user values to pass down as ExpressionRaw SQL string**:
+   **Never allow arbitrary user values to pass down as RawExpression SQL string**:
    since they are not properly escaped, they represent a security risk.
 
    **Keep them for edge cases the builder can't do**.
 
-The ``ExpressionRaw`` object allows you to pass arbitrary parameters that must
+The ``RawExpression`` object allows you to pass arbitrary parameters that must
 refer to :ref:`parameters placehoders <query-parameter-placeholder>` within
 the expression arbitrary SQL string, example usage on a select query adding
 an arbitrary raw expression to the where clause:
@@ -88,7 +88,7 @@ rightful respective order at execute time.
 Available expressions
 ^^^^^^^^^^^^^^^^^^^^^
 
-ExpressionRaw
+RawExpression
 #############
 
 This expression allows to write arbitrary unvalidated SQL.
@@ -98,10 +98,10 @@ This expression allows to write arbitrary unvalidated SQL.
    <?php
 
    // Create a raw expression
-   \Goat\Query\ExpressionRaw::create('count(*)');
+   \Goat\Query\RawExpression::create('count(*)');
 
    // Create a raw expression with arguments
-   \Goat\Query\ExpressionRaw::create('sum(foo.column1) = ?', [12]);
+   \Goat\Query\RawExpression::create('sum(foo.column1) = ?', [12]);
 
 ExpressionColumn
 ################

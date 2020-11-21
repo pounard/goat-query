@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Goat\Query\Tests;
 
-use Goat\Query\ExpressionRaw;
 use Goat\Query\QueryError;
 use Goat\Query\UpdateQuery;
+use Goat\Query\Expression\RawExpression;
 use PHPUnit\Framework\TestCase;
 
 final class UpdateUnitTest extends TestCase
@@ -57,7 +57,7 @@ final class UpdateUnitTest extends TestCase
     public function testSetWithExpression(): void
     {
         $query = new UpdateQuery('a');
-        $query->set('foo', ExpressionRaw::create('bla()'));
+        $query->set('foo', RawExpression::create('bla()'));
 
         self::assertSameSql(
             'update "a" set "foo" = bla()',

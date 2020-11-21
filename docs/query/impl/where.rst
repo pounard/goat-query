@@ -303,7 +303,7 @@ You may as well return any ``Expression`` instance, including ``ExpressionColumn
        ->select('some_table')
        ->column('a')
        ->whereExpression(function () {
-           return ExpressionRaw::create('1');
+           return RawExpression::create('1');
        })
    ;
 
