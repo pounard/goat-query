@@ -97,14 +97,14 @@ class InsertTest extends DatabaseAwareQueryTest
             ->insert('some_table')
             ->columns(['foo', 'bar', 'baz'])
             ->values([
-                RawExpression::create('11 + 11'),
+                new RawExpression('11 + 11'),
                 'b',
-                RawExpression::create('current_timestamp'),
+                new RawExpression('current_timestamp'),
             ])
             ->values([
                 42,
-                ValueExpression::create('a'),
-                RawExpression::create('current_timestamp'),
+                new ValueExpression('a'),
+                new RawExpression('current_timestamp'),
             ])
             ->execute()
         ;

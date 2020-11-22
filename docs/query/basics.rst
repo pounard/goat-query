@@ -98,10 +98,10 @@ This expression allows to write arbitrary unvalidated SQL.
    <?php
 
    // Create a raw expression
-   \Goat\Query\RawExpression::create('count(*)');
+   new \Goat\Query\Expression\RawExpression('count(*)');
 
    // Create a raw expression with arguments
-   \Goat\Query\RawExpression::create('sum(foo.column1) = ?', [12]);
+   new \Goat\Query\Expression\RawExpression('sum(foo.column1) = ?', [12]);
 
 ExpressionColumn
 ################
@@ -115,7 +115,7 @@ in the generated SQL.
 
    <?php
 
-   \Goat\Query\ExpressionColumn::create('some_column');
+   new \Goat\Query\Expression\ColumnExpression('some_column');
 
 Will be formatted as:
 
@@ -129,7 +129,7 @@ Will be formatted as:
 
    <?php
 
-   \Goat\Query\ExpressionColumn::create('some_column.some_table');
+   new \Goat\Query\Expression\ColumnExpression('some_column.some_table');
 
 Will be formatted as:
 
@@ -143,7 +143,7 @@ Will be formatted as:
 
    <?php
 
-   \Goat\Query\ExpressionColumn::create('some_column', 'some_table');
+   new \Goat\Query\Expression\ColumnExpression('some_column', 'some_table');
 
 Will be formatted as:
 
@@ -157,7 +157,7 @@ Will be formatted as:
 
    <?php
 
-   \Goat\Query\ExpressionColumn::escape('some.column', 'some.table');
+   new \Goat\Query\Expression\ColumnExpression('some.column', 'some.table');
 
 Will be formatted as:
 
@@ -177,7 +177,7 @@ alias, WITH statement.
 
    <?php
 
-   \Goat\Query\Expression\TableExpression::create('some_table');
+   new \Goat\Query\Expression\TableExpression('some_table');
 
 Will be formatted as:
 
@@ -191,7 +191,7 @@ Will be formatted as:
 
    <?php
 
-   \Goat\Query\Expression\TableExpression::create('some_table', 'foo');
+   new \Goat\Query\Expression\TableExpression('some_table', 'foo');
 
 Will be formatted as:
 
@@ -205,7 +205,7 @@ Will be formatted as:
 
    <?php
 
-   \Goat\Query\Expression\TableExpression::create('my_schema.some_table', 'foo');
+   new \Goat\Query\Expression\TableExpression('my_schema.some_table', 'foo');
 
 Will be formatted as:
 
@@ -219,7 +219,7 @@ Will be formatted as:
 
    <?php
 
-   \Goat\Query\Expression\TableExpression::create('some_table', 'foo', 'my_schema');
+   new \Goat\Query\Expression\TableExpression('some_table', 'foo', 'my_schema');
 
 Will be formatted as:
 
@@ -233,7 +233,7 @@ Will be formatted as:
 
    <?php
 
-   \Goat\Query\Expression\TableExpression::escape('some.table', 'some.alias', 'my.schema');
+   new \Goat\Query\Expression\TableExpression('some.table', 'some.alias', 'my.schema');
 
 Will be formatted as:
 
@@ -257,7 +257,7 @@ converter to deambiguate values types.
 
    <?php
 
-   \Goat\Query\Expression\ValueExpression::create(12);
+   new \Goat\Query\Expression\ValueExpression(12);
 
 Will be formatted as:
 
@@ -271,7 +271,7 @@ Will be formatted as:
 
    <?php
 
-   \Goat\Query\Expression\ValueExpression::create(12, 'int');
+   new \Goat\Query\Expression\ValueExpression(12, 'int');
 
 .. code-block:: sql
 
@@ -283,7 +283,7 @@ Will be formatted as:
 
    <?php
 
-   \Goat\Query\Expression\ValueExpression::create(['foo' => 'bar', 'baz' => [1, 2, 3]], 'json');
+   new \Goat\Query\Expression\ValueExpression(['foo' => 'bar', 'baz' => [1, 2, 3]], 'json');
 
 .. code-block:: sql
 
@@ -295,7 +295,7 @@ Will be formatted as:
 
    <?php
 
-   \Goat\Query\Expression\ValueExpression::create([1, 2, 3], 'int[]');
+   new \Goat\Query\Expression\ValueExpression([1, 2, 3], 'int[]');
 
 .. code-block:: sql
 

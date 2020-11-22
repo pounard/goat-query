@@ -15,32 +15,21 @@ class ColumnExpression implements Expression
     private string $columnName;
     private ?string $tableAlias = null;
 
-    protected function __construct(string $columnName, ?string $tableAlias = null)
-    {
-        $this->columnName = $columnName;
-        $this->tableAlias = $tableAlias;
-    }
-
     /**
-     * Create instance from name and alias.
+     * @param string|IdentifierExpression $columnName
      */
-    public static function create(string $columnName, ?string $tableAlias = null): self
+    public function __construct($columnName, ?string $tableAlias = null)
     {
         if (null === $tableAlias) {
-            if (false !== \strpos($columnName, '.')) {
+            if ($columnName instanceof IdentifierExpression) {
+                $columnName = $columnName->getName();
+            } else if (false !== \strpos($columnName, '.')) {
                 list($tableAlias, $columnName) = \explode('.', $columnName, 2);
             }
         }
 
-        return new self($columnName, $tableAlias);
-    }
-
-    /**
-     * Creates an instance without automatic split using '.' notation.
-     */
-    public static function escape(string $columnName, ?string $tableAlias = null): self
-    {
-        return new self($columnName, $tableAlias);
+        $this->columnName = $columnName;
+        $this->tableAlias = $tableAlias;
     }
 
     /**

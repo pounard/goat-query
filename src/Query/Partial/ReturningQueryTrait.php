@@ -49,7 +49,7 @@ trait ReturningQueryTrait
             if ($alias) {
                 throw new QueryError("RETURNING * cannot be aliased.");
             }
-            $expression = RawExpression::create('*');
+            $expression = new RawExpression('*');
         }
 
         $this->return[] = Column::name($expression, $alias);

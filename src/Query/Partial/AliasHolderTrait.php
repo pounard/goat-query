@@ -36,7 +36,7 @@ trait AliasHolderTrait
 
             $alias = $this->createAliasForName($tableName, $alias ?? $tableAlias);
 
-            return TableExpression::create($tableName, $alias, $table->getSchema());
+            return new TableExpression($tableName, $alias, $table->getSchema());
         }
 
         if ($table instanceof Expression) {
@@ -53,7 +53,7 @@ trait AliasHolderTrait
         }
 
         if (\is_string($table)) {
-            return TableExpression::create($table, $this->createAliasForName($table, $alias));
+            return new TableExpression($table, $this->createAliasForName($table, $alias));
         }
 
         throw new QueryError(\sprintf("\$table must be a string or an instance of %s", Expression::class));
@@ -77,11 +77,11 @@ trait AliasHolderTrait
 
             $alias = $this->createAliasForName($tableName, $alias ?? $tableAlias);
 
-            return TableExpression::create($tableName, $alias, $table->getSchema());
+            return new TableExpression($tableName, $alias, $table->getSchema());
         }
 
         if (\is_string($table)) {
-            return TableExpression::create($table, $this->createAliasForName($table, $alias));
+            return new TableExpression($table, $this->createAliasForName($table, $alias));
         }
 
         throw new QueryError(\sprintf("\$table must be a string or an instance of %s", TableExpression::class));

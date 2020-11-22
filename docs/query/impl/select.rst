@@ -145,7 +145,7 @@ Mixing an array with numeric and string keys when calling ``columns()``:
        ->columns([
            'a' => 'column1',
            'column2',
-           'count_foo' => new \Goat\Query\Expression\RawExpression::create('COUNT(foo)'),
+           'count_foo' => new \Goat\Query\Expression\RawExpression('COUNT(foo)'),
        ])
    ;
 

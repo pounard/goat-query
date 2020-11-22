@@ -22,18 +22,14 @@ class ConstantRowExpression implements Expression
      * @param iterable $values
      *   Can contain pretty much anything, keys will be dropped.
      */
-    public static function create(iterable $values): self
+    public function __construct(iterable $values)
     {
-        $ret = new self();
-
         foreach ($values as $value) {
             if (!$value instanceof Statement) {
-                $value = ValueExpression::create($value);
+                $value = new ValueExpression($value);
             }
-            $ret->values[] = $value;
+            $this->values[] = $value;
         }
-
-        return $ret;
     }
 
     /**

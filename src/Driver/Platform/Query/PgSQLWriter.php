@@ -79,7 +79,7 @@ class PgSQLWriter extends DefaultSqlWriter
                 $setColumnMap = [];
                 foreach ($columns as $column) {
                     if (!\in_array($column, $key)) {
-                        $setColumnMap[$column] = RawExpression::create("excluded." . $this->escaper->escapeIdentifier($column));
+                        $setColumnMap[$column] = new RawExpression("excluded." . $this->escaper->escapeIdentifier($column));
                     }
                 }
                 $output[] = 'on conflict (' . $this->formatColumnNameList($key) . ')';

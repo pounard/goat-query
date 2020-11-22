@@ -20,7 +20,7 @@ final class QuerySelectUnitTest extends TestCase
     {
         $select = new SelectQuery();
         $select
-            ->with('sdf', ConstantTableExpression::create()->row([1, 2]))
+            ->with('sdf', new ConstantTableExpression([[1, 2]]))
             ->from('a')
             ->from('b')
             ->join('c')
@@ -220,7 +220,7 @@ final class QuerySelectUnitTest extends TestCase
     {
         $select = new SelectQuery('some_table');
 
-        $select->column(RawExpression::create('count(distinct foo)'), 'bar');
+        $select->column(new RawExpression('count(distinct foo)'), 'bar');
 
         self::assertSameSql(
             'select count(distinct foo) as "bar" from "some_table"',
@@ -246,7 +246,7 @@ final class QuerySelectUnitTest extends TestCase
         self::expectException(QueryError::class);
         self::expectExceptionMessageMatches('/arguments/');
 
-        $select->columnExpression(RawExpression::create('count(*)'), null, 12);
+        $select->columnExpression(new RawExpression('count(*)'), null, 12);
     }
 
     public function testColumnExpressionWithNullRaiseError(): void
@@ -304,7 +304,7 @@ final class QuerySelectUnitTest extends TestCase
 
         $select->column(
             function () {
-                return RawExpression::create("foo.bar");
+                return new RawExpression("foo.bar");
             },
             'result'
         );
@@ -338,7 +338,7 @@ final class QuerySelectUnitTest extends TestCase
 
         $select->column(
             function () {
-                return RawExpression::create("count(*)");
+                return new RawExpression("count(*)");
             },
             'result'
         );
@@ -361,26 +361,26 @@ final class QuerySelectUnitTest extends TestCase
             'id' => 'a.b',
 
             // An expresssion, no alias
-            RawExpression::create('count(a) as a'),
+            new RawExpression('count(a) as a'),
 
             // An expression, with alias
-            'b' => RawExpression::create('count(b)'),
+            'b' => new RawExpression('count(b)'),
 
             // A callback, no alias
             function () {
-                return RawExpression::create('count(c) as c');
+                return new RawExpression('count(c) as c');
             },
 
             // A callback, with alias
             'd' => function () {
-                return RawExpression::create('count(d)');
+                return new RawExpression('count(d)');
             },
 
             // A short arrow function, no alias
-            fn () => RawExpression::create('count(e) as e'),
+            fn () => new RawExpression('count(e) as e'),
 
             // A short arrow function, with alias
-            'f' => fn () => RawExpression::create('count(f)'),
+            'f' => fn () => new RawExpression('count(f)'),
         ]);
 
         self::assertSameSql('
@@ -414,7 +414,7 @@ final class QuerySelectUnitTest extends TestCase
     {
         $select = new SelectQuery('some_table');
 
-        $select->where('bar', RawExpression::create('12'));
+        $select->where('bar', new RawExpression('12'));
 
         self::assertSameSql(
             'select * from "some_table" where "bar" = 12',
@@ -426,7 +426,7 @@ final class QuerySelectUnitTest extends TestCase
     {
         $select = new SelectQuery('some_table');
 
-        $select->where('baz', ValueExpression::create(12, 'json'));
+        $select->where('baz', new ValueExpression(12, 'json'));
 
         self::assertSameSql(
             'select * from "some_table" where "baz" = ?::json',
@@ -491,7 +491,7 @@ final class QuerySelectUnitTest extends TestCase
         $select = new SelectQuery('some_table');
 
         $select->where('baa', function () {
-            return RawExpression::create('now()');
+            return new RawExpression('now()');
         }, '<');
 
         self::assertSameSql(
@@ -603,7 +603,7 @@ final class QuerySelectUnitTest extends TestCase
     {
         $select = new SelectQuery('some_table');
 
-        $select->having('bar', RawExpression::create('12'));
+        $select->having('bar', new RawExpression('12'));
 
         self::assertSameSql(
             'select * from "some_table" having "bar" = 12',
@@ -615,7 +615,7 @@ final class QuerySelectUnitTest extends TestCase
     {
         $select = new SelectQuery('some_table');
 
-        $select->having('baz', ValueExpression::create(12, 'json'));
+        $select->having('baz', new ValueExpression(12, 'json'));
 
         self::assertSameSql(
             'select * from "some_table" having "baz" = ?::json',
@@ -642,7 +642,7 @@ final class QuerySelectUnitTest extends TestCase
         $select = new SelectQuery('some_table');
 
         $select->having('baa', function () {
-            return RawExpression::create('now()');
+            return new RawExpression('now()');
         }, '<');
 
         self::assertSameSql(
@@ -679,7 +679,7 @@ final class QuerySelectUnitTest extends TestCase
 
     public function testExpressionAsJoin(): void
     {
-        $expression = ConstantTableExpression::create();
+        $expression = new ConstantTableExpression();
         $expression->row([1, 2, 3]);
 
         $select = new SelectQuery('foo');
@@ -698,7 +698,7 @@ final class QuerySelectUnitTest extends TestCase
 
     public function testExpressionAsJoinWithAlias(): void
     {
-        $expression = ConstantTableExpression::create();
+        $expression = new ConstantTableExpression();
         $expression->row([1, 2, 3]);
 
         $select = new SelectQuery('foo');
@@ -720,7 +720,7 @@ final class QuerySelectUnitTest extends TestCase
      *
     public function testExpressionAsJoinWithAliasInExpression()
     {
-        $expression = ConstantTableExpression::create();
+        $expression = new ConstantTableExpression();
         $expression->row([1, 2, 3]);
 
         $select = new SelectQuery(new AliasedExpression('f.u.b.a.r.', $expression));
@@ -740,7 +740,7 @@ final class QuerySelectUnitTest extends TestCase
 
     public function testExpressionAsTable(): void
     {
-        $expression = ConstantTableExpression::create();
+        $expression = new ConstantTableExpression();
         $expression->row([1, 2, 3]);
         $expression->row(["a", "b", "c"]);
 
@@ -761,7 +761,7 @@ final class QuerySelectUnitTest extends TestCase
 
     public function testExpressionAsTableWithAlias(): void
     {
-        $expression = ConstantTableExpression::create();
+        $expression = new ConstantTableExpression();
         $expression->row([1, 2, 3]);
 
         $select = new SelectQuery($expression, 'foobar');
@@ -783,7 +783,7 @@ final class QuerySelectUnitTest extends TestCase
      *
     public function testExpressionAsTableWithAliasInExpression()
     {
-        $expression = ConstantTableExpression::create();
+        $expression = new ConstantTableExpression();
         $expression->row([1, 2, 3]);
 
         $select = new SelectQuery(new AliasedExpression('f.u.b.a.r.', $expression));

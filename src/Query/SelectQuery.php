@@ -274,7 +274,7 @@ final class SelectQuery extends AbstractQuery implements Expression
     public function orderBy($column, int $order = Query::ORDER_ASC, int $null = Query::NULL_IGNORE): self
     {
         if (!$column instanceof Expression) {
-            $column = ColumnExpression::create($column);
+            $column = new ColumnExpression($column);
         }
 
         $this->orders[] = [$column, $order, $null];
@@ -296,7 +296,7 @@ final class SelectQuery extends AbstractQuery implements Expression
     public function orderByExpression($column, int $order = Query::ORDER_ASC, int $null = Query::NULL_IGNORE): self
     {
         if (!$column instanceof Expression) {
-            $column = RawExpression::create($column);
+            $column = new RawExpression($column);
         }
 
         $this->orders[] = [$column, $order, $null];
@@ -422,7 +422,7 @@ final class SelectQuery extends AbstractQuery implements Expression
             ->removeAllColumns()
             ->removeAllOrder()
             ->range(0, 0)
-            ->column(RawExpression::create("count(*)"), $countAlias)
+            ->column(new RawExpression("count(*)"), $countAlias)
         ;
     }
 

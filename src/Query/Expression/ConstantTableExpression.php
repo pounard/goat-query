@@ -26,9 +26,20 @@ class ConstantTableExpression implements Expression
     /** @var ConstantRowExpression[] */
     private array $rows = [];
 
-    public static function create(): self
+    /**
+     * Create a constant table expression.
+     *
+     * @param ?iterable $rows
+     *   An array of iterables, whose are rows, each row must contain the same
+     *   number of values.
+     */
+    public function __construct(?iterable $rows = null)
     {
-        return new self();
+        if ($rows) {
+            foreach ($rows as $row) {
+                $this->row($row);
+            }
+        }
     }
 
     /**
@@ -70,7 +81,7 @@ class ConstantTableExpression implements Expression
                 throw new QueryError(\sprintf("Values must be an iterable or an %s instance", ConstantRowExpression::class));
             }
 
-            $row = ConstantRowExpression::create($row);
+            $row = new ConstantRowExpression($row);
         }
 
         $columnCount = $row->getColumnCount();

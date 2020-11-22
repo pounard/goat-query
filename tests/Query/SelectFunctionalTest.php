@@ -56,18 +56,18 @@ EOT;
         $query = new SelectQuery('task', 't');
         $query->column('t.*');
         $query->column('n.type');
-        $query->column(RawExpression::create('count(n.id)'), 'comment_count');
+        $query->column(new RawExpression('count(n.id)'), 'comment_count');
         // Add and remove a column for fun
         $query->column('some_field', 'some_alias')->removeColumn('some_alias');
         $query->leftJoin('task_note', 'n.task_id = t.id', 'n');
         $query->groupBy('t.id');
         $query->groupBy('n.type');
         $query->orderBy('n.type');
-        $query->orderBy(RawExpression::create('count(n.nid)'), Query::ORDER_DESC);
+        $query->orderBy(new RawExpression('count(n.nid)'), Query::ORDER_DESC);
         $query->range(7, 42);
         $where = $query->getWhere();
         $where->condition('t.user_id', 12);
-        $where->condition('t.deadline', RawExpression::create('now()'), '<');
+        $where->condition('t.deadline', new RawExpression('now()'), '<');
         $having = $query->getHaving();
         $having->expression('count(n.nid) < ?', 3);
 
@@ -130,11 +130,11 @@ EOT;
         ;
         $query
             ->leftJoinWhere('task_note', 'n')
-            ->condition('n.task_id', ColumnExpression::create('t.id'))
+            ->condition('n.task_id', new ColumnExpression('t.id'))
         ;
         $where = $query->getWhere()
             ->condition('t.user_id', 12)
-            ->condition('t.deadline', RawExpression::create('now()'), '<')
+            ->condition('t.deadline', new RawExpression('now()'), '<')
         ;
         $having = $query->getHaving()
             ->expression('count(n.nid) < ?', 3)

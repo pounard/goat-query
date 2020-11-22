@@ -57,7 +57,7 @@ final class UpdateUnitTest extends TestCase
     public function testSetWithExpression(): void
     {
         $query = new UpdateQuery('a');
-        $query->set('foo', RawExpression::create('bla()'));
+        $query->set('foo', new RawExpression('bla()'));
 
         self::assertSameSql(
             'update "a" set "foo" = bla()',

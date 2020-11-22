@@ -96,7 +96,7 @@ trait InsertTrait
     public function values(array $values): self
     {
         if (null === $this->query) {
-            $this->query = ConstantTableExpression::create();
+            $this->query = new ConstantTableExpression();
             $this->queryIsConstantTable = true;
         } else if (!$this->queryIsConstantTable) {
             throw new QueryError(\sprintf("%s::query() and %s::values() are mutually exclusive.", __CLASS__, __CLASS__));

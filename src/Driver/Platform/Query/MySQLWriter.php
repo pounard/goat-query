@@ -63,9 +63,9 @@ class MySQLWriter extends DefaultSqlWriter
         if (\is_string($expression)) {
             // Let pass strings with dot inside, it might already been formatted.
             if (false !== \strpos($expression, ".")) {
-                return RawExpression::create($expression);
+                return new RawExpression($expression);
             }
-            return RawExpression::create("values(" . $this->escaper->escapeIdentifier($expression) . ")");
+            return new RawExpression("values(" . $this->escaper->escapeIdentifier($expression) . ")");
         }
 
         return $expression;

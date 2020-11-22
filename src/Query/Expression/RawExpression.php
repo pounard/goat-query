@@ -17,7 +17,7 @@ class RawExpression implements Expression
     private string $expression;
     private ArgumentBag $arguments;
 
-    protected function __construct(string $expression, $arguments = [])
+    public function __construct(string $expression, $arguments = [])
     {
         if (!\is_array($arguments)) {
             $arguments = [$arguments];
@@ -26,14 +26,6 @@ class RawExpression implements Expression
         $this->expression = $expression;
         $this->arguments = new ArgumentBag();
         $this->arguments->appendArray($arguments);
-    }
-
-    /**
-     * Create instance from name and alias.
-     */
-    public static function create(string $expression, $arguments = []): self
-    {
-        return new self($expression, $arguments);
     }
 
     /**

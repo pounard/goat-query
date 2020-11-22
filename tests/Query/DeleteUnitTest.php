@@ -25,7 +25,7 @@ final class DeleteUnitTest extends TestCase
     {
         $select = new DeleteQuery('d');
         $select
-            ->with('sdf', ConstantTableExpression::create()->row([1, 2]))
+            ->with('sdf', new ConstantTableExpression([[1, 2]]))
             ->from('a')
             ->from('b')
             ->join('c')
@@ -115,7 +115,7 @@ final class DeleteUnitTest extends TestCase
     {
         $delete = new DeleteQuery('some_table');
 
-        $delete->returning(RawExpression::create('a + 2'), 'a_plus_two');
+        $delete->returning(new RawExpression('a + 2'), 'a_plus_two');
 
         self::assertSameSql(
             'delete from "some_table" returning a + 2 as "a_plus_two"',

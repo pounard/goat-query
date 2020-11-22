@@ -28,14 +28,14 @@ class ExpressionTest extends TestCase
      */
     public function testValueExpression()
     {
-        $simple = ValueExpression::create(42);
+        $simple = new ValueExpression(42);
         self::assertNull($simple->getType());
         self::assertSame(42, $simple->getValue());
         $arguments = $simple->getArguments();
         self::assertTrue($arguments instanceof ArgumentBag);
         self::assertSame([42], $arguments->getAll());
 
-        $string = ValueExpression::create('some:string:_ouy"" \\\\é \#\'jiretj @');
+        $string = new ValueExpression('some:string:_ouy"" \\\\é \#\'jiretj @');
         self::assertNull($string->getType());
         self::assertSame('some:string:_ouy"" \\\\é \#\'jiretj @', $string->getValue());
         $arguments = $string->getArguments();
@@ -53,7 +53,7 @@ class ExpressionTest extends TestCase
 
     public function testExpressionFactoryWithExpressionPassthrough()
     {
-        $expression = RawExpression::create('foo');
+        $expression = new RawExpression('foo');
         $returned = ExpressionFactory::raw($expression);
         self::assertSame($expression, $returned);
     }
@@ -71,6 +71,6 @@ class ExpressionTest extends TestCase
         self::expectException(QueryError::class);
         self::expectExceptionMessageMatches('/instance and arguments along/');
 
-        ExpressionFactory::raw(RawExpression::create('foo'), ['a']);
+        ExpressionFactory::raw(new RawExpression('foo'), ['a']);
     }
 }

@@ -20,9 +20,9 @@ class MySQL8Writer extends MySQLWriter
         if (\is_string($expression)) {
             // Let pass strings with dot inside, it might already been formatted.
             if (false !== \strpos($expression, ".")) {
-                return RawExpression::create($expression);
+                return new RawExpression($expression);
             }
-            return RawExpression::create("new." . $this->escaper->escapeIdentifier($expression));
+            return new RawExpression("new." . $this->escaper->escapeIdentifier($expression));
         }
 
         return $expression;

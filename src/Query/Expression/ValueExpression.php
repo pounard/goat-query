@@ -13,31 +13,20 @@ use Goat\Query\ValueRepresentation;
  */
 class ValueExpression implements Expression, ValueRepresentation
 {
-    private $bag;
-    private $type;
+    private ?string $type = null;
+    /** @var mixed */
     private $value;
 
-    /**
-     * Default constructor
-     */
-    private function __construct()
+    public function __construct($value, ?string $type = null)
     {
+        $this->value = $value;
+        $this->type = $type;
     }
 
     /**
-     * Build from value
-     */
-    public static function create($value, ?string $type = null): self
-    {
-        $ret = new self;
-        $ret->value = $value;
-        $ret->type = $type;
-
-        return $ret;
-    }
-
-    /**
-     * Get value
+     * Get value.
+     *
+     * @return mixed
      */
     public function getValue()
     {
@@ -45,7 +34,7 @@ class ValueExpression implements Expression, ValueRepresentation
     }
 
     /**
-     * Get value type
+     * Get value type.
      */
     public function getType(): ?string
     {

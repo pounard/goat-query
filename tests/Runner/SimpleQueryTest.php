@@ -30,7 +30,7 @@ class SimpleQueryTest extends DatabaseAwareQueryTest
             $runner
                 ->getQueryBuilder()
                 ->select()
-                ->columnExpression(RawExpression::create('42'))
+                ->columnExpression(new RawExpression('42'))
                 ->execute()
                 ->fetchField()
         );

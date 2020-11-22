@@ -245,7 +245,7 @@ class UpdateTest extends DatabaseAwareQueryTest
         $result = $runner
             ->getQueryBuilder()
             ->update('some_table', 't')
-            ->set('foo', ColumnExpression::create('u.id'))
+            ->set('foo', new ColumnExpression('u.id'))
             ->join('users', "u.id = t.id_user", 'u')
             ->where('u.name', 'admin')
             ->execute()
@@ -281,7 +281,7 @@ class UpdateTest extends DatabaseAwareQueryTest
         $result = $runner
             ->getQueryBuilder()
             ->update('some_table', 't')
-            ->set('foo', RawExpression::create('u.id'))
+            ->set('foo', new RawExpression('u.id'))
             ->join('users', "u.id = t.id_user", 'u')
             ->where('u.name', 'admin')
             ->execute()
@@ -368,7 +368,7 @@ class UpdateTest extends DatabaseAwareQueryTest
         $affectedRows = $runner
             ->getQueryBuilder()
             ->update('some_table')
-            ->set('foo', RawExpression::create('id_user * 2'))
+            ->set('foo', new RawExpression('id_user * 2'))
             ->join('users', 'u.id = id_user', 'u')
             ->where('id_user', self::ID_JEAN)
             ->perform()

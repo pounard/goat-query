@@ -585,7 +585,7 @@ class DefaultSqlWriter extends AbstractSqlWriter
                 $setColumnMap = [];
                 foreach ($usingColumnMap as $column => $usingColumnExpression) {
                     if (!\in_array($column, $key)) {
-                        $setColumnMap[$column] = RawExpression::create($usingColumnExpression);
+                        $setColumnMap[$column] = new RawExpression($usingColumnExpression);
                     }
                 }
                 $output[] = "when matched then update set";

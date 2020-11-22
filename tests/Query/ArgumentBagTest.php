@@ -30,8 +30,8 @@ class ArgumentBagTest extends TestCase
     {
         $argumentBag = new ArgumentBag();
         $argumentBag->add(1);
-        $argumentBag->add(ValueExpression::create('a', 'some_type'));
-        $argumentBag->add(ValueExpression::create('b', 'other_type'));
+        $argumentBag->add(new ValueExpression('a', 'some_type'));
+        $argumentBag->add(new ValueExpression('b', 'other_type'));
 
         $this->assertSame(null, $argumentBag->getTypeAt(0));
         $this->assertSame('some_type', $argumentBag->getTypeAt(1));

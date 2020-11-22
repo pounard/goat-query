@@ -49,7 +49,7 @@ final class ExpressionFactory
     public static function output($expression, $context = null): Expression
     {
         if ('*' === $expression) {
-            return RawExpression::create('*');
+            return new RawExpression('*');
         }
 
         return self::column($expression);
@@ -68,7 +68,7 @@ final class ExpressionFactory
         }
 
         if (\is_string($expression)) {
-            return ColumnExpression::create($expression);
+            return new ColumnExpression($expression);
         }
 
         throw new QueryError(\sprintf("column reference must be a string or an instance of %s", ColumnExpression::class));
@@ -88,7 +88,7 @@ final class ExpressionFactory
             return $expression;
         }
 
-        return ValueExpression::create($expression);
+        return new ValueExpression($expression);
     }
 
     /**
@@ -116,7 +116,7 @@ final class ExpressionFactory
         }
 
         if (\is_scalar($expression)) {
-            return RawExpression::create($expression, $arguments);
+            return new RawExpression($expression, $arguments);
         }
 
         throw new QueryError(\sprintf("raw expression must be a scalar or an instance of %s", Expression::class));
