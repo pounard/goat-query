@@ -114,6 +114,47 @@ In other words:
 
  - Symfony bundle in https://github.com/makinacorpus/php-goat/
 
+# Upgrade
+
+## Upgrade from 2.x to 3.x
+
+ - 3.x deprecated all `\Goat\Query\Expression*` classes. Their backward
+   compatible equivalent still exists, in order to make your code resilient,
+   please use their new implementations in `\Goat\Query\Expression\*Expression`.
+
+ - 3.x ships a complete `\Goat\Driver\Query\SqlWriter` interface and
+   implementations rewrite. New code is faster, easier to read and has much
+   less dependencies, driver developers or users using it directly must adapt
+   their code.
+
+ - 3.x removes the `\Goat\Query\ArgumentBag`, `\Goat\Query\ArgumentList`,
+   `\Goat\Query\Value`, `\Goat\Query\ValueRepresentation` classes and
+   interfaces, people using those must adapt their code.
+
+ - Generally speaking, this will be the last version providing backward
+   compatible deprecated code, following deprecation notices and the `@deprecated`
+   PHP documentation annotaton to fix your existing code.
+
+ - For most users, upgrade will be transparent and will not cause any trouble.
+
+## Upgrade from 1.x to 2.x
+
+ - 2.x introduced a single user facing change: the Symfony bundle was
+   originally provided by the
+   [makinacorpus/goat](https://packagist.org/packages/makinacorpus/goat)
+   package, it is now bundled as the standalone
+   [makinacorpus/goat-query-bundle](https://packagist.org/packages/makinacorpus/goat-query-bundle)
+   package.
+
+ - 2.x changed internal runners implementation and introduces a new
+   `\Goat\Driver\` namespace, which focuses on low-level driver implementations,
+   driver developpers will need to convert their code to the new API.
+
+This also introduce a dependency conflict between `makinacorpus/goat` version
+prior to `3.0.0` version, if you were using it, you need to upgrade.
+
+Query builder, database runner and result iterator end-user API did not change.
+
 # History
 
 Originating and extracted from https://github.com/pounard/goat
