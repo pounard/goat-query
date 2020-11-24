@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace Goat\Query\Expression;
 
-use Goat\Query\ArgumentBag;
 use Goat\Query\Expression;
+use Goat\Query\QueryError;
 use Goat\Query\Partial\WithAlias;
 use Goat\Query\Partial\WithAliasTrait;
-use Goat\Query\QueryError;
 
 /**
  * Allows to hold any expression with an alias.
@@ -34,13 +33,5 @@ final class AliasedExpression implements Expression, WithAlias
     public function getExpression(): Expression
     {
         return $this->expression;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getArguments(): ArgumentBag
-    {
-        return new ArgumentBag();
     }
 }

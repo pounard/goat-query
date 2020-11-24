@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Goat\Query\Expression;
 
-use Goat\Query\ArgumentBag;
 use Goat\Query\Expression;
 
 /**
@@ -15,7 +14,7 @@ use Goat\Query\Expression;
 class RawExpression implements Expression
 {
     private string $expression;
-    private ArgumentBag $arguments;
+    private array $arguments;
 
     public function __construct(string $expression, $arguments = [])
     {
@@ -24,8 +23,7 @@ class RawExpression implements Expression
         }
 
         $this->expression = $expression;
-        $this->arguments = new ArgumentBag();
-        $this->arguments->appendArray($arguments);
+        $this->arguments = $arguments;
     }
 
     /**
@@ -37,9 +35,11 @@ class RawExpression implements Expression
     }
 
     /**
-     * {@inheritdoc}
+     * Get arguments.
+     *
+     * @return mixed[]
      */
-    public function getArguments(): ArgumentBag
+    public function getArguments(): array
     {
         return $this->arguments;
     }
@@ -49,6 +49,8 @@ class RawExpression implements Expression
      */
     public function __clone()
     {
-        $this->arguments = clone $this->arguments;
+        foreach ($this->arguments as $index => $value) {
+            $this->arguments[$index] = \is_object($value) ? clone $value : $value;
+        }
     }
 }

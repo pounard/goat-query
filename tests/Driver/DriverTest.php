@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Goat\Query\Tests;
+namespace Goat\Driver\Tests;
 
 use Goat\Driver\Platform\Platform;
 use Goat\Runner\Runner;

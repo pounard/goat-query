@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Goat\Query\Tests;
 
-use Goat\Query\ArgumentBag;
 use Goat\Query\ExpressionFactory;
 use Goat\Query\QueryError;
 use Goat\Query\Expression\RawExpression;
@@ -31,16 +30,10 @@ class ExpressionTest extends TestCase
         $simple = new ValueExpression(42);
         self::assertNull($simple->getType());
         self::assertSame(42, $simple->getValue());
-        $arguments = $simple->getArguments();
-        self::assertTrue($arguments instanceof ArgumentBag);
-        self::assertSame([42], $arguments->getAll());
 
         $string = new ValueExpression('some:string:_ouy"" \\\\é \#\'jiretj @');
         self::assertNull($string->getType());
         self::assertSame('some:string:_ouy"" \\\\é \#\'jiretj @', $string->getValue());
-        $arguments = $string->getArguments();
-        self::assertTrue($arguments instanceof ArgumentBag);
-        self::assertSame(['some:string:_ouy"" \\\\é \#\'jiretj @'], $arguments->getAll());
     }
 
     public function testExpressionFactoryWithColumnRaiseErrorIfNotScalar()

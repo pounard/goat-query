@@ -7,7 +7,7 @@ namespace Goat\Query\Tests;
 use Goat\Runner\Testing\NullEscaper;
 use PHPUnit\Framework\TestCase;
 
-class FormatterBaseRegexTest extends TestCase
+final class FormatterBaseRegexTest extends TestCase
 {
     use BuilderTestTrait;
 
@@ -16,7 +16,7 @@ class FormatterBaseRegexTest extends TestCase
      *
      * It is based upon a failing real life scenario.
      */
-    public function testEscapeSequenceIsNonGreedy()
+    public function testEscapeSequenceIsNonGreedy(): void
     {
         $formatter = new FooSqlWriter(new NullEscaper(true));
 
@@ -25,8 +25,7 @@ select "foo" from "some_table" where "a" = ? and "b" = ?"
 SQL
         );
 
-        $argumentList = $prepared->getArgumentList();
-        $this->assertSame(2, $argumentList->count());
+        self::assertCount(2, $prepared->getArgumentTypes());
     }
 
     public function testPlaceholderUnescaping(): void
@@ -34,17 +33,16 @@ SQL
         $formatter = new FooSqlWriter(new NullEscaper(true));
 
         $prepared = $formatter->prepare(<<<SQL
-select "foo" from "some_table" where "a" ?? "foo" and "b" = ?::date and "c" = ? and "d" = :foo
+select "foo" from "some_table" where "a" ?? "foo" and "b" = ?::date and "c" = ?
 SQL
         );
 
-        $argumentList = $prepared->getArgumentList();
-        $this->assertSame(3, $argumentList->count());
-        $this->assertSame('date', $argumentList->getTypeAt(0));
-        $this->assertSame(2, $argumentList->getNameIndex('foo'));
+        self::assertCount(2, $prepared->getArgumentTypes());
+        self::assertSame('date', $prepared->getArgumentTypes()[0]);
+        self::assertNull($prepared->getArgumentTypes()[1]);
 
-        $this->assertSameSql(<<<SQL
-select "foo" from "some_table" where "a" ? "foo" and "b" = #1 and "c" = #2 and "d" = #3
+        self::assertSameSql(<<<SQL
+select "foo" from "some_table" where "a" ? "foo" and "b" = #1 and "c" = #2
 SQL
             , $prepared->getRawSQL()
         );
@@ -53,7 +51,7 @@ SQL
     /**
      * Simple named parameters test.
      */
-    public function testNamedParametersAreFound()
+    public function testNamedParametersAreIgnoredFound(): void
     {
         $formatter = new FooSqlWriter(new NullEscaper(true));
 
@@ -62,16 +60,13 @@ select "foo" from "some_table" where "a" = :foo and "b" = :bar and "c" = ?
 SQL
         );
 
-        $argumentList = $prepared->getArgumentList();
-        $this->assertSame(3, $argumentList->count());
-        $this->assertSame(0, $argumentList->getNameIndex('foo'));
-        $this->assertSame(1, $argumentList->getNameIndex('bar'));
+        self::assertCount(1, $prepared->getArgumentTypes());
     }
 
     /**
      * Basic placeholder test.
      */
-    public function testPlaceholderAreFound()
+    public function testPlaceholderAreFound(): void
     {
         $formatter = new FooSqlWriter(new NullEscaper(true));
 
@@ -80,35 +75,13 @@ select * from bar where foo = ?
 SQL
         );
 
-        $argumentList = $prepared->getArgumentList();
-        $this->assertSame(1, $argumentList->count());
-    }
-
-    /**
-     * Does a query will all 3 of a pgsql cast, a named parameter and
-     * a typed named parameter. Things should not mix up.
-     */
-    public function testPgSqlCastDoesNotMixedUpWithNames()
-    {
-        $formatter = new FooSqlWriter(new NullEscaper(true));
-
-        $prepared = $formatter->prepare(<<<SQL
-select *, a::int from bar where foo = :foo and bar = :bar::bigint
-SQL
-        );
-
-        $argumentList = $prepared->getArgumentList();
-        $this->assertSame(2, $argumentList->count());
-        $this->assertSame(0, $argumentList->getNameIndex('foo'));
-        $this->assertNull($argumentList->getTypeAt(0));
-        $this->assertSame(1, $argumentList->getNameIndex('bar'));
-        $this->assertSame('bigint', $argumentList->getTypeAt(1));
+        self::assertCount(1, $prepared->getArgumentTypes());
     }
 
     /**
      * Simple test where a placeholder is within an escaped sequence.
      */
-    public function testPlaceholderInEscapeSequencesAreIgnored()
+    public function testPlaceholderInEscapeSequencesAreIgnored(): void
     {
         $formatter = new FooSqlWriter(new NullEscaper(true));
 
@@ -117,23 +90,6 @@ select "oups ?" from bar where foo = 'some ? randomly placed'
 SQL
         );
 
-        $argumentList = $prepared->getArgumentList();
-        $this->assertSame(0, $argumentList->count());
-    }
-
-    /**
-     * Simple test where a named parameter is within an escaped sequence.
-     */
-    public function testNamedParametersInEscapeSequencesAreIgnored()
-    {
-        $formatter = new FooSqlWriter(new NullEscaper(true));
-
-        $prepared = $formatter->prepare(<<<SQL
-select ":oups" from bar where foo = 'some :param randomly placed'
-SQL
-        );
-
-        $argumentList = $prepared->getArgumentList();
-        $this->assertSame(0, $argumentList->count());
+        self::assertCount(0, $prepared->getArgumentTypes());
     }
 }

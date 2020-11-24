@@ -12,7 +12,7 @@ use Goat\Query\Expression\ColumnExpression;
 /**
  * Represents the HAVING part of any query.
  *
- * Don't forget to handle HAVING in __clone(), __construct() and getArguments().
+ * Don't forget to handle HAVING in __clone(), __construct().
  */
 trait HavingClauseTrait
 {

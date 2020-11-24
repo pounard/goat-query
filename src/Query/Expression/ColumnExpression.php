@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Goat\Query\Expression;
 
-use Goat\Query\ArgumentBag;
 use Goat\Query\Expression;
 
 /**
@@ -46,13 +45,5 @@ class ColumnExpression implements Expression
     public function getTableAlias(): ?string
     {
         return $this->tableAlias;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getArguments(): ArgumentBag
-    {
-        return new ArgumentBag();
     }
 }

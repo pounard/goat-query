@@ -10,7 +10,6 @@ use Goat\Runner\Runner;
 
 final class PreparedQuery implements Query
 {
-    private ?ArgumentBag $arguments = null;
     private ?string $identifier = null;
     /** @var null|callable */
     private $initializer = null;
@@ -48,7 +47,6 @@ final class PreparedQuery implements Query
                 throw new QueryError(\sprintf("%s cannot nest %s instances.", __CLASS__, __CLASS__));
             }
 
-            $this->arguments = $query->getArguments();
             $this->options = $query->getOptions();
             $this->willReturnRows = $query->willReturnRows();
 
@@ -178,17 +176,5 @@ final class PreparedQuery implements Query
         }
 
         return $this->willReturnRows;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getArguments(): ArgumentBag
-    {
-        if (!$this->sqlIdentifier) {
-            $this->initialize();
-        }
-
-        return $this->arguments;
     }
 }

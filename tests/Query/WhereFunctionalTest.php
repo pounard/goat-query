@@ -15,8 +15,6 @@ class WhereFunctionalTest extends TestCase
 
     public function testWhere(): void
     {
-        $formatter = self::createStandardSqlWriter();
-
         $select = new SelectQuery('the_universe', 'u');
         $select->column('id');
         $select->where('id', new ColumnExpression('parent.id'));
@@ -109,7 +107,7 @@ and "universe_id" in (
 )
 EOT;
 
-        self::assertSameSql($reference, $formatter->format($where));
+        self::assertSameSql($reference, self::format($where));
 
         // And now the exact same where, using convenience methods
         $where = (new Where())
@@ -150,7 +148,7 @@ EOT;
         ;
 
         // Expected is the exact same
-        self::assertSameSql($reference, $formatter->format($where));
+        self::assertSameSql($reference, self::format($where));
     }
 
     public function testLike(): void
@@ -170,25 +168,23 @@ EOT;
 
     public function testWhereWhenEmpty(): void
     {
-        $formatter = self::createStandardSqlWriter();
-
         $where = (new Where());
 
         // Where is empty
         self::assertTrue($where->isEmpty());
-        self::assertSameSql("1", $formatter->format($where));
+        self::assertSameSql("1", self::format($where));
 
         // Where is not empty anymore
         $where->isNotNull('a');
         self::assertFalse($where->isEmpty());
-        self::assertSameSql("\"a\" is not null", $formatter->format($where));
+        self::assertSameSql("\"a\" is not null", self::format($where));
 
         // Statement is empty
         $statement = $where->and();
         self::assertTrue($statement->isEmpty());
-        self::assertSameSql("1", $formatter->format($statement));
+        self::assertSameSql("1", self::format($statement));
 
         // Statement is ignored, because empty
-        self::assertSameSql("\"a\" is not null", $formatter->format($where));
+        self::assertSameSql("\"a\" is not null", self::format($where));
     }
 }

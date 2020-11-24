@@ -10,12 +10,4 @@ namespace Goat\Query;
  */
 interface Statement
 {
-    /**
-     * Get query arguments
-     *
-     * Those arguments will be later converted by the driven prior to the
-     * query being sent to the backend; for this to work type cast information
-     * must lie into the query
-     */
-    public function getArguments(): ArgumentBag;
 }

@@ -362,7 +362,7 @@ abstract class AbstractRunner implements Runner, ProfilerAware
             $profiler->begin('prepare');
             $prepared = $this->formatter->prepare($query);
             $rawSQL = $prepared->getRawSQL();
-            $args = $prepared->prepareArgumentsWith($this->converter, $query, $arguments);
+            $args = $prepared->prepareArgumentsWith($this->converter, $arguments);
             $profiler->end('prepare');
 
             $profiler->begin('execute');
@@ -402,7 +402,7 @@ abstract class AbstractRunner implements Runner, ProfilerAware
             $profiler->begin('prepare');
             $prepared = $this->formatter->prepare($query);
             $rawSQL = $prepared->getRawSQL();
-            $args = $prepared->prepareArgumentsWith($this->converter, $query, $arguments);
+            $args = $prepared->prepareArgumentsWith($this->converter, $arguments);
             $profiler->end('prepare');
 
             $profiler->begin('execute');

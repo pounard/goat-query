@@ -42,22 +42,6 @@ class InsertQuery extends AbstractQuery
     }
 
     /**
-     * {@inheritdoc}
-     */
-    public function getArguments(): ArgumentBag
-    {
-        $arguments = new ArgumentBag();
-
-        foreach ($this->getAllWith() as $with) {
-            $arguments->append($with->table->getArguments());
-        }
-
-        $arguments->append($this->getQuery()->getArguments());
-
-        return $arguments;
-    }
-
-    /**
      * Deep clone support.
      */
     public function __clone()

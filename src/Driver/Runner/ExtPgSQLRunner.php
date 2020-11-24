@@ -121,7 +121,7 @@ class ExtPgSQLRunner extends AbstractRunner
         $prepared = $this->prepared[$identifier];
         \assert($prepared instanceof FormattedQuery);
 
-        $args = $prepared->prepareArgumentsWith($this->converter, '', $args);
+        $args = $prepared->prepareArgumentsWith($this->converter, $args);
         $resource = @\pg_execute($this->connection, $identifier, $args);
         if (false === $resource) {
             $this->serverError($this->connection, $identifier);

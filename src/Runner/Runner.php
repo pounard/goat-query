@@ -130,7 +130,7 @@ interface Runner
      *
      * @param string $identifier
      *   Generated unique identifier for the prepared query.
-     * @param mixed[]|\Goat\Query\ArgumentBag $arguments
+     * @param mixed[] $arguments
      *   Query arguments.
      * @param string|mixed[] $options
      *   If a string is passed, map object on the given class, else parse
@@ -145,7 +145,7 @@ interface Runner
      *
      * @param string|\Goat\Query\Query $query
      *   Arbitrary query to execute.
-     * @param mixed[]|\Goat\Query\ArgumentBag $arguments
+     * @param mixed[] $arguments
      *   Query arguments, if given $query already carries some, those will
      *   override them allowing query re-use.
      * @param string|mixed[] $options
@@ -168,7 +168,7 @@ interface Runner
      *
      * @param string|\Goat\Query\Query $query
      *   Arbitrary query to execute
-     * @param mixed[]|\Goat\Query\ArgumentBag $arguments
+     * @param mixed[] $arguments
      *   Query arguments, if given $query already carries some, those will
      *   override them allowing query re-use.
      * @param string|mixed[] $options

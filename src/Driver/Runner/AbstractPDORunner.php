@@ -105,7 +105,7 @@ abstract class AbstractPDORunner extends AbstractRunner
         list($statement, $prepared) = $this->prepared[$identifier];
         \assert($prepared instanceof FormattedQuery);
 
-        $args = $prepared->prepareArgumentsWith($this->converter, '', $args);
+        $args = $prepared->prepareArgumentsWith($this->converter, $args);
 
         try {
             $statement->execute($args);

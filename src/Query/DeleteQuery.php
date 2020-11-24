@@ -56,35 +56,6 @@ final class DeleteQuery extends AbstractQuery
     }
 
     /**
-     * {@inheritdoc}
-     */
-    public function getArguments(): ArgumentBag
-    {
-        $arguments = new ArgumentBag();
-
-        foreach ($this->getAllWith() as $with) {
-            $arguments->append($with->table->getArguments());
-        }
-
-        $arguments->append($this->table->getArguments());
-
-        foreach ($this->from as $expression) {
-            $arguments->append($expression->getArguments());
-        }
-
-        foreach ($this->join as $join) {
-            $arguments->append($join->table->getArguments());
-            $arguments->append($join->condition->getArguments());
-        }
-
-        if (!$this->where->isEmpty()) {
-            $arguments->append($this->where->getArguments());
-        }
-
-        return $arguments;
-    }
-
-    /**
      * Deep clone support.
      */
     public function __clone()

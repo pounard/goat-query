@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Goat\Driver\Platform\Query;
 
 use Goat\Driver\Query\DefaultSqlWriter;
+use Goat\Driver\Query\WriterContext;
 use Goat\Query\MergeQuery;
 use Goat\Query\Query;
 use Goat\Query\QueryError;
@@ -30,7 +31,7 @@ class PgSQLWriter extends DefaultSqlWriter
     /**
      * {@inheritdoc}
      */
-    protected function formatInsertNoValuesStatement(): string
+    protected function doFormatInsertNoValuesStatement(WriterContext $context): string
     {
         return "DEFAULT VALUES";
     }
@@ -41,7 +42,7 @@ class PgSQLWriter extends DefaultSqlWriter
      *
      * {@inheritdoc}
      */
-    protected function formatQueryMerge(MergeQuery $query) : string
+    protected function formatQueryMerge(MergeQuery $query, WriterContext $context) : string
     {
         $output = [];
 
@@ -51,16 +52,16 @@ class PgSQLWriter extends DefaultSqlWriter
             throw new QueryError("Insert query must have a table.");
         }
 
-        $output[] = $this->formatWith($query->getAllWith());
+        $output[] = $this->doFormatWith($context, $query->getAllWith());
         // From SQL 92 standard, INSERT queries don't have table alias
         $output[] = 'insert into ' . $this->escaper->escapeIdentifier($table->getName());
 
         // @todo skip column names if numerical
         if ($columns) {
-            $output[] = '(' . $this->formatColumnNameList($columns) . ')';
+            $output[] = '(' . $this->doFormatColumnNameList($context, $columns) . ')';
         }
 
-        $output[] = $this->format($query->getQuery());
+        $output[] = $this->format($query->getQuery(), $context);
 
         switch ($mode = $query->getConflictBehaviour()) {
 
@@ -82,9 +83,9 @@ class PgSQLWriter extends DefaultSqlWriter
                         $setColumnMap[$column] = new RawExpression("excluded." . $this->escaper->escapeIdentifier($column));
                     }
                 }
-                $output[] = 'on conflict (' . $this->formatColumnNameList($key) . ')';
+                $output[] = 'on conflict (' . $this->doFormatColumnNameList($context, $key) . ')';
                 $output[] = 'do update set';
-                $output[] = $this->formatUpdateSet($setColumnMap);
+                $output[] = $this->doFormatUpdateSet($context, $setColumnMap);
                 break;
 
             default:
@@ -93,7 +94,7 @@ class PgSQLWriter extends DefaultSqlWriter
 
         $return = $query->getAllReturn();
         if ($return) {
-            $output[] = 'returning ' . $this->formatReturning($return);
+            $output[] = 'returning ' . $this->doFormatReturning($context, $return);
         }
 
         return \implode("\n", $output);

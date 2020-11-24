@@ -9,6 +9,7 @@ use Goat\Driver\Platform\Query\MySQLWriter;
 use Goat\Driver\Platform\Query\PgSQLWriter;
 use Goat\Driver\Query\DefaultSqlWriter;
 use Goat\Driver\Query\SqlWriter;
+use Goat\Driver\Query\WriterContext;
 use Goat\Runner\Testing\NullEscaper;
 
 trait BuilderTestTrait
@@ -59,8 +60,8 @@ trait BuilderTestTrait
         return new DefaultSqlWriter(new NullEscaper());
     }
 
-    protected static function format($query): string
+    protected static function format($query, ?WriterContext $context = null): string
     {
-        return self::createStandardSqlWriter()->format($query);
+        return self::createStandardSqlWriter()->format($query, $context ?? new WriterContext());
     }
 }

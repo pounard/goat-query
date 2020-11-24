@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace Goat\Query\Expression;
 
-use Goat\Query\ArgumentBag;
 use Goat\Query\Expression;
 use Goat\Query\QueryError;
-use Goat\Query\Statement;
 
 /**
  * Constant table expression reprensent one or more rows of raw arbitrary
@@ -99,21 +97,5 @@ class ConstantTableExpression implements Expression
         $this->rowCount++;
 
         return $this;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getArguments(): ArgumentBag
-    {
-        $ret = new ArgumentBag();
-
-        foreach ($this->rows as $value) {
-            \assert($value instanceof Statement);
-
-            $ret->append($value->getArguments());
-        }
-
-        return $ret;
     }
 }

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Goat\Query\Expression;
 
-use Goat\Query\ArgumentBag;
 use Goat\Query\Expression;
 use Goat\Query\Statement;
 
@@ -50,19 +49,4 @@ class ConstantRowExpression implements Expression
         return $this->values;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function getArguments(): ArgumentBag
-    {
-        $ret = new ArgumentBag();
-
-        foreach ($this->values as $value) {
-            \assert($value instanceof Statement);
-
-            $ret->append($value->getArguments());
-        }
-
-        return $ret;
-    }
 }

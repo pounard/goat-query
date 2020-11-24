@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Goat\Query\Expression;
 
-use Goat\Query\ArgumentBag;
 use Goat\Query\Expression;
 
 /**
@@ -27,13 +26,5 @@ class IdentifierExpression implements Expression
     public function getName(): string
     {
         return $this->name;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getArguments(): ArgumentBag
-    {
-        return new ArgumentBag();
     }
 }

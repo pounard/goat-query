@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Goat\Query\Tests;
 
-use Goat\Query\ArgumentBag;
+use Goat\Driver\Query\ArgumentBag;
 use Goat\Query\SelectQuery;
 use Goat\Runner\Testing\NullEscaper;
 use PHPUnit\Framework\TestCase;
@@ -23,34 +23,6 @@ class PlaceholderTest extends TestCase
         );
 
         $this->assertSameSql('select * from some_table where foo::date = #1', $formatted->getRawSQL());
-        // @todo FIXME $this->assertSame(['1983-03-22'], $formatted->getArguments());
-    }
-
-    public function testNamedParametersWithoutTypeAreReplaced()
-    {
-        $formatter = new FooSqlWriter(new NullEscaper(true));
-
-        $formatted = $formatter->prepare(
-            'select * from some_table where foo = :date',
-            [\DateTimeImmutable::createFromFormat('Y-m-d H:i:s', '1983-03-22 08:25:00')]
-        );
-
-        // Type is guessed as 'timestamp'
-        $this->assertSameSql('select * from some_table where foo = #1', $formatted->getRawSQL());
-        // @todo FIXME $this->assertSame(['1983-03-22 08:25:00'], $formatted->getArguments());
-    }
-
-    public function testNamedParametersWithTypeAreReplacedAndTyped()
-    {
-        $formatter = new FooSqlWriter(new NullEscaper(true));
-
-        $formatted = $formatter->prepare(
-            'select * from some_table where foo = :date::date',
-            [\DateTimeImmutable::createFromFormat('Y-m-d H:i:s', '1983-03-22 08:25:00')]
-        );
-
-        // Type is guessed as 'timestamp'
-        $this->assertSameSql('select * from some_table where foo = #1', $formatted->getRawSQL());
         // @todo FIXME $this->assertSame(['1983-03-22'], $formatted->getArguments());
     }
 
@@ -139,22 +111,6 @@ class PlaceholderTest extends TestCase
         // @todo FIXME $this->assertSame([7, "12"], $query->getArguments());
     }
 
-    /*
-    public function testNamedPlaceholder()
-    {
-        $formatter = new FooSqlWriter(new NullEscaper(true));
-
-        $builder = new SelectQuery('some_table');
-        $builder->where('foo', 7);
-        $builder->whereExpression('bar = ?', 12);
-
-        $query = $formatter->prepare($builder);
-
-        $this->assertSameSql('select * from "some_table" where "foo" = #1 and bar = #2', $query->getRawSQL());
-        $this->assertSame([7, 12], $query->getArguments());
-    }
-     */
-
     public function testEscapedPlaceholderIsIgnored()
     {
         $formatter = new FooSqlWriter(new NullEscaper(true));
@@ -171,11 +127,4 @@ class PlaceholderTest extends TestCase
         $query = $formatter->prepare("select '?' from \"weird ? table\" where bar = ? and foo = $$?$$ and john = $$ doh ? $$", ['test']);
         $this->assertSameSql("select '?' from \"weird ? table\" where bar = #1 and foo = $$?$$ and john = $$ doh ? $$", $query->getRawSQL());
     }
-
-    /*
-    public function testEscapedNamedPlaceholderIsIgnored()
-    {
-        
-    }
-     */
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Goat\Query\Tests;
 
+use Goat\Driver\Query\WriterContext;
 use Goat\Query\MergeQuery;
 use Goat\Query\Query;
 use Goat\Query\QueryError;
@@ -74,7 +75,7 @@ values (
 )
 SQL
             ,
-            self::createMySQLWriter()->format($query)
+            self::createMySQLWriter()->format($query, new WriterContext())
         );
     }
 
@@ -99,7 +100,7 @@ values (
 )
 SQL
             ,
-            self::createMySQLWriter()->format($query)
+            self::createMySQLWriter()->format($query, new WriterContext())
         );
     }
 
@@ -127,7 +128,7 @@ on duplicate key update
     "buzz" = values("buzz")
 SQL
             ,
-            self::createMySQLWriter()->format($query)
+            self::createMySQLWriter()->format($query, new WriterContext())
         );
     }
 
@@ -156,7 +157,7 @@ on duplicate key update
     "buzz" = values("buzz")
 SQL
             ,
-            self::createMySQLWriter()->format($query)
+            self::createMySQLWriter()->format($query, new WriterContext())
         );
     }
 
@@ -177,7 +178,7 @@ insert ignore into "table1" (
 select "a", "b", "c", "d" from "table2"
 SQL
             ,
-            self::createMySQLWriter()->format($query)
+            self::createMySQLWriter()->format($query, new WriterContext())
         );
     }
 
@@ -199,7 +200,7 @@ insert ignore into "table1" (
 select "a", "b", "c", "d" from "table2"
 SQL
             ,
-            self::createMySQLWriter()->format($query)
+            self::createMySQLWriter()->format($query, new WriterContext())
         );
     }
 
@@ -224,7 +225,7 @@ on duplicate key update
     "buzz" = values("buzz")
 SQL
             ,
-            self::createMySQLWriter()->format($query)
+            self::createMySQLWriter()->format($query, new WriterContext())
         );
     }
 
@@ -250,7 +251,7 @@ on duplicate key update
     "buzz" = values("buzz")
 SQL
             ,
-            self::createMySQLWriter()->format($query)
+            self::createMySQLWriter()->format($query, new WriterContext())
         );
     }
 }

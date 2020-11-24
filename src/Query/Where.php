@@ -6,6 +6,9 @@ namespace Goat\Query;
 
 use Goat\Query\Expression\ColumnExpression;
 use Goat\Query\Expression\LikeExpression;
+use Goat\Query\Expression\ComparisonExpression;
+use Goat\Query\Expression\BetweenExpression;
+use Goat\Query\Expression\ConstantRowExpression;
 
 /**
  * Where represents the selection of the SQL query
@@ -33,25 +36,10 @@ final class Where implements Statement
     const NOT_LIKE = 'not like';
     const OR = 'or';
 
-    /**
-     * @var ArgumentBag
-     */
-    protected $arguments;
-
-    /**
-     * @var string
-     */
-    protected $operator = self::AND;
-
-    /**
-     * @var Where
-     */
-    protected $parent;
-
-    /**
-     * @var WhereCondition[]
-     */
-    protected $conditions = [];
+    protected string $operator = self::AND;
+    protected $parent = null;
+    /** @var Expression[] */
+    protected array $conditions = [];
 
     /**
      * Default constructor
@@ -89,16 +77,6 @@ final class Where implements Statement
         return $this;
     }
 
-    /**
-     * Reset internal cache if necessary
-     */
-    protected function reset()
-    {
-        // Never use unset() this will unassign the class property and make
-        // PHP raise notices on further accesses.
-        $this->arguments = null;
-    }
-
     private function operatorNeedsValue(string $operator)
     {
         return $operator !== self::IS_NULL && $operator !== self::NOT_IS_NULL;
@@ -119,8 +97,10 @@ final class Where implements Statement
             return $this->expression($column);
         }
 
+        // Normalize column to expression.
         $column = ExpressionFactory::column($column);
 
+        // Normalize values to statements.
         if (!$this->operatorNeedsValue($operator)) {
             if ($value) {
                 throw new QueryError(\sprintf("operator %s cannot carry a value", $operator));
@@ -138,18 +118,30 @@ final class Where implements Statement
             if (\is_array($value) || $value instanceof SelectQuery) {
                 $operator = self::IN;
             }
-        } else if (self::NOT_EQUAL === $operator) {
+            $this->conditions[] = new ComparisonExpression($column, \is_array($value) ? new ConstantRowExpression($value) : $value, $operator);
+
+            return $this;
+        }
+
+        if (self::NOT_EQUAL === $operator) {
             if (\is_array($value) || $value instanceof SelectQuery) {
                 $operator = self::NOT_IN;
             }
-        } else if (self::BETWEEN === $operator || self::NOT_BETWEEN === $operator) {
+            $this->conditions[] = new ComparisonExpression($column, \is_array($value) ? new ConstantRowExpression($value) : $value, $operator);
+
+            return $this;
+        }
+
+        if (self::BETWEEN === $operator || self::NOT_BETWEEN === $operator) {
             if (!\is_array($value) || 2 !== \count($value)) {
                 throw new QueryError("between and not between operators needs exactly 2 values");
             }
+            $this->conditions[] = new BetweenExpression($column, \array_shift($value), \array_shift($value), $operator);
+
+            return $this;
         }
 
-        $this->conditions[] = new WhereCondition($column, $value, $operator);
-        $this->reset();
+        $this->conditions[] = new ComparisonExpression($column, \is_array($value) ? new ConstantRowExpression($value) : $value, $operator);
 
         return $this;
     }
@@ -183,7 +175,7 @@ final class Where implements Statement
             }
         }
 
-        $this->conditions[] = new WhereCondition(null, $expression, null);
+        $this->conditions[] = $expression;
 
         return $this;
     }
@@ -193,7 +185,7 @@ final class Where implements Statement
      */
     public function exists(SelectQuery $query)
     {
-        $this->conditions[] = new WhereCondition(null, $query, self::EXISTS);
+        $this->conditions[] = new ComparisonExpression(null, $query, self::EXISTS);
 
         return $this;
     }
@@ -203,7 +195,7 @@ final class Where implements Statement
      */
     public function notExists(SelectQuery $query)
     {
-        $this->conditions[] = new WhereCondition(null, $query, self::NOT_EXISTS);
+        $this->conditions[] = new ComparisonExpression(null, $query, self::NOT_EXISTS);
 
         return $this;
     }
@@ -219,10 +211,8 @@ final class Where implements Statement
      */
     public function open(string $operator = self::AND) : Where
     {
-        $this->reset();
-
         $where = (new Where($operator))->setParent($this);
-        $this->conditions[] = new WhereCondition(null, $where, null);
+        $this->conditions[] = $where;
 
         return $where;
     }
@@ -516,45 +506,6 @@ final class Where implements Statement
     }
 
     /**
-     * {@inheritdoc}
-     */
-    public function getArguments() : ArgumentBag
-    {
-        if (null !== $this->arguments) {
-            return $this->arguments;
-        }
-
-        $arguments = new ArgumentBag();
-
-        /** @var \Goat\Query\WhereCondition $condition */
-        foreach ($this->conditions as $condition) {
-            if ($condition->value instanceof Statement) {
-                $arguments->append($condition->value->getArguments());
-            } else {
-                switch ($condition->operator) {
-
-                    case Where::IS_NULL:
-                    case Where::NOT_IS_NULL:
-                        break;
-
-                    default:
-                        // This is ugly as hell, fix me.
-                        foreach ((array)$condition->value as $candidate) {
-                            if ($candidate instanceof Statement) {
-                                $arguments->append($candidate->getArguments());
-                            } else {
-                                $arguments->add($candidate);
-                            }
-                        }
-                        break;
-                }
-            }
-        }
-
-        return $this->arguments = $arguments;
-    }
-
-    /**
      * Get operator
      *
      * @return string
@@ -567,7 +518,7 @@ final class Where implements Statement
     /**
      * Get conditions
      *
-     * @return WhereCondition[]
+     * @return ComparisonExpression
      */
     public function getConditions() : array
     {
@@ -579,29 +530,8 @@ final class Where implements Statement
      */
     public function __clone()
     {
-        $this->reset();
-
         foreach ($this->conditions as $index => $condition) {
             $this->conditions[$index] = clone $condition;
         }
-    }
-}
-
-final class WhereCondition
-{
-    /** @var null|Statement */
-    public $column;
-
-    /** @var string|Statement */
-    public $operator;
-
-    /** @var null|string */
-    public $value;
-
-    public function __construct($column, $value, ?string $operator = null)
-    {
-        $this->column = $column;
-        $this->value = $value;
-        $this->operator = $operator;
     }
 }

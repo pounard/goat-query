@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Goat\Query\Expression;
 
-use Goat\Query\ArgumentBag;
 use Goat\Query\Expression;
 use Goat\Query\ValueRepresentation;
 
@@ -39,16 +38,5 @@ class ValueExpression implements Expression, ValueRepresentation
     public function getType(): ?string
     {
         return $this->type;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getArguments(): ArgumentBag
-    {
-        $ret = new ArgumentBag();
-        $ret->add($this->value, null, $this->type);
-
-        return $ret;
     }
 }

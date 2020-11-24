@@ -361,48 +361,6 @@ final class SelectQuery extends AbstractQuery implements Expression
     }
 
     /**
-     * {@inheritdoc}
-     */
-    public function getArguments(): ArgumentBag
-    {
-        $arguments = new ArgumentBag();
-
-        foreach ($this->getAllWith() as $with) {
-            $arguments->append($with->table->getArguments());
-        }
-
-        foreach ($this->columns as $column) {
-            $arguments->append($column->expression->getArguments());
-        }
-
-        foreach ($this->from as $expression) {
-            $arguments->append($expression->getArguments());
-        }
-
-        foreach ($this->join as $join) {
-            $arguments->append($join->table->getArguments());
-            $arguments->append($join->condition->getArguments());
-        }
-
-        if (!$this->where->isEmpty()) {
-            $arguments->append($this->where->getArguments());
-        }
-
-        foreach ($this->orders as $order) {
-            if ($order[0] instanceof Statement) {
-                $arguments->append($order[0]->getArguments());
-            }
-        }
-
-        // HAVING
-        if (!$this->having->isEmpty()) {
-            $arguments->append($this->having->getArguments());
-        }
-
-        return $arguments;
-    }
-
-    /**
      * Get the count SelectQuery
      *
      * @param string $countAlias

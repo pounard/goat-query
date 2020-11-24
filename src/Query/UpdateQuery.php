@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Goat\Query;
 
-use Goat\Query\Expression\ColumnExpression;
 use Goat\Query\Expression\TableExpression;
 use Goat\Query\Partial\FromClauseTrait;
 use Goat\Query\Partial\ReturningQueryTrait;
@@ -20,7 +19,7 @@ final class UpdateQuery extends AbstractQuery
     use WhereClauseTrait;
 
     private TableExpression $table;
-    /** @var ColumnExpression */
+    /** @var Expression|] */
     private array $columns = [];
 
     /**
@@ -96,43 +95,6 @@ final class UpdateQuery extends AbstractQuery
     public function getUpdatedColumns(): array
     {
         return $this->columns;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getArguments(): ArgumentBag
-    {
-        $arguments = new ArgumentBag();
-
-        foreach ($this->getAllWith() as $with) {
-            $arguments->append($with->table->getArguments());
-        }
-
-        $arguments->append($this->table->getArguments());
-
-        foreach ($this->columns as $statement) {
-            if ($statement instanceof Statement) {
-                $arguments->append($statement->getArguments());
-            } else {
-                $arguments->add($statement);
-            }
-        }
-
-        foreach ($this->from as $expression) {
-            $arguments->append($expression->getArguments());
-        }
-
-        foreach ($this->join as $join) {
-            $arguments->append($join->table->getArguments());
-            $arguments->append($join->condition->getArguments());
-        }
-
-        if (!$this->where->isEmpty()) {
-            $arguments->append($this->where->getArguments());
-        }
-
-        return $arguments;
     }
 
     /**

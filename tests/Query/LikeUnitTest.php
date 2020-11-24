@@ -8,7 +8,7 @@ use Goat\Query\QueryError;
 use Goat\Query\Expression\LikeExpression;
 use PHPUnit\Framework\TestCase;
 
-class LikeUnitTest extends TestCase
+final class LikeUnitTest extends TestCase
 {
     use BuilderTestTrait;
 

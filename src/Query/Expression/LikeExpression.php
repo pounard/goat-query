@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Goat\Query\Expression;
 
-use Goat\Query\ArgumentBag;
 use Goat\Query\Expression;
 use Goat\Query\ExpressionFactory;
 use Goat\Query\QueryError;
@@ -142,13 +141,5 @@ class LikeExpression implements Expression
     public function getOperator(): string
     {
         return $this->operator;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getArguments(): ArgumentBag
-    {
-        return new ArgumentBag();
     }
 }

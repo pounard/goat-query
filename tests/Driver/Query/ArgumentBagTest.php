@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Goat\Query\Tests;
+namespace Goat\Driver\Tests\Query;
 
-use Goat\Query\ArgumentBag;
+use Goat\Driver\Query\ArgumentBag;
 use Goat\Query\Expression\ValueExpression;
 use PHPUnit\Framework\TestCase;
 
@@ -35,15 +35,5 @@ class ArgumentBagTest extends TestCase
 
         $this->assertSame(null, $argumentBag->getTypeAt(0));
         $this->assertSame('some_type', $argumentBag->getTypeAt(1));
-    }
-
-    public function testAppend()
-    {
-        $this->markTestIncomplete("Implement me");
-    }
-
-    public function testAppendArrayWithNames()
-    {
-        $this->markTestIncomplete("Implement me");
     }
 }

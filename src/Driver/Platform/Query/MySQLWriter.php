@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Goat\Driver\Platform\Query;
 
 use Goat\Driver\Query\DefaultSqlWriter;
+use Goat\Driver\Query\WriterContext;
 use Goat\Query\DeleteQuery;
 use Goat\Query\Expression;
 use Goat\Query\MergeQuery;
@@ -21,26 +22,6 @@ class MySQLWriter extends DefaultSqlWriter
     /**
      * {@inheritdoc}
      */
-    protected function getCastType(string $type) : string
-    {
-        $type = parent::getCastType($type);
-
-        // Specific type conversion for MySQL because its CAST() function
-        // does not accepts the same datatypes as the one it handles.
-        if ('timestamp' === $type) {
-            return 'datetime';
-        } else if ('int' === \mb_substr($type, 0, 3)) {
-            return 'signed integer';
-        } else if ('float' === \mb_substr($type, 0, 5) || 'double' === \mb_substr($type, 0, 6)) {
-            return 'decimal';
-        }
-
-        return $type;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
     protected function writeCast(string $placeholder, string $type): string
     {
         // This is supposedly SQL-92 standard compliant, but can be overriden
@@ -50,7 +31,7 @@ class MySQLWriter extends DefaultSqlWriter
     /**
      * {@inheritdoc}
      */
-    protected function formatInsertNoValuesStatement() : string
+    protected function doFormatInsertNoValuesStatement(WriterContext $context) : string
     {
         return "() VALUES ()";
     }
@@ -77,7 +58,7 @@ class MySQLWriter extends DefaultSqlWriter
      *
      * {@inheritdoc}
      */
-    protected function formatQueryMerge(MergeQuery $query) : string
+    protected function formatQueryMerge(MergeQuery $query, WriterContext $context) : string
     {
         $output = [];
 
@@ -88,7 +69,7 @@ class MySQLWriter extends DefaultSqlWriter
             throw new QueryError("Insert query must have a table.");
         }
 
-        $output[] = $this->formatWith($query->getAllWith());
+        $output[] = $this->doFormatWith($context, $query->getAllWith());
         if ($isIgnore) {
             // From SQL 92 standard, INSERT queries don't have table alias
             $output[] = 'insert ignore into ' . $this->escaper->escapeIdentifier($table->getName());
@@ -98,10 +79,10 @@ class MySQLWriter extends DefaultSqlWriter
         }
 
         if ($columns) {
-            $output[] = '(' . $this->formatColumnNameList($columns) . ')';
+            $output[] = '(' . $this->doFormatColumnNameList($context, $columns) . ')';
         }
 
-        $output[] = $this->format($query->getQuery());
+        $output[] = $this->format($query->getQuery(), $context);
 
         if (!$isIgnore) {
             switch ($mode = $query->getConflictBehaviour()) {
@@ -112,11 +93,11 @@ class MySQLWriter extends DefaultSqlWriter
                     $setColumnMap = [];
                     foreach ($columns as $column) {
                         if (!\in_array($column, $key)) {
-                            $setColumnMap[$column] = $this->doFormatInsertExcludedItem($column);
+                            $setColumnMap[$column] = $this->doFormatInsertExcludedItem($column, $context);
                         }
                     }
                     $output[] = "on duplicate key update";
-                    $output[] = $this->formatUpdateSet($setColumnMap);
+                    $output[] = $this->doFormatUpdateSet($context, $setColumnMap);
                     break;
 
                 default:
@@ -135,7 +116,7 @@ class MySQLWriter extends DefaultSqlWriter
     /**
      * {@inheritdoc}
      */
-    protected function formatQueryDelete(DeleteQuery $query) : string
+    protected function formatQueryDelete(DeleteQuery $query, WriterContext $context) : string
     {
         $output = [];
 
@@ -154,22 +135,22 @@ class MySQLWriter extends DefaultSqlWriter
         // would write a SELECT, so give him that. Beware that some MySQL
         // versions will DELETE FROM all tables matching rows in the FROM,
         // hence the "table_alias.*" statement here.
-        $output[] = 'delete ' . $this->escaper->escapeIdentifier($tableAlias) .  '.* from ' . $this->formatTableExpression($table);
+        $output[] = 'delete ' . $this->escaper->escapeIdentifier($tableAlias) .  '.* from ' . $this->formatTableExpression($table, $context);
 
         $from = $query->getAllFrom();
         if ($from) {
             $output[] = ', ';
-            $output[] = $this->formatFrom($from);
+            $output[] = $this->doFormatFrom($context, $from);
         }
 
         $join = $query->getAllJoin();
         if ($join) {
-            $output[] = $this->formatJoin($join);
+            $output[] = $this->doFormatJoin($context, $join);
         }
 
         $where = $query->getWhere();
         if (!$where->isEmpty()) {
-            $output[] = 'where ' . $this->formatWhere($where);
+            $output[] = 'where ' . $this->formatWhere($context, $where);
         }
 
         $return = $query->getAllReturn();
@@ -183,7 +164,7 @@ class MySQLWriter extends DefaultSqlWriter
     /**
      * {@inheritdoc}
      */
-    protected function formatQueryUpdate(UpdateQuery $query) : string
+    protected function formatQueryUpdate(UpdateQuery $query, WriterContext $context) : string
     {
         $output = [];
 
@@ -194,27 +175,27 @@ class MySQLWriter extends DefaultSqlWriter
 
         // From the SQL 92 standard (which PostgreSQL does support here) the
         // FROM and JOIN must be written AFTER the SET clause. MySQL does not.
-        $output[] = 'update ' . $this->formatTableExpression($query->getTable());
+        $output[] = 'update ' . $this->formatTableExpression($query->getTable(), $context);
 
         // MySQL don't do UPDATE t1 SET [...] FROM t2 but uses the SELECT
         // syntax and just append the set after the JOIN clause.
         $from = $query->getAllFrom();
         if ($from) {
             $output[] = ', ';
-            $output[] = $this->formatFrom($from);
+            $output[] = $this->doFormatFrom($context, $from);
         }
 
         $join = $query->getAllJoin();
         if ($join) {
-            $output[] = $this->formatJoin($join);
+            $output[] = $this->doFormatJoin($context, $join);
         }
 
         // SET clause.
-        $output[] = 'set ' . $this->formatUpdateSet($columns) . "\n";
+        $output[] = 'set ' . $this->doFormatUpdateSet($context, $columns) . "\n";
 
         $where = $query->getWhere();
         if (!$where->isEmpty()) {
-            $output[] = 'where ' . $this->formatWhere($where);
+            $output[] = 'where ' . $this->formatWhere($context, $where);
         }
 
         $return = $query->getAllReturn();

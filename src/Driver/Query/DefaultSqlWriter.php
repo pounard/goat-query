@@ -15,7 +15,9 @@ use Goat\Query\Statement;
 use Goat\Query\UpdateQuery;
 use Goat\Query\Where;
 use Goat\Query\Expression\AliasedExpression;
+use Goat\Query\Expression\BetweenExpression;
 use Goat\Query\Expression\ColumnExpression;
+use Goat\Query\Expression\ComparisonExpression;
 use Goat\Query\Expression\ConstantRowExpression;
 use Goat\Query\Expression\ConstantTableExpression;
 use Goat\Query\Expression\LikeExpression;
@@ -40,6 +42,9 @@ use Goat\Query\Partial\With;
  *
  * It will work gracefully with PostgreSQL, but also, from the various
  * documentation I could read, probably with MSSQL too.
+ *
+ * All methods starting with "format" do handle a known Expression class,
+ * whereas all methods starting with "do" will handle an internal behaviour.
  */
 class DefaultSqlWriter extends AbstractSqlWriter
 {
@@ -49,15 +54,15 @@ class DefaultSqlWriter extends AbstractSqlWriter
      * @param string $columnName
      * @param string|Expression $expression
      */
-    protected function formatUpdateSetItem(string $columnName, $expression): string
+    protected function doFormatUpdateSetItem(WriterContext $context, string $columnName, $expression): string
     {
         $columnString = $this->escaper->escapeIdentifier($columnName);
 
         if ($expression instanceof Expression) {
-            return $columnString . ' = ' . $this->format($expression);
+            return $columnString . ' = ' . $this->format($expression, $context);
         }
         if ($expression instanceof Statement) {
-            return $columnString . ' = (' . $this->format($expression) . ')';
+            return $columnString . ' = (' . $this->format($expression, $context) . ')';
         }
         return $columnString . ' = ' . $this->escaper->escapeLiteral($expression);
     }
@@ -68,12 +73,12 @@ class DefaultSqlWriter extends AbstractSqlWriter
      * @param string[]|Expression[] $columns
      *   Keys are column names, values are strings or Expression instances
      */
-    protected function formatUpdateSet(array $columns): string
+    protected function doFormatUpdateSet(WriterContext $context, array $columns): string
     {
         $output = [];
 
         foreach ($columns as $column => $statement) {
-            $output[] = $this->formatUpdateSetItem($column, $statement);
+            $output[] = $this->doFormatUpdateSetItem($context, $column, $statement);
         }
 
         return \implode(",\n", $output);
@@ -82,10 +87,10 @@ class DefaultSqlWriter extends AbstractSqlWriter
     /**
      * Format projection for a single select column or statement.
      */
-    protected function formatSelectItem(Column $column): string
+    protected function doFormatSelectItem(WriterContext $context, Column $column): string
     {
         // @todo Add parenthesis when necessary.
-        $output = $this->format($column->expression);
+        $output = $this->format($column->expression, $context);
 
         // We cannot alias columns with a numeric identifier;
         // aliasing with the same string as the column name
@@ -106,7 +111,7 @@ class DefaultSqlWriter extends AbstractSqlWriter
      *
      * @param Column[] $columns
      */
-    protected function formatSelect(array $columns): string
+    protected function doFormatSelect(WriterContext $context, array $columns): string
     {
         if (!$columns) {
             return '*';
@@ -115,18 +120,10 @@ class DefaultSqlWriter extends AbstractSqlWriter
         $output = [];
 
         foreach ($columns as $column) {
-            $output[] = $this->formatSelectItem($column);
+            $output[] = $this->doFormatSelectItem($context, $column);
         }
 
         return \implode(",\n", $output);
-    }
-
-    /**
-     * Format single SELECT column.
-     */
-    protected function formatReturningItem(Column $column): string
-    {
-        return $this->formatSelectItem($column->expression, $column->alias);
     }
 
     /**
@@ -137,9 +134,9 @@ class DefaultSqlWriter extends AbstractSqlWriter
      *     - 0: string or Statement: column name or SQL statement
      *     - 1: column alias, can be empty or null for no aliasing
      */
-    protected function formatReturning(array $return): string
+    protected function doFormatReturning(WriterContext $context, array $return): string
     {
-        return $this->formatSelect($return);
+        return $this->doFormatSelect($context, $return);
     }
 
     /**
@@ -151,9 +148,9 @@ class DefaultSqlWriter extends AbstractSqlWriter
      * @param int $null
      *   Query::NULL_* constant.
      */
-    protected function formatOrderByItem($column, int $order, int $null): string
+    protected function doFormatOrderByItem($column, int $order, int $null, WriterContext $context): string
     {
-        $column = $this->format($column);
+        $column = $this->format($column, $context);
 
         if (Query::ORDER_ASC === $order) {
             $orderStr = 'asc';
@@ -187,7 +184,7 @@ class DefaultSqlWriter extends AbstractSqlWriter
      *     - 1: Query::ORDER_* constant
      *     - 2: Query::NULL_* constant
      */
-    protected function formatOrderBy(array $orders): string
+    protected function doFormatOrderBy(WriterContext $context, array $orders): string
     {
         if (!$orders) {
             return '';
@@ -197,7 +194,7 @@ class DefaultSqlWriter extends AbstractSqlWriter
 
         foreach ($orders as $data) {
             list($column, $order, $null) = $data;
-            $output[] = $this->formatOrderByItem($column, $order, $null);
+            $output[] = $this->doFormatOrderByItem($column, $order, $null, $context);
         }
 
         return "order by " . \implode(", ", $output);
@@ -209,7 +206,7 @@ class DefaultSqlWriter extends AbstractSqlWriter
      * @param Expression[] $groups
      *   Array of column names or aliases.
      */
-    protected function formatGroupBy(array $groups): string
+    protected function doFormatGroupBy(WriterContext $context, array $groups): string
     {
         if (!$groups) {
             return '';
@@ -217,7 +214,7 @@ class DefaultSqlWriter extends AbstractSqlWriter
 
         $output = [];
         foreach ($groups as $group) {
-            $output[] = $this->format($group);
+            $output[] = $this->format($group, $context);
         }
 
         return "group by " . \implode(", ", $output);
@@ -226,7 +223,7 @@ class DefaultSqlWriter extends AbstractSqlWriter
     /**
      * Format a single join statement.
      */
-    protected function formatJoinItem(Join $join): string
+    protected function doFormatJoinItem(WriterContext $context, Join $join): string
     {
         switch ($join->mode) {
 
@@ -254,9 +251,9 @@ class DefaultSqlWriter extends AbstractSqlWriter
 
         // @todo parenthesis when necessary
         if ($condition->isEmpty()) {
-            return $prefix . ' ' . $this->format($join->table);
+            return $prefix . ' ' . $this->format($join->table, $context);
         } else {
-            return $prefix . ' ' . $this->format($join->table) . ' on (' . $this->formatWhere($condition) . ')';
+            return $prefix . ' ' . $this->format($join->table, $context) . ' on (' . $this->formatWhere($context, $condition) . ')';
         }
     }
 
@@ -265,7 +262,7 @@ class DefaultSqlWriter extends AbstractSqlWriter
      *
      * @param Join[] $join
      */
-    protected function formatJoin(array $join, bool $transformFirstJoinAsFrom = false, ?string $fromPrefix = null, $query = null): string
+    protected function doFormatJoin(WriterContext $context, array $join, bool $transformFirstJoinAsFrom = false, ?string $fromPrefix = null, $query = null): string
     {
         if (!$join) {
             return '';
@@ -284,9 +281,9 @@ class DefaultSqlWriter extends AbstractSqlWriter
             }
 
             if ($fromPrefix) {
-                $output[] = $fromPrefix . ' ' . $this->format($first->table);
+                $output[] = $fromPrefix . ' ' . $this->format($first->table, $context);
             } else {
-                $output[] = $this->format($first->table);
+                $output[] = $this->format($first->table, $context);
             }
 
             if (!$first->condition->isEmpty()) {
@@ -298,7 +295,7 @@ class DefaultSqlWriter extends AbstractSqlWriter
         }
 
         foreach ($join as $item) {
-            $output[] = $this->formatJoinItem($item);
+            $output[] = $this->doFormatJoinItem($context, $item);
         }
 
         return \implode("\n", $output);
@@ -309,7 +306,7 @@ class DefaultSqlWriter extends AbstractSqlWriter
      *
      * @param Expression[] $from
      */
-    protected function formatFrom(array $from, ?string $prefix = null): string
+    protected function doFormatFrom(WriterContext $context, array $from, ?string $prefix): string
     {
         if (!$from) {
             return '';
@@ -321,7 +318,7 @@ class DefaultSqlWriter extends AbstractSqlWriter
             \assert($item instanceof Expression);
 
             // @todo parenthesis when necessary
-            $output[] = $this->format($item);
+            $output[] = $this->format($item, $context);
         }
 
         if ($prefix) {
@@ -332,6 +329,36 @@ class DefaultSqlWriter extends AbstractSqlWriter
     }
 
     /**
+     * When no values are set in an insert query, what should we write?
+     */
+    protected function doFormatInsertNoValuesStatement(WriterContext $context): string
+    {
+        return "DEFAULT VALUES";
+    }
+
+    /**
+     * Format array of with statements.
+     *
+     * @param With[] $with
+     */
+    protected function doFormatWith(WriterContext $context, array $with): string
+    {
+        if (!$with) {
+            return '';
+        }
+
+        $output = [];
+
+        foreach ($with as $item) {
+            \assert($item instanceof With);
+
+            $output[] = $this->escaper->escapeIdentifier($item->alias) . ' as (' . $this->format($item->table, $context) . ')';
+        }
+
+        return 'with ' . \implode(', ', $output);
+    }
+
+    /**
      * Format range statement.
      *
      * @param int $limit
@@ -339,7 +366,7 @@ class DefaultSqlWriter extends AbstractSqlWriter
      * @param int $offset
      *   0 means default offset
      */
-    protected function formatRange(int $limit = 0, int $offset = 0): string
+    protected function doFormatRange(WriterContext $context, int $limit = 0, int $offset = 0): string
     {
         if ($limit) {
             return 'limit ' . $limit . ' offset ' . $offset;
@@ -358,177 +385,21 @@ class DefaultSqlWriter extends AbstractSqlWriter
      * @param string $type = null
      *   Data type of arguments
      */
-    protected function formatValueList(array $arguments): string
+    protected function doFormatValueList(array $arguments, WriterContext $context): string
     {
         return \implode(
             ', ',
             \array_map(
-                fn ($value) => $value instanceof Statement ? $this->format($value) : '?',
+                fn ($value) => $this->format($value, $context),
                 $arguments
             )
         );
     }
 
     /**
-     * Format placeholder for a single value.
-     *
-     * @param mixed $argument
-     */
-    protected function formatPlaceholder($argument): string
-    {
-        return '?';
-    }
-
-    /**
-     * Format where instance.
-     */
-    protected function formatWhere(Where $where): string
-    {
-        if ($where->isEmpty()) {
-            // Definitely legit (except for pgsql which awaits a bool)
-            return '1';
-        }
-
-        $output = [];
-
-        foreach ($where->getConditions() as $condition) {
-            $value = $condition->value;
-            $column = $condition->column;
-
-            // Do not allow an empty where to be displayed
-            if ($value instanceof Where && $value->isEmpty()) {
-                continue;
-            }
-
-            $columnString = '';
-            $valueString = '';
-
-            if ($column) {
-                $columnString = $this->format($column);
-            }
-
-            if ($value instanceof Query) {
-                $valueString = '(' . $this->format($value) . ')';
-            } else if ($value instanceof Expression) {
-                $valueString = $this->format($value);
-            } else if ($value instanceof Statement) {
-                $valueString = '(' . $this->format($value) . ')';
-            } else if (\is_array($value)) {
-                $valueString = '(' . $this->formatValueList($value) . ')';
-            } else {
-                $valueString = $this->formatPlaceholder($value);
-            }
-
-            if (!$column) {
-                switch ($operator = $condition->operator) {
-
-                    case Where::EXISTS:
-                    case Where::NOT_EXISTS:
-                        $output[] = $operator . ' ' . $valueString;
-                        break;
-
-                    case Where::IS_NULL:
-                    case Where::NOT_IS_NULL:
-                        $output[] = $valueString . ' ' . $operator;
-                        break;
-
-                    default:
-                        $output[] = $valueString;
-                        break;
-                }
-            } else {
-                switch ($operator = $condition->operator) {
-
-                    case Where::EXISTS:
-                    case Where::NOT_EXISTS:
-                        $output[] = $operator . ' ' . $valueString;
-                        break;
-
-                    case Where::IS_NULL:
-                    case Where::NOT_IS_NULL:
-                        $output[] = $columnString . ' ' . $operator;
-                        break;
-
-                    case Where::BETWEEN:
-                    case Where::NOT_BETWEEN:
-                        $output[] = $columnString . ' ' . $operator . ' ? and ?';
-                        break;
-
-                    default:
-                        $output[] = $columnString . ' ' . $operator . ' ' . $valueString;
-                        break;
-                }
-            }
-        }
-
-        return \implode("\n" . $where->getOperator() . ' ', $output);
-    }
-
-    /**
-     * When no values are set in an insert query, what should we write?
-     */
-    protected function formatInsertNoValuesStatement(): string
-    {
-        return "DEFAULT VALUES";
-    }
-
-    /**
-     * Format array of with statements.
-     *
-     * @param With[] $with
-     */
-    protected function formatWith(array $with): string
-    {
-        if (!$with) {
-            return '';
-        }
-
-        $output = [];
-
-        foreach ($with as $item) {
-            \assert($item instanceof With);
-
-            $output[] = $this->escaper->escapeIdentifier($item->alias) . ' as (' . $this->format($item->table) . ')';
-        }
-
-        return 'with ' . \implode(', ', $output);
-    }
-
-    /**
-     * Format a constant table expression.
-     */
-    protected function formatConstantTableExpression(ConstantTableExpression $constantTable): string
-    {
-        if (!$constantTable->getRowCount()) {
-            return "values ()";
-        }
-
-        return "values " . \implode(
-            ", ",
-            \array_map(
-                fn ($row) => $this->formatConstantRowExpression($row),
-                $constantTable->getRows(),
-            )
-        );
-    }
-
-    /**
-     * Format an arbitrary row of values.
-     */
-    protected function formatConstantRowExpression(ConstantRowExpression $row): string
-    {
-        return '(' . \implode(
-            ", ",
-            \array_map(
-                fn ($value) => ($value instanceof Query ? '(' . $this->format($value) . ')' : $this->format($value)),
-                $row->getValues())
-        ) . ')';
-    }
-
-    /**
      * Format a column name list.
      */
-    protected function formatColumnNameList(array $columnNames): string
+    protected function doFormatColumnNameList(WriterContext $context, array $columnNames): string
     {
         return \implode(
             ', ',
@@ -542,9 +413,124 @@ class DefaultSqlWriter extends AbstractSqlWriter
     }
 
     /**
+     * Format generic comparison expression.
+     */
+    protected function formatComparisonExpression(ComparisonExpression $expression, WriterContext $context): string
+    {
+        $output = '';
+
+        $left = $expression->getLeft();
+        $right = $expression->getRight();
+        $operator = $expression->getOperator();
+
+        if ($left) {
+            if ($left instanceof Query || $left instanceof ConstantTableExpression) {
+                $output .= '(' . $this->format($left, $context) . ')';
+            } else {
+                $output .= $this->format($left, $context);
+            }
+        }
+
+        if ($operator) {
+            $output .= ' ' . $operator;
+        }
+
+        if ($right) {
+            if ($right instanceof Query || $right instanceof ConstantTableExpression) {
+                $output .= ' (' . $this->format($right, $context) . ')';
+            } else {
+                $output .= ' ' . $this->format($right, $context);
+            }
+        }
+
+        return $output;
+    }
+
+    /**
+     * Format BETWEEN expression.
+     */
+    protected function formatBetweenExpression(BetweenExpression $expression, WriterContext $context): string
+    {
+        $column = $expression->getColumn();
+        $from = $expression->getFrom();
+        $to = $expression->getTo();
+        $operator = $expression->getOperator();
+
+        return $this->format($column, $context) . ' ' . $operator . ' ' . $this->format($from, $context) . ' and ' . $this->format($to, $context);
+    }
+
+    /**
+     * Format where instance.
+     */
+    protected function formatWhere(WriterContext $context, Where $where): string
+    {
+        if ($where->isEmpty()) {
+            // Definitely legit (except for pgsql which awaits a bool).
+            return '1';
+        }
+
+        $output = '';
+
+        $operator = $where->getOperator();
+        $first = true;
+
+        foreach ($where->getConditions() as $expression) {
+            // Do not allow an empty where to be displayed
+            if ($expression instanceof Where && $expression->isEmpty()) {
+                continue;
+            }
+
+            if ($first) {
+                $first = false;
+            } else {
+                $output .= "\n" . $operator . ' ';
+            }
+
+            if ($expression instanceof Where) {
+                $output .= '(' . $this->format($expression, $context) . ')';
+            } else {
+                $output .= $this->format($expression, $context);
+            }
+        }
+
+        return $output;
+    }
+
+    /**
+     * Format a constant table expression.
+     */
+    protected function formatConstantTableExpression(ConstantTableExpression $constantTable, WriterContext $context): string
+    {
+        if (!$constantTable->getRowCount()) {
+            return "values ()";
+        }
+
+        return "values " . \implode(
+            ", ",
+            \array_map(
+                fn ($row) => $this->formatConstantRowExpression($row, $context),
+                $constantTable->getRows(),
+            )
+        );
+    }
+
+    /**
+     * Format an arbitrary row of values.
+     */
+    protected function formatConstantRowExpression(ConstantRowExpression $row, WriterContext $context): string
+    {
+        return '(' . \implode(
+            ", ",
+            \array_map(
+                fn ($value) => ($value instanceof Query ? '(' . $this->format($value, $context) . ')' : $this->format($value, $context)),
+                $row->getValues())
+        ) . ')';
+    }
+
+    /**
      * Format given merge query.
      */
-    protected function formatQueryMerge(MergeQuery $query): string
+    protected function formatQueryMerge(MergeQuery $query, WriterContext $context): string
     {
         $output = [];
 
@@ -553,7 +539,7 @@ class DefaultSqlWriter extends AbstractSqlWriter
         $escapedInsertTable = $this->escaper->escapeIdentifier($table->getName());
         $escapedUsingAlias = $this->escaper->escapeIdentifier($query->getUsingTableAlias());
 
-        $output[] = $this->formatWith($query->getAllWith());
+        $output[] = $this->doFormatWith($context, $query->getAllWith());
 
         // From SQL:2003 standard, MERGE queries don't have table alias.
         $output[] = "merge into " . $escapedInsertTable;
@@ -561,9 +547,9 @@ class DefaultSqlWriter extends AbstractSqlWriter
         // USING
         $using = $query->getQuery();
         if ($using instanceof ConstantTableExpression) {
-            $output[] = 'using ' . $this->format($using) . ' as ' . $escapedUsingAlias;
+            $output[] = 'using ' . $this->format($using, $context) . ' as ' . $escapedUsingAlias;
         } else {
-            $output[] = 'using (' . $this->format($using) . ') as ' . $escapedUsingAlias;
+            $output[] = 'using (' . $this->format($using, $context) . ') as ' . $escapedUsingAlias;
         }
 
         // Build USING columns map.
@@ -589,7 +575,7 @@ class DefaultSqlWriter extends AbstractSqlWriter
                     }
                 }
                 $output[] = "when matched then update set";
-                $output[] = $this->formatUpdateSet($setColumnMap);
+                $output[] = $this->doFormatUpdateSet($context, $setColumnMap);
                 break;
 
             default:
@@ -598,13 +584,13 @@ class DefaultSqlWriter extends AbstractSqlWriter
 
         // WHEN NOT MATCHED THEN
         $output[] = 'when not matched then insert into ' . $escapedInsertTable;
-        $output[] = '(' . $this->formatColumnNameList($columns) . ')';
+        $output[] = '(' . $this->doFormatColumnNameList($context, $columns) . ')';
         $output[] = 'values (' . \implode(', ', $usingColumnMap) . ')';
 
         // RETURNING
         $return = $query->getAllReturn();
         if ($return) {
-            $output[] = 'returning ' . $this->formatReturning($return);
+            $output[] = 'returning ' . $this->doFormatReturning($context, $return);
         }
 
         return \implode("\n", $output);
@@ -613,7 +599,7 @@ class DefaultSqlWriter extends AbstractSqlWriter
     /**
      * Format given insert query.
      */
-    protected function formatQueryInsert(InsertQuery $query): string
+    protected function formatQueryInsert(InsertQuery $query, WriterContext $context): string
     {
         $output = [];
 
@@ -623,32 +609,32 @@ class DefaultSqlWriter extends AbstractSqlWriter
             throw new QueryError("Insert query must target a table.");
         }
 
-        $output[] = $this->formatWith($query->getAllWith());
+        $output[] = $this->doFormatWith($context, $query->getAllWith());
         // From SQL 92 standard, INSERT queries don't have table alias
         $output[] = 'insert into ' . $this->escaper->escapeIdentifier($table->getName());
 
         // Columns.
         if ($columns) {
-            $output[] = '(' . $this->formatColumnNameList($columns) . ')';
+            $output[] = '(' . $this->doFormatColumnNameList($context, $columns) . ')';
         }
 
         $using = $query->getQuery();
         if ($using instanceof ConstantTableExpression) {
             if (\count($columns)) {
-                $output[] = $this->format($using);
+                $output[] = $this->format($using, $context);
             } else {
                 // Assume there is no specific values, for PostgreSQL, we need to set
                 // "DEFAULT VALUES" explicitely, for MySQL "() VALUES ()" will do the
                 // trick
-                $output[] = $this->formatInsertNoValuesStatement();
+                $output[] = $this->doFormatInsertNoValuesStatement($context);
             }
         } else {
-            $output[] = $this->format($using);
+            $output[] = $this->format($using, $context);
         }
 
         $return = $query->getAllReturn();
         if ($return) {
-            $output[] = 'returning ' . $this->formatReturning($return);
+            $output[] = 'returning ' . $this->doFormatReturning($context, $return);
         }
 
         return \implode("\n", $output);
@@ -657,7 +643,7 @@ class DefaultSqlWriter extends AbstractSqlWriter
     /**
      * Format given delete query.
      */
-    protected function formatQueryDelete(DeleteQuery $query): string
+    protected function formatQueryDelete(DeleteQuery $query, WriterContext $context): string
     {
         $output = [];
 
@@ -665,10 +651,10 @@ class DefaultSqlWriter extends AbstractSqlWriter
             throw new QueryError("Delete query must target a table.");
         }
 
-        $output[] = $this->formatWith($query->getAllWith());
+        $output[] = $this->doFormatWith($context, $query->getAllWith());
         // This is not SQL-92 compatible, we are using USING..JOIN clause to
         // do joins in the DELETE query, which is not accepted by the standard.
-        $output[] = 'delete from ' . $this->formatTableExpression($table);
+        $output[] = 'delete from ' . $this->formatTableExpression($table, $context);
 
         $transformFirstJoinAsFrom = true;
 
@@ -676,22 +662,22 @@ class DefaultSqlWriter extends AbstractSqlWriter
         if ($from) {
             $transformFirstJoinAsFrom = false;
             $output[] = ', ';
-            $output[] = $this->formatFrom($from, 'using');
+            $output[] = $this->doFormatFrom($context, $from, 'using');
         }
 
         $join = $query->getAllJoin();
         if ($join) {
-            $output[] = $this->formatJoin($join, $transformFirstJoinAsFrom, 'using', $query);
+            $output[] = $this->doFormatJoin($context, $join, $transformFirstJoinAsFrom, 'using', $query);
         }
 
         $where = $query->getWhere();
         if (!$where->isEmpty()) {
-            $output[] = 'where ' . $this->formatWhere($where);
+            $output[] = 'where ' . $this->formatWhere($context, $where);
         }
 
         $return = $query->getAllReturn();
         if ($return) {
-            $output[] = 'returning ' . $this->formatReturning($return);
+            $output[] = 'returning ' . $this->doFormatReturning($context, $return);
         }
 
         return \implode("\n", \array_filter($output));
@@ -700,7 +686,7 @@ class DefaultSqlWriter extends AbstractSqlWriter
     /**
      * Format given update query.
      */
-    protected function formatQueryUpdate(UpdateQuery $query): string
+    protected function formatQueryUpdate(UpdateQuery $query, WriterContext $context): string
     {
         $output = [];
 
@@ -736,31 +722,31 @@ class DefaultSqlWriter extends AbstractSqlWriter
         // to use.
         //
 
-        $output[] = $this->formatWith($query->getAllWith());
-        $output[] = 'update ' . $this->formatTableExpression($table);
-        $output[] = 'set ' . $this->formatUpdateSet($columns);
+        $output[] = $this->doFormatWith($context, $query->getAllWith());
+        $output[] = 'update ' . $this->formatTableExpression($table, $context);
+        $output[] = 'set ' . $this->doFormatUpdateSet($context, $columns);
 
         $transformFirstJoinAsFrom = true;
 
         $from = $query->getAllFrom();
         if ($from) {
             $transformFirstJoinAsFrom = false;
-            $output[] = $this->formatFrom($from, 'from');
+            $output[] = $this->doFormatFrom($context, $from, 'from');
         }
 
         $join = $query->getAllJoin();
         if ($join) {
-            $output[] = $this->formatJoin($join, $transformFirstJoinAsFrom, 'from', $query);
+            $output[] = $this->doFormatJoin($context, $join, $transformFirstJoinAsFrom, 'from', $query);
         }
 
         $where = $query->getWhere();
         if (!$where->isEmpty()) {
-            $output[] = 'where ' . $this->formatWhere($where);
+            $output[] = 'where ' . $this->formatWhere($context, $where);
         }
 
         $return = $query->getAllReturn();
         if ($return) {
-            $output[] = "returning " . $this->formatReturning($return);
+            $output[] = "returning " . $this->doFormatReturning($context, $return);
         }
 
         return \implode("\n", \array_filter($output));
@@ -769,39 +755,39 @@ class DefaultSqlWriter extends AbstractSqlWriter
     /**
      * Format given select query.
      */
-    protected function formatQuerySelect(SelectQuery $query): string
+    protected function formatQuerySelect(SelectQuery $query, WriterContext $context): string
     {
         $output = [];
-        $output[] = $this->formatWith($query->getAllWith());
+        $output[] = $this->doFormatWith($context, $query->getAllWith());
         $output[] = "select";
-        $output[] = $this->formatSelect($query->getAllColumns());
+        $output[] = $this->doFormatSelect($context, $query->getAllColumns());
 
         $from = $query->getAllFrom();
         if ($from) {
-            $output[] = $this->formatFrom($from, 'from');
+            $output[] = $this->doFormatFrom($context, $from, 'from');
         }
 
         $join = $query->getAllJoin();
         if ($join) {
-            $output[] = $this->formatJoin($join);
+            $output[] = $this->doFormatJoin($context, $join);
         }
 
         $where = $query->getWhere();
         if (!$where->isEmpty()) {
-            $output[] = 'where ' . $this->formatWhere($where);
+            $output[] = 'where ' . $this->formatWhere($context, $where);
         }
 
-        $output[] = $this->formatGroupBy($query->getAllGroupBy());
-        $output[] = $this->formatOrderBy($query->getAllOrderBy());
-        $output[] = $this->formatRange(...$query->getRange());
+        $output[] = $this->doFormatGroupBy($context, $query->getAllGroupBy());
+        $output[] = $this->doFormatOrderBy($context, $query->getAllOrderBy());
+        $output[] = $this->doFormatRange($context, ...$query->getRange());
 
         $having = $query->getHaving();
         if (!$having->isEmpty()) {
-            $output[] = 'having ' . $this->formatWhere($having);
+            $output[] = 'having ' . $this->formatWhere($context, $having);
         }
 
         foreach ($query->getUnion() as $expression) {
-            $output[] = "union " . $this->format($expression);
+            $output[] = "union " . $this->format($expression, $context);
         }
 
         if ($query->isForUpdate()) {
@@ -814,15 +800,17 @@ class DefaultSqlWriter extends AbstractSqlWriter
     /**
      * Format value expression.
      */
-    protected function formatRawExpression(RawExpression $expression): string
+    protected function formatRawExpression(RawExpression $expression, WriterContext $context): string
     {
+        $context->append($expression->getArguments());
+
         return $expression->getString();
     }
 
     /**
      * Format value expression.
      */
-    protected function formatColumnExpression(ColumnExpression $column): string
+    protected function formatColumnExpression(ColumnExpression $column, WriterContext $context): string
     {
         // Allow selection such as "table".*
         if ('*' !== ($target = $column->getName())) {
@@ -839,7 +827,7 @@ class DefaultSqlWriter extends AbstractSqlWriter
     /**
      * Format table expression.
      */
-    protected function formatTableExpression(TableExpression $table): string
+    protected function formatTableExpression(TableExpression $table, WriterContext $context): string
     {
         $name = $table->getName();
         $schema = $table->getSchema();
@@ -865,18 +853,21 @@ class DefaultSqlWriter extends AbstractSqlWriter
     /**
      * Format value expression.
      */
-    protected function formatValueExpression(ValueExpression $value): string
+    protected function formatValueExpression(ValueExpression $value, WriterContext $context): string
     {
+        $context->append([$value->getValue()]);
+
         if ($type = $value->getType()) {
-            return $this->formatPlaceholder($value->getValue()) . '::' . $type;
+            return '?::' . $type;
         }
-        return $this->formatPlaceholder($value->getValue());
+
+        return '?';
     }
 
     /**
      * Format like expression.
      */
-    protected function formatLikeExpression(LikeExpression $value): string
+    protected function formatLikeExpression(LikeExpression $value, WriterContext $context): string
     {
         if ($value->hasValue()) {
             $pattern = $value->getPattern(
@@ -888,53 +879,72 @@ class DefaultSqlWriter extends AbstractSqlWriter
             $pattern = $value->getPattern();
         }
 
-        return $this->format($value->getColumn()) . ' ' . $value->getOperator() . ' ' . $this->escaper->escapeLiteral($pattern);
+        return $this->format($value->getColumn(), $context) . ' ' . $value->getOperator() . ' ' . $this->escaper->escapeLiteral($pattern);
     }
 
     /**
      * Format an expression with an alias.
      */
-    protected function formatAliasedExpression(AliasedExpression $expression): string
+    protected function formatAliasedExpression(AliasedExpression $expression, WriterContext $context): string
     {
         if ($alias = $expression->getAlias()) {
-            return '(' . $this->format($expression->getExpression()) . ') as ' . $this->escaper->escapeIdentifier($alias);
+            return '(' . $this->format($expression->getExpression(), $context) . ') as ' . $this->escaper->escapeIdentifier($alias);
         }
-        return '(' . $this->format($expression->getExpression()) . ')';
+        return '(' . $this->format($expression->getExpression(), $context) . ')';
     }
 
     /**
      * {@inheritdoc}
      */
-    public function format(Statement $query): string
+    public function format(Statement $query, WriterContext $context): string
     {
         if ($query instanceof ColumnExpression) {
-            return $this->formatColumnExpression($query);
-        } else if ($query instanceof RawExpression) {
-            return $this->formatRawExpression($query);
-        } else if ($query instanceof TableExpression) {
-            return $this->formatTableExpression($query);
-        } else if ($query instanceof ValueExpression) {
-            return $this->formatValueExpression($query);
-        } else if ($query instanceof LikeExpression) {
-            return $this->formatLikeExpression($query);
-        } else if ($query instanceof ConstantTableExpression) {
-            return $this->formatConstantTableExpression($query);
-        } else if ($query instanceof ConstantRowExpression) {
-            return $this->formatConstantRowExpression($query);
-        } else if ($query instanceof Where) {
-            return $this->formatWhere($query);
-        } else if ($query instanceof DeleteQuery) {
-            return $this->formatQueryDelete($query);
-        } else if ($query instanceof SelectQuery) {
-            return $this->formatQuerySelect($query);
-        } else if ($query instanceof MergeQuery) {
-            return $this->formatQueryMerge($query);
-        } else if ($query instanceof InsertQuery) {
-            return $this->formatQueryInsert($query);
-        } else if ($query instanceof UpdateQuery) {
-            return $this->formatQueryUpdate($query);
-        } else if ($query instanceof AliasedExpression) {
-            return $this->formatAliasedExpression($query);
+            return $this->formatColumnExpression($query, $context);
+        }
+        if ($query instanceof RawExpression) {
+            return $this->formatRawExpression($query, $context);
+        }
+        if ($query instanceof TableExpression) {
+            return $this->formatTableExpression($query, $context);
+        }
+        if ($query instanceof ValueExpression) {
+            return $this->formatValueExpression($query, $context);
+        }
+        if ($query instanceof ComparisonExpression) {
+            return $this->formatComparisonExpression($query, $context);
+        }
+        if ($query instanceof BetweenExpression) {
+            return $this->formatBetweenExpression($query, $context);
+        }
+        if ($query instanceof LikeExpression) {
+            return $this->formatLikeExpression($query, $context);
+        }
+        if ($query instanceof ConstantTableExpression) {
+            return $this->formatConstantTableExpression($query, $context);
+        }
+        if ($query instanceof ConstantRowExpression) {
+            return $this->formatConstantRowExpression($query, $context);
+        }
+        if ($query instanceof Where) {
+            return $this->formatWhere($context, $query);
+        }
+        if ($query instanceof DeleteQuery) {
+            return $this->formatQueryDelete($query, $context);
+        }
+        if ($query instanceof SelectQuery) {
+            return $this->formatQuerySelect($query, $context);
+        }
+        if ($query instanceof MergeQuery) {
+            return $this->formatQueryMerge($query, $context);
+        }
+        if ($query instanceof InsertQuery) {
+            return $this->formatQueryInsert($query, $context);
+        }
+        if ($query instanceof UpdateQuery) {
+            return $this->formatQueryUpdate($query, $context);
+        }
+        if ($query instanceof AliasedExpression) {
+            return $this->formatAliasedExpression($query, $context);
         }
 
         throw new \InvalidArgumentException();

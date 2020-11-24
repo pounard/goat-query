@@ -12,7 +12,7 @@ use Goat\Query\Expression\ColumnExpression;
 /**
  * Represents the WHERE part of any query.
  *
- * Don't forget to handle WHERE in __clone(), __construct() and getArguments().
+ * Don't forget to handle WHERE in __clone(), __construct().
  */
 trait WhereClauseTrait
 {

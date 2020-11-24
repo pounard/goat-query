@@ -12,7 +12,7 @@ use Goat\Query\Expression\RawExpression;
 use Goat\Query\Expression\ValueExpression;
 use PHPUnit\Framework\TestCase;
 
-final class QuerySelectUnitTest extends TestCase
+final class SelectUnitTest extends TestCase
 {
     use BuilderTestTrait;
 

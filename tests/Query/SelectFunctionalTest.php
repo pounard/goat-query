@@ -11,46 +11,47 @@ use Goat\Query\Expression\ColumnExpression;
 use Goat\Query\Expression\RawExpression;
 use Goat\Runner\Testing\NullEscaper;
 use PHPUnit\Framework\TestCase;
+use Goat\Converter\DefaultConverter;
 
 final class SelectFunctionalTest extends TestCase
 {
     use BuilderTestTrait;
 
-    public function testSimpleQuery()
+    public function testSimpleQuery(): void
     {
         $formatter = new DefaultSqlWriter(new NullEscaper());
 
-        $referenceArguments = [12, 3];
+        $referenceArguments = ['12', '3'];
         $reference = <<<EOT
-select "t".*, "n"."type", count(n.id) as "comment_count"
-from "task" as "t"
-left outer join "task_note" as "n"
-    on (n.task_id = t.id)
-where
-    "t"."user_id" = ?
-    and "t"."deadline" < now()
-group
-    by "t"."id", "n"."type"
-order by
-    "n"."type" asc,
-    count(n.nid) desc
-limit 7 offset 42
-having
-    count(n.nid) < ?
-EOT;
-        $countReference = <<<EOT
-select count(*) as "count"
-from "task" as "t"
-left outer join "task_note" as "n"
-    on (n.task_id = t.id)
-where
-    "t"."user_id" = ?
-    and "t"."deadline" < now()
-group
-    by "t"."id", "n"."type"
-having
-    count(n.nid) < ?
-EOT;
+            select "t".*, "n"."type", count(n.id) as "comment_count"
+            from "task" as "t"
+            left outer join "task_note" as "n"
+                on (n.task_id = t.id)
+            where
+                "t"."user_id" = ?
+                and "t"."deadline" < now()
+            group
+                by "t"."id", "n"."type"
+            order by
+                "n"."type" asc,
+                count(n.nid) desc
+            limit 7 offset 42
+            having
+                count(n.nid) < ?
+            EOT;
+                    $countReference = <<<EOT
+            select count(*) as "count"
+            from "task" as "t"
+            left outer join "task_note" as "n"
+                on (n.task_id = t.id)
+            where
+                "t"."user_id" = ?
+                and "t"."deadline" < now()
+            group
+                by "t"."id", "n"."type"
+            having
+                count(n.nid) < ?
+            EOT;
 
         // Compact way
         $query = new SelectQuery('task', 't');
@@ -72,50 +73,52 @@ EOT;
         $having->expression('count(n.nid) < ?', 3);
 
         $formatted = $formatter->prepare($query);
-        $this->assertSameSql($reference, $formatted->getRawSQL());
-        $this->assertSame($referenceArguments, $query->getArguments()->getAll());
+        self::assertSameSql($reference, $formatted->getRawSQL());
+        self::assertSame($referenceArguments, $formatted->prepareArgumentsWith(new DefaultConverter()));
 
         $countQuery = $query->getCountQuery();
-        $this->assertSameSql($countReference, $formatter->format($countQuery));
-        $this->assertSame($referenceArguments, $countQuery->getArguments()->getAll());
+        $formatted = $formatter->prepare($countQuery);
+        self::assertSameSql($countReference, $formatted->getRawSQL());
+        self::assertSame($referenceArguments, $formatted->prepareArgumentsWith(new DefaultConverter()));
 
         $clonedQuery = clone $query;
-        $this->assertSameSql($reference, $formatter->format($clonedQuery));
-        $this->assertSame($referenceArguments, $clonedQuery->getArguments()->getAll());
+        $formatted = $formatter->prepare($query);
+        self::assertSameSql($reference, $formatted->getRawSQL());
+        self::assertSame($referenceArguments, $formatted->prepareArgumentsWith(new DefaultConverter()));
 
         // We have to reset the reference because using a more buildish way we
         // do set precise where conditions on join conditions, and field names
         // get escaped
         $reference = <<<EOT
-select "t".*, "n"."type", count(n.id) as "comment_count"
-from "task" as "t"
-left outer join "task_note" as "n"
-    on ("n"."task_id" = "t"."id")
-where
-    "t"."user_id" = ?
-    and "t"."deadline" < now()
-group
-    by "t"."id", "n"."type"
-order by
-    "n"."type" asc,
-    count(n.nid) desc
-limit 7 offset 42
-having
-    count(n.nid) < ?
-EOT;
-        $countReference = <<<EOT
-select count(*) as "count"
-from "task" as "t"
-left outer join "task_note" as "n"
-    on ("n"."task_id" = "t"."id")
-where
-    "t"."user_id" = ?
-    and "t"."deadline" < now()
-group
-    by "t"."id", "n"."type"
-having
-    count(n.nid) < ?
-EOT;
+            select "t".*, "n"."type", count(n.id) as "comment_count"
+            from "task" as "t"
+            left outer join "task_note" as "n"
+                on ("n"."task_id" = "t"."id")
+            where
+                "t"."user_id" = ?
+                and "t"."deadline" < now()
+            group
+                by "t"."id", "n"."type"
+            order by
+                "n"."type" asc,
+                count(n.nid) desc
+            limit 7 offset 42
+            having
+                count(n.nid) < ?
+            EOT;
+                    $countReference = <<<EOT
+            select count(*) as "count"
+            from "task" as "t"
+            left outer join "task_note" as "n"
+                on ("n"."task_id" = "t"."id")
+            where
+                "t"."user_id" = ?
+                and "t"."deadline" < now()
+            group
+                by "t"."id", "n"."type"
+            having
+                count(n.nid) < ?
+            EOT;
 
         // Builder way
         $query = (new SelectQuery('task', 't'))
@@ -140,48 +143,51 @@ EOT;
             ->expression('count(n.nid) < ?', 3)
         ;
 
-        $this->assertSameSql($reference, $formatter->format($query));
-        $this->assertSame($referenceArguments, $query->getArguments()->getAll());
+        $formatted = $formatter->prepare($query);
+        self::assertSameSql($reference, $formatted->getRawSQL());
+        self::assertSame($referenceArguments, $formatted->prepareArgumentsWith(new DefaultConverter()));
 
         $countQuery = $query->getCountQuery();
-        $this->assertSameSql($countReference, $formatter->format($countQuery));
-        $this->assertSame($referenceArguments, $countQuery->getArguments()->getAll());
+        $formatted = $formatter->prepare($countQuery);
+        self::assertSameSql($countReference, $formatted->getRawSQL());
+        self::assertSame($referenceArguments, $formatted->prepareArgumentsWith(new DefaultConverter()));
 
         $clonedQuery = clone $query;
-        $this->assertSameSql($reference, $formatter->format($clonedQuery));
-        $this->assertSame($referenceArguments, $clonedQuery->getArguments()->getAll());
+        $formatted = $formatter->prepare($clonedQuery);
+        self::assertSameSql($reference, $formatted->getRawSQL());
+        self::assertSame($referenceArguments, $formatted->prepareArgumentsWith(new DefaultConverter()));
 
         // Same without alias
         $reference = <<<EOT
-select "task".*, "task_note"."type", count(task_note.id) as "comment_count"
-from "task"
-left outer join "task_note"
-    on (task_note.task_id = task.id)
-where
-    "task"."user_id" = ?
-    and task.deadline < now()
-group by
-    "task"."id", "task_note"."type"
-order by
-    "task_note"."type" asc,
-    count(task_note.nid) desc
-limit 7 offset 42
-having
-    count(task_note.nid) < ?
-EOT;
-        $countReference = <<<EOT
-select count(*) as "count"
-from "task"
-left outer join "task_note"
-    on (task_note.task_id = task.id)
-where
-    "task"."user_id" = ?
-    and task.deadline < now()
-group by
-    "task"."id", "task_note"."type"
-having
-    count(task_note.nid) < ?
-EOT;
+            select "task".*, "task_note"."type", count(task_note.id) as "comment_count"
+            from "task"
+            left outer join "task_note"
+                on (task_note.task_id = task.id)
+            where
+                "task"."user_id" = ?
+                and task.deadline < now()
+            group by
+                "task"."id", "task_note"."type"
+            order by
+                "task_note"."type" asc,
+                count(task_note.nid) desc
+            limit 7 offset 42
+            having
+                count(task_note.nid) < ?
+            EOT;
+                    $countReference = <<<EOT
+            select count(*) as "count"
+            from "task"
+            left outer join "task_note"
+                on (task_note.task_id = task.id)
+            where
+                "task"."user_id" = ?
+                and task.deadline < now()
+            group by
+                "task"."id", "task_note"."type"
+            having
+                count(task_note.nid) < ?
+            EOT;
 
         // Most basic way
         $query = (new SelectQuery('task'))
@@ -199,33 +205,34 @@ EOT;
             ->havingExpression('count(task_note.nid) < ?', 3)
         ;
 
-        $this->assertSameSql($reference, $formatter->format($query));
-        $this->assertSame($referenceArguments, $query->getArguments()->getAll());
+        $formatted = $formatter->prepare($query);
+        self::assertSameSql($reference, $formatted->getRawSQL());
+        self::assertSame($referenceArguments, $formatted->prepareArgumentsWith(new DefaultConverter()));
 
         $countQuery = $query->getCountQuery();
-        $this->assertSameSql($countReference, $formatter->format($countQuery));
-        $this->assertSame($referenceArguments, $countQuery->getArguments()->getAll());
+        $formatted = $formatter->prepare($countQuery);
+        self::assertSameSql($countReference, $formatted->getRawSQL());
+        self::assertSame($referenceArguments, $formatted->prepareArgumentsWith(new DefaultConverter()));
 
         $clonedQuery = clone $query;
-        $this->assertSameSql($reference, $formatter->format($clonedQuery));
-        $this->assertSame($referenceArguments, $clonedQuery->getArguments()->getAll());
+        $formatted = $formatter->prepare($clonedQuery);
+        self::assertSameSql($reference, $formatted->getRawSQL());
+        self::assertSame($referenceArguments, $formatted->prepareArgumentsWith(new DefaultConverter()));
     }
 
-    public function testWith()
+    public function testWith(): void
     {
-        $formatter = new DefaultSqlWriter(new NullEscaper());
-
         $reference = <<<EOT
-with "test1" as (
-    select "a" from "sometable"
-), "test2" as (
-    select "foo" from "someothertable"
-)
-select count(*)
-from "test1"
-inner join "test2"
-    on (test1.a = test2.foo)
-EOT;
+            with "test1" as (
+                select "a" from "sometable"
+            ), "test2" as (
+                select "foo" from "someothertable"
+            )
+            select count(*)
+            from "test1"
+            inner join "test2"
+                on (test1.a = test2.foo)
+            EOT;
 
         // Most basic way
         $query = (new SelectQuery('test1'))
@@ -238,22 +245,20 @@ EOT;
         $secondWith = $query->createWith('test2', 'someothertable');
         $secondWith->column('foo');
 
-        $this->assertSameSql($reference, $formatter->format($query));
+        self::assertSameSql($reference, self::format($query));
     }
 
-    public function testWhereInSelect()
+    public function testWhereInSelect(): void
     {
-        $formatter = new DefaultSqlWriter(new NullEscaper());
-
         $reference = <<<EOT
-select "foo"
-from "test1"
-where
-  "a" in (
-    select "b"
-    from "test2"
-  )
-EOT;
+            select "foo"
+            from "test1"
+            where
+              "a" in (
+                select "b"
+                from "test2"
+              )
+            EOT;
 
         // Most basic way
         $query = (new SelectQuery('test1'))
@@ -264,6 +269,6 @@ EOT;
             )
         ;
 
-        $this->assertSameSql($reference, $formatter->format($query));
+        self::assertSameSql($reference, self::format($query));
     }
 }

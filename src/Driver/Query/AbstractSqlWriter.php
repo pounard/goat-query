@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Goat\Driver\Query;
 
 use Goat\Driver\Platform\Escaper\Escaper;
-use Goat\Query\ArgumentList;
 use Goat\Query\Query;
 use Goat\Query\QueryError;
 use Goat\Query\Statement;
@@ -28,8 +27,7 @@ abstract class AbstractSqlWriter implements SqlWriter
      *   - "?::WORD" will superseed "?",
      *
      *   - any "::WORD" sequence, which is a valid SQL cast, will be left
-     *     as-is and required no rewrite, but will superseed ":NAME"
-     *     placeholders.
+     *     as-is and required no rewrite.
      *
      * After some thoughts, this needs serious optimisation.
      *
@@ -43,10 +41,7 @@ abstract class AbstractSqlWriter implements SqlWriter
     const PARAMETER_MATCH = '@
         ESCAPE
         (\?\?)|                 # Matches ??
-        (\?((\:\:([\w]+))|))|   # Matches ?[::WORD] (placeholders)
-        (\:\:[\w\."]+)|         # Matches ::WORD (pgsql cast we shoud let pass)
-        (\:([\w]+)\:\:([\w]+))| # Matches :NAME::WORD (named placeholders with type)
-        (\:[\w]+)               # Matches :NAME (named placeholders without type)
+        (\?((\:\:([\w]+))|))    # Matches ?[::WORD] (placeholders)
         @x';
 
     private string $matchParametersRegex;
@@ -56,46 +51,6 @@ abstract class AbstractSqlWriter implements SqlWriter
     {
         $this->escaper = $escaper;
         $this->buildParameterRegex();
-    }
-
-    /**
-     * Allows the driver to proceed to different type cast.
-     *
-     * For example, MySQL as types that are not identified by the same string
-     * when casted and in other conditions, for example to cast an "int" you
-     * need to write CAST(? AS SIGNED INTEGER), if you omit the SIGNED cast
-     * won't work and MySQL will raise errors. This method exists primarily
-     * for the formatter to fix those edge cases.
-     *
-     * Default implementation does a few conversions upon primtive types.
-     *
-     * @param string $type
-     *   The internal type carried by converters
-     *
-     * @return string
-     *   The real type the server will understand
-     */
-    protected function getCastType(string $type) : ?string
-    {
-        switch ($type) {
-
-            // Timestamp
-            case 'datetime':
-            case 'timestamp':
-            case 'timestampz':
-                return 'timestamp';
-
-            // Date without time
-            case 'date':
-                return 'date';
-
-            // Time without date
-            case 'time':
-            case 'timez':
-                return 'time';
-        }
-
-        return $type;
     }
 
     /**
@@ -165,48 +120,33 @@ abstract class AbstractSqlWriter implements SqlWriter
      *   First value is the query string, second is the reworked array
      *   of parameters, if conversions were needed
      */
-    final private function rewriteQueryAndParameters(string $formattedSQL, ?string $identifier = null): FormattedQuery
+    final private function rewriteQueryAndParameters(string $formattedSQL): array
     {
         $index = 0;
-        $argumentList = new ArgumentList();
+        $types = [];
 
         // See https://stackoverflow.com/a/3735908 for the  starting
         // sequence explaination, the rest should be comprehensible.
         $preparedSQL = \preg_replace_callback(
             $this->matchParametersRegex,
-            function ($matches) use (&$index, $argumentList) {
+            function ($matches) use (&$index, &$types) {
                 $match  = $matches[0];
 
                 if ('??' === $match) {
                     return $this->escaper->unescapePlaceholderChar();
                 }
-
-                $isNamed = '?' !== ($first = $match[0]);
-
-                if ($isNamed) {
-                    // Excludes the following:
-                    //   - strings that don't start with : (escape sequences)
-                    //   - strings that start with : but with a second : (valid pgsql cast)
-                    if (\strlen($match) < 2 || ':' !== $first || ':' === $match[1]) {
-                        return $match;
-                    }
-                    // $matches[8] is for ":NAME::TYPE" match
-                    // \substr($match, 1) if for ":NAME" only match
-                    $name = empty($matches[9]) ? \substr($match, 1) : $matches[9];
-                    $type = empty($matches[10]) ? null : $matches[10];
-                } else {
-                    $name = null;
-                    $type = empty($matches[6]) ? null : $matches[6];
+                if ('?' !== $match[0]) {
+                    return $match;
                 }
 
-                $argumentList->addParameter($type, $name);
+                $types[$index] = empty($matches[6]) ? null : $matches[6];
 
                 return $this->escaper->writePlaceholder($index++);
             },
             $formattedSQL
         );
 
-        return new FormattedQuery($preparedSQL, $argumentList, $identifier);
+        return [$preparedSQL, $types];
     }
 
     /**
@@ -214,17 +154,24 @@ abstract class AbstractSqlWriter implements SqlWriter
      */
     final public function prepare($query): FormattedQuery
     {
-        $identifier = null;
+        $preparedSQL = $types = $arguments = $identifier = null;
 
-        if (!\is_string($query)) {
+        if (\is_string($query)) {
+            list($preparedSQL, $types) = $this->rewriteQueryAndParameters($query);
+        } else if ($query instanceof Statement) {
             if ($query instanceof Query) {
                 $identifier = $query->getIdentifier();
-            } else if (!$query instanceof Statement) {
-                throw new QueryError(\sprintf("query must be a bare string or an instance of %s", Query::class));
             }
-            $query = $this->format($query);
+
+            $context = new WriterContext();
+            $rawSql = $this->format($query, $context);
+            $arguments = $context->getArgumentBag();
+
+            list($preparedSQL, $types) = $this->rewriteQueryAndParameters($rawSql);
+        } else {
+            throw new QueryError(\sprintf("query must be a bare string or an instance of %s", Statement::class));
         }
 
-        return $this->rewriteQueryAndParameters($query, $identifier);
+        return new FormattedQuery($preparedSQL, $types, $identifier, $arguments);
     }
 }

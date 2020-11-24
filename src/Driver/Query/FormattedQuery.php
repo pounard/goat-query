@@ -5,39 +5,47 @@ declare(strict_types=1);
 namespace Goat\Driver\Query;
 
 use Goat\Converter\ConverterInterface;
-use Goat\Query\ArgumentList;
-use Goat\Query\QueryError;
-use Goat\Query\Statement;
 
 /**
  * Carries a formatted query for a driver, along with its arguments types
  */
 final class FormattedQuery
 {
-    private $argumentList;
-    private $identifier;
-    private $rawSQL;
+    private ?string $identifier;
+    private string $rawSQL;
+    private ?ArgumentBag $arguments = null;
+    /** array<int,null|string> */
+    private array $types;
 
     /**
      * Default constructor
      */
-    public function __construct(string $rawSQL, ArgumentList $argumentList, ?string $identifier = null)
-    {
-        $this->argumentList = $argumentList;
+    public function __construct(
+        string $rawSQL,
+        array $types,
+        ?string $identifier = null,
+        ?ArgumentBag $arguments = null
+    ) {
+        $this->types = $types;
         $this->identifier = $identifier;
         $this->rawSQL = $rawSQL;
+        $this->arguments = $arguments ?? new ArgumentBag();
     }
 
     /**
-     * Get argument count
+     * Get query arguments types.
+     *
+     * @return array<int,string|null>
+     *   Keys are ordered argument index in SQL, values are found argument
+     *   types, if no type found, value can be null.
      */
-    public function getArgumentList(): ArgumentList
+    public function getArgumentTypes(): array
     {
-        return $this->argumentList;
+        return $this->types;
     }
 
     /**
-     * Get formatted and escaped SQL query with placeholders
+     * Get formatted and escaped SQL query with placeholders.
      */
     public function getRawSQL(): string
     {
@@ -45,7 +53,7 @@ final class FormattedQuery
     }
 
     /**
-     * Get query identifier
+     * Get query identifier.
      */
     public function getIdentifier(): string
     {
@@ -53,67 +61,29 @@ final class FormattedQuery
     }
 
     /**
-     * Prepare arguments.
-     *
-     * ArgumentList comes from the SQL formatter, and gives us information
-     * about the number of argument and their types if found. Based upon this
-     * information, it will:
-     *
-     *   - either just convert given arguments if it's a bare array,
-     *   - merge type information then convert if it's an ArgumentBag.
-     *
-     * In all cases, it will reconcile the awaited parameter count and raise
-     * errors if the number doesn't match.
+     * Prepare arguments with the given input.
      */
-    private function convertArguments(ConverterInterface $converter, ArgumentList $argumentList, array $arguments): array
+    public function prepareArgumentsWith(ConverterInterface $converter, array $arguments = null): array
     {
+        // If null was given, this means that we should use query given
+        // arguments, those who are already set in this object.
+        if (!$arguments) {
+            $arguments = $this->arguments->getAll();
+        } else {
+            $arguments = \array_values($arguments);
+        }
+
+        if (!$arguments) {
+            return [];
+        }
+
         $ret = [];
-
-        $input = [];
         foreach ($arguments as $index => $value) {
-            if (\is_int($index)) {
-                $input[$index] = $value;
-            } else {
-                $input[$argumentList->getNameIndex($index)] = $value;
-            }
-        }
-        $types = $argumentList->getTypeMap();
-        $count = $argumentList->count();
+            $type = $this->types[$index] ?? $this->arguments->getTypeAt($index) ?? ConverterInterface::TYPE_UNKNOWN;
 
-        if (\count($input) !== $count) {
-            throw new QueryError(\sprintf("Invalid parameter number bound: expected %d got %d", $count, \count($input)));
-        }
-
-        for ($i = 0; $i < $count; ++$i) {
-            $ret[$i] = $converter->toSQL($types[$i] ?? ConverterInterface::TYPE_UNKNOWN, $input[$i]);
+            $ret[] = $converter->toSQL($type, $value);
         }
 
         return $ret;
-    }
-
-    /**
-     * Prepare arguments with the given input
-     *
-     * This method should belong to the driver namespace, but there is no way
-     * to make this very explicit and clear and decoupled from a specific driver
-     * implementation at the same time. This should be the only converter
-     * namespace dependency in the query namespace.
-     */
-    public function prepareArgumentsWith(ConverterInterface $converter, $query, $arguments = null): array
-    {
-        $argumentList = $this->argumentList;
-
-        if ($argumentList->count()) {
-            if ($query instanceof Statement) {
-                $queryArguments = $query->getArguments();
-                $argumentList = $argumentList->withTypesOf($queryArguments);
-                if (!$arguments) {
-                    $arguments = $queryArguments->getAll();
-                }
-            }
-            return $this->convertArguments($converter, $argumentList, $arguments);
-        }
-
-        return [];
     }
 }
