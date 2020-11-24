@@ -20,9 +20,10 @@ final class FormatterBaseRegexTest extends TestCase
     {
         $formatter = new FooSqlWriter(new NullEscaper(true));
 
-        $prepared = $formatter->prepare(<<<SQL
-select "foo" from "some_table" where "a" = ? and "b" = ?"
-SQL
+        $prepared = $formatter->prepare(
+            <<<SQL
+            select "foo" from "some_table" where "a" = ? and "b" = ?"
+            SQL
         );
 
         self::assertCount(2, $prepared->getArgumentTypes());
@@ -32,19 +33,21 @@ SQL
     {
         $formatter = new FooSqlWriter(new NullEscaper(true));
 
-        $prepared = $formatter->prepare(<<<SQL
-select "foo" from "some_table" where "a" ?? "foo" and "b" = ?::date and "c" = ?
-SQL
+        $prepared = $formatter->prepare(
+            <<<SQL
+            select "foo" from "some_table" where "a" ?? "foo" and "b" = ?::date and "c" = ?
+            SQL
         );
 
         self::assertCount(2, $prepared->getArgumentTypes());
         self::assertSame('date', $prepared->getArgumentTypes()[0]);
         self::assertNull($prepared->getArgumentTypes()[1]);
 
-        self::assertSameSql(<<<SQL
-select "foo" from "some_table" where "a" ? "foo" and "b" = #1 and "c" = #2
-SQL
-            , $prepared->getRawSQL()
+        self::assertSameSql(
+            <<<SQL
+            select "foo" from "some_table" where "a" ? "foo" and "b" = #1 and "c" = #2
+            SQL,
+            $prepared->toString()
         );
     }
 
@@ -55,9 +58,10 @@ SQL
     {
         $formatter = new FooSqlWriter(new NullEscaper(true));
 
-        $prepared = $formatter->prepare(<<<SQL
-select "foo" from "some_table" where "a" = :foo and "b" = :bar and "c" = ?
-SQL
+        $prepared = $formatter->prepare(
+            <<<SQL
+            select "foo" from "some_table" where "a" = :foo and "b" = :bar and "c" = ?
+            SQL
         );
 
         self::assertCount(1, $prepared->getArgumentTypes());

@@ -148,7 +148,7 @@ class DefaultSqlWriter extends AbstractSqlWriter
      * @param int $null
      *   Query::NULL_* constant.
      */
-    protected function doFormatOrderByItem($column, int $order, int $null, WriterContext $context): string
+    protected function doFormatOrderByItem(WriterContext $context, $column, int $order, int $null): string
     {
         $column = $this->format($column, $context);
 
@@ -194,7 +194,7 @@ class DefaultSqlWriter extends AbstractSqlWriter
 
         foreach ($orders as $data) {
             list($column, $order, $null) = $data;
-            $output[] = $this->doFormatOrderByItem($column, $order, $null, $context);
+            $output[] = $this->doFormatOrderByItem($context, $column, $order, $null);
         }
 
         return "order by " . \implode(", ", $output);
@@ -375,25 +375,6 @@ class DefaultSqlWriter extends AbstractSqlWriter
             return 'offset ' . $offset;
         }
         return '';
-    }
-
-    /**
-     * Format value list.
-     *
-     * @param mixed[] $arguments
-     *   Arbitrary arguments
-     * @param string $type = null
-     *   Data type of arguments
-     */
-    protected function doFormatValueList(array $arguments, WriterContext $context): string
-    {
-        return \implode(
-            ', ',
-            \array_map(
-                fn ($value) => $this->format($value, $context),
-                $arguments
-            )
-        );
     }
 
     /**
@@ -896,7 +877,7 @@ class DefaultSqlWriter extends AbstractSqlWriter
     /**
      * {@inheritdoc}
      */
-    public function format(Statement $query, WriterContext $context): string
+    protected function format(Statement $query, WriterContext $context): string
     {
         if ($query instanceof ColumnExpression) {
             return $this->formatColumnExpression($query, $context);

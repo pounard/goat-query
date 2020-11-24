@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Goat\Query\Tests;
 
-use Goat\Driver\Query\ArgumentBag;
 use Goat\Query\SelectQuery;
 use Goat\Runner\Testing\NullEscaper;
 use PHPUnit\Framework\TestCase;
@@ -13,91 +12,39 @@ class PlaceholderTest extends TestCase
 {
     use BuilderTestTrait;
 
-    public function testArbitraryPgTypeCastAreNotConverted()
+    public function testArbitraryPgTypeCastAreNotConverted(): void
     {
         $formatter = new FooSqlWriter(new NullEscaper(true));
+        $formatted = $formatter->prepare('select * from some_table where foo::date = ?::date');
 
-        $formatted = $formatter->prepare(
-            'select * from some_table where foo::date = ?::date',
-            [\DateTimeImmutable::createFromFormat('Y-m-d H:i:s', '1983-03-22 08:25:00')]
-        );
-
-        $this->assertSameSql('select * from some_table where foo::date = #1', $formatted->getRawSQL());
-        // @todo FIXME $this->assertSame(['1983-03-22'], $formatted->getArguments());
+        self::assertSameSql('select * from some_table where foo::date = #1', $formatted->toString());
     }
 
-    public function testCastWithConverterAndTypeInQuery()
+    public function testCastWithConverterAndTypeInQuery(): void
     {
         $formatter = new FooSqlWriter(new NullEscaper(true));
+        $formatted = $formatter->prepare('select * from some_table where foo = ?::timestamp');
 
-        $formatted = $formatter->prepare(
-            'select * from some_table where foo = ?::timestamp',
-            [\DateTimeImmutable::createFromFormat('Y-m-d H:i:s', '1983-03-22 08:25:00')]
-        );
-
-        $this->assertSameSql('select * from some_table where foo = #1', $formatted->getRawSQL());
-        // @todo FIXME $this->assertSame(['1983-03-22 08:25:00'], $formatted->getArguments());
+        self::assertSameSql('select * from some_table where foo = #1', $formatted->toString());
     }
 
-    public function testWithConverterAndTypeGuessShouldNotCast()
+    public function testWithConverterAndTypeGuessShouldNotCast(): void
     {
         $formatter = new FooSqlWriter(new NullEscaper(true));
+        $formatted = $formatter->prepare('select * from some_table where foo = ?');
 
-        $formatted = $formatter->prepare(
-            'select * from some_table where foo = ?',
-            [\DateTimeImmutable::createFromFormat('Y-m-d H:i:s', '1983-03-22 08:25:00')]
-        );
-
-        $this->assertSameSql('select * from some_table where foo = #1', $formatted->getRawSQL());
-        // @todo FIXME $this->assertSame(['1983-03-22 08:25:00'], $formatted->getArguments());
+        self::assertSameSql('select * from some_table where foo = #1', $formatted->toString());
     }
 
-    public function testCastWithConverterAndTypeFromBag()
+    public function testWithConverterAndTypeInQuery(): void
     {
         $formatter = new FooSqlWriter(new NullEscaper(true));
+        $formatted = $formatter->prepare('select * from some_table where foo = ?::bool');
 
-        $arguments =  new ArgumentBag();
-        $arguments->add(\DateTimeImmutable::createFromFormat('Y-m-d', '1983-03-22'), null, 'date');
-
-        $formatted = $formatter->prepare(
-            'select * from some_table where foo = ?',
-            $arguments
-        );
-
-        $this->assertSameSql('select * from some_table where foo = #1', $formatted->getRawSQL());
-        // @todo FIXME $this->assertSame(['1983-03-22'], $formatted->getArguments());
+        self::assertSameSql('select * from some_table where foo = #1', $formatted->toString());
     }
 
-    public function testWithConverterAndTypeInQuery()
-    {
-        $formatter = new FooSqlWriter(new NullEscaper(true));
-
-        $formatted = $formatter->prepare(
-            'select * from some_table where foo = ?::bool',
-            [true]
-        );
-
-        $this->assertSameSql('select * from some_table where foo = #1', $formatted->getRawSQL());
-        // @todo FIXME $this->assertSame(['t'], $formatted->getArguments());
-    }
-
-    public function testWithConverterAndTypeFromBag()
-    {
-        $formatter = new FooSqlWriter(new NullEscaper(true));
-
-        $arguments =  new ArgumentBag();
-        $arguments->add(true, null, 'bool');
-
-        $formatted = $formatter->prepare(
-            'select * from some_table where foo = ?',
-            $arguments
-        );
-
-        $this->assertSameSql('select * from some_table where foo = #1', $formatted->getRawSQL());
-        // @todo FIXME $this->assertSame(['t'], $formatted->getArguments());
-    }
-
-    public function testWithoutConverter()
+    public function testWithoutConverter(): void
     {
         $formatter = new FooSqlWriter(new NullEscaper(true));
 
@@ -106,12 +53,10 @@ class PlaceholderTest extends TestCase
         $builder->whereExpression('bar = ?', "12");
 
         $query = $formatter->prepare($builder);
-        $this->assertSameSql('select * from "some_table" where "foo" = #1 and bar = #2', $query->getRawSQL());
-        // Parameters are converted too.
-        // @todo FIXME $this->assertSame([7, "12"], $query->getArguments());
+        self::assertSameSql('select * from "some_table" where "foo" = #1 and bar = #2', $query->toString());
     }
 
-    public function testEscapedPlaceholderIsIgnored()
+    public function testEscapedPlaceholderIsIgnored(): void
     {
         $formatter = new FooSqlWriter(new NullEscaper(true));
 
@@ -121,10 +66,10 @@ class PlaceholderTest extends TestCase
         $builder->where('bar ?', 12);
 
         $query = $formatter->prepare($builder);
-        $this->assertSameSql('select * from "some_table" where "foo" = #1 and "bar ?" = #2', $query->getRawSQL());
+        self::assertSameSql('select * from "some_table" where "foo" = #1 and "bar ?" = #2', $query->toString());
 
         // String that contains all three escape sequences and one parameter
-        $query = $formatter->prepare("select '?' from \"weird ? table\" where bar = ? and foo = $$?$$ and john = $$ doh ? $$", ['test']);
-        $this->assertSameSql("select '?' from \"weird ? table\" where bar = #1 and foo = $$?$$ and john = $$ doh ? $$", $query->getRawSQL());
+        $query = $formatter->prepare("select '?' from \"weird ? table\" where bar = ? and foo = $$?$$ and john = $$ doh ? $$");
+        self::assertSameSql("select '?' from \"weird ? table\" where bar = #1 and foo = $$?$$ and john = $$ doh ? $$", $query->toString());
     }
 }

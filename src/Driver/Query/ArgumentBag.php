@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Goat\Driver\Query;
 
-use Goat\Query\QueryError;
 use Goat\Query\ValueRepresentation;
 
 /**
@@ -16,8 +15,6 @@ use Goat\Query\ValueRepresentation;
 final class ArgumentBag
 {
     private array $data = [];
-    private array $nameMap = [];
-    private array $names = [];
     private array $types = [];
     private int $index = 0;
 
@@ -26,12 +23,8 @@ final class ArgumentBag
      */
     public function addAll(iterable $array): void
     {
-        foreach ($array as $index => $value) {
-            if (\is_int($index)) {
-                $this->add($value);
-            } else {
-                $this->add($value, $index);
-            }
+        foreach ($array as $value) {
+            $this->add($value);
         }
     }
 
@@ -39,21 +32,15 @@ final class ArgumentBag
      * Add a parameter
      *
      * @param mixed $value
-     *   Value
-     * @param string $name
-     *   Named identifier, for query alteration to be possible
-     * @param string $type
-     *   SQL datatype
+     *   Value.
+     * @param ?string $type
+     *   SQL datatype.
      *
      * @return int
-     *   Added item position
+     *   Added item position.
      */
-    public function add($value, ?string $name = null, ?string $type = null): int
+    public function add($value, ?string $type = null): int
     {
-        if ($name && isset($this->nameMap[$name])) {
-            throw new QueryError(\sprintf("%s argument name is already in use in this query", $name));
-        }
-
         if ($value instanceof ValueRepresentation) {
             if (!$type) {
                 $type = $value->getType();
@@ -64,13 +51,7 @@ final class ArgumentBag
         $index = $this->index;
         $this->index++;
 
-        $this->names[$index] = $name;
         $this->types[$index] = $type;
-
-        if ($name) {
-            $this->nameMap[$name] = $index;
-        }
-
         $this->data[$index] = $value;
 
         return $index;
@@ -85,22 +66,11 @@ final class ArgumentBag
     }
 
     /**
-     * Get all values, returned index are either numerical or named.
+     * Get all values.
      */
     public function getAll(): array
     {
         return $this->data;
-    }
-
-    /**
-     * Get type as array.
-     *
-     * @return string[]
-     *   Values are indexed positions (not names)
-     */
-    public function getTypeMap(): array
-    {
-        return $this->types;
     }
 
     /**
@@ -109,21 +79,5 @@ final class ArgumentBag
     public function getTypeAt(int $index): ?string
     {
         return $this->types[$index] ?? null;
-    }
-
-    /**
-     * Get name index.
-     */
-    public function getNameIndex(string $name): int
-    {
-        return $this->nameMap[$name] ?? $this->nameDoesNotExist($name);
-    }
-
-    /**
-     * Raise name does not exist exception.
-     */
-    private function nameDoesNotExist(string $name)
-    {
-        throw new QueryError(\sprintf("%s argument name does not exist", $name));
     }
 }

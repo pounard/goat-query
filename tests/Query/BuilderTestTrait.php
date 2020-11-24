@@ -8,8 +8,8 @@ use Goat\Driver\Platform\Query\MySQL8Writer;
 use Goat\Driver\Platform\Query\MySQLWriter;
 use Goat\Driver\Platform\Query\PgSQLWriter;
 use Goat\Driver\Query\DefaultSqlWriter;
+use Goat\Driver\Query\FormattedQuery;
 use Goat\Driver\Query\SqlWriter;
-use Goat\Driver\Query\WriterContext;
 use Goat\Runner\Testing\NullEscaper;
 
 trait BuilderTestTrait
@@ -29,14 +29,14 @@ trait BuilderTestTrait
     {
         if ($message) {
             return self::assertSame(
-                self::normalize($expected),
-                self::normalize($actual),
+                self::normalize((string) $expected),
+                self::normalize((string) $actual),
                 $message
             );
         }
         return self::assertSame(
-            self::normalize($expected),
-            self::normalize($actual)
+            self::normalize((string) $expected),
+            self::normalize((string) $actual)
         );
     }
 
@@ -60,8 +60,13 @@ trait BuilderTestTrait
         return new DefaultSqlWriter(new NullEscaper());
     }
 
-    protected static function format($query, ?WriterContext $context = null): string
+    protected static function prepare($query): FormattedQuery
     {
-        return self::createStandardSqlWriter()->format($query, $context ?? new WriterContext());
+        return self::createStandardSqlWriter()->prepare($query);
+    }
+
+    protected static function format($query): string
+    {
+        return self::prepare($query)->toString();
     }
 }

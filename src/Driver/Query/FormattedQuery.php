@@ -7,7 +7,8 @@ namespace Goat\Driver\Query;
 use Goat\Converter\ConverterInterface;
 
 /**
- * Carries a formatted query for a driver, along with its arguments types
+ * Result of SQL formatter, holds rewritten SQL containing driver specific
+ * placeholders, and found arguments with types when they could be infered.
  */
 final class FormattedQuery
 {
@@ -26,10 +27,10 @@ final class FormattedQuery
         ?string $identifier = null,
         ?ArgumentBag $arguments = null
     ) {
-        $this->types = $types;
+        $this->arguments = $arguments ?? new ArgumentBag();
         $this->identifier = $identifier;
         $this->rawSQL = $rawSQL;
-        $this->arguments = $arguments ?? new ArgumentBag();
+        $this->types = $types;
     }
 
     /**
@@ -42,14 +43,6 @@ final class FormattedQuery
     public function getArgumentTypes(): array
     {
         return $this->types;
-    }
-
-    /**
-     * Get formatted and escaped SQL query with placeholders.
-     */
-    public function getRawSQL(): string
-    {
-        return $this->rawSQL;
     }
 
     /**
@@ -67,10 +60,13 @@ final class FormattedQuery
     {
         // If null was given, this means that we should use query given
         // arguments, those who are already set in this object.
-        if (!$arguments) {
-            $arguments = $this->arguments->getAll();
-        } else {
+        // Sometime, we receive an empty array due to wrong typings that
+        // must be fixed, until then, we also consider empty arrays as
+        // being null.
+        if ($arguments) {
             $arguments = \array_values($arguments);
+        } else {
+            $arguments = $this->arguments->getAll();
         }
 
         if (!$arguments) {
@@ -85,5 +81,21 @@ final class FormattedQuery
         }
 
         return $ret;
+    }
+
+    /**
+     * Get raw SQL string ready to be sent to driver.
+     */
+    public function toString(): string
+    {
+        return $this->rawSQL;
+    }
+
+    /**
+     * Allow transparent to string conversion.
+     */
+    public function __toString(): string
+    {
+        return $this->rawSQL;
     }
 }

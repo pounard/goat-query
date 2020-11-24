@@ -9,17 +9,18 @@ use Goat\Query\Statement;
 interface SqlWriter
 {
     /**
-     * Format query.
-     */
-    public function format(Statement $query, WriterContext $context): string;
-
-    /**
-     * Rewrite query by adding type cast information and correct placeholders.
+     * Format, aggregate arguments, then prepare for driver any query builder
+     * built query, arbitrary expression, or raw SQL string.
+     *
+     * Rewrite the resulting SQL string or query, replace ?::TYPE information
+     * using driver specific placeholders, and store found types information in
+     * the result object.
      *
      * @param string|Statement $query
-     *   If query is a Statement, format() will be called.
+     * @param ?WriterContext $context
+     *   Under certain scenarios, a user given context can be used.
      *
      * @return FormattedQuery
      */
-    public function prepare($query): FormattedQuery;
+    public function prepare($query, ?WriterContext $context = null): FormattedQuery;
 }

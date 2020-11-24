@@ -428,10 +428,14 @@ final class SelectUnitTest extends TestCase
 
         $select->where('baz', new ValueExpression(12, 'json'));
 
+        $formatted = self::prepare($select);
+
         self::assertSameSql(
-            'select * from "some_table" where "baz" = ?::json',
-            self::format($select)
+            'select * from "some_table" where "baz" = ?',
+            $formatted
         );
+
+        self::assertSame('json', $formatted->getArgumentTypes()[0]);
     }
 
     public function testConditionWithCallbackCastAsArgument(): void
@@ -617,10 +621,14 @@ final class SelectUnitTest extends TestCase
 
         $select->having('baz', new ValueExpression(12, 'json'));
 
+        $formatted = self::prepare($select);
+
         self::assertSameSql(
-            'select * from "some_table" having "baz" = ?::json',
-            self::format($select)
+            'select * from "some_table" having "baz" = ?',
+            $formatted
         );
+
+        self::assertSame('json', $formatted->getArgumentTypes()[0]);
     }
 
     public function testHavingWithCallbackCastAsArgument(): void

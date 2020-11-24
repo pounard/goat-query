@@ -73,17 +73,17 @@ final class SelectFunctionalTest extends TestCase
         $having->expression('count(n.nid) < ?', 3);
 
         $formatted = $formatter->prepare($query);
-        self::assertSameSql($reference, $formatted->getRawSQL());
+        self::assertSameSql($reference, $formatted->toString());
         self::assertSame($referenceArguments, $formatted->prepareArgumentsWith(new DefaultConverter()));
 
         $countQuery = $query->getCountQuery();
         $formatted = $formatter->prepare($countQuery);
-        self::assertSameSql($countReference, $formatted->getRawSQL());
+        self::assertSameSql($countReference, $formatted->toString());
         self::assertSame($referenceArguments, $formatted->prepareArgumentsWith(new DefaultConverter()));
 
         $clonedQuery = clone $query;
         $formatted = $formatter->prepare($query);
-        self::assertSameSql($reference, $formatted->getRawSQL());
+        self::assertSameSql($reference, $formatted->toString());
         self::assertSame($referenceArguments, $formatted->prepareArgumentsWith(new DefaultConverter()));
 
         // We have to reset the reference because using a more buildish way we
@@ -144,17 +144,17 @@ final class SelectFunctionalTest extends TestCase
         ;
 
         $formatted = $formatter->prepare($query);
-        self::assertSameSql($reference, $formatted->getRawSQL());
+        self::assertSameSql($reference, $formatted->toString());
         self::assertSame($referenceArguments, $formatted->prepareArgumentsWith(new DefaultConverter()));
 
         $countQuery = $query->getCountQuery();
         $formatted = $formatter->prepare($countQuery);
-        self::assertSameSql($countReference, $formatted->getRawSQL());
+        self::assertSameSql($countReference, $formatted->toString());
         self::assertSame($referenceArguments, $formatted->prepareArgumentsWith(new DefaultConverter()));
 
         $clonedQuery = clone $query;
         $formatted = $formatter->prepare($clonedQuery);
-        self::assertSameSql($reference, $formatted->getRawSQL());
+        self::assertSameSql($reference, $formatted->toString());
         self::assertSame($referenceArguments, $formatted->prepareArgumentsWith(new DefaultConverter()));
 
         // Same without alias
@@ -206,17 +206,17 @@ final class SelectFunctionalTest extends TestCase
         ;
 
         $formatted = $formatter->prepare($query);
-        self::assertSameSql($reference, $formatted->getRawSQL());
+        self::assertSameSql($reference, $formatted->toString());
         self::assertSame($referenceArguments, $formatted->prepareArgumentsWith(new DefaultConverter()));
 
         $countQuery = $query->getCountQuery();
         $formatted = $formatter->prepare($countQuery);
-        self::assertSameSql($countReference, $formatted->getRawSQL());
+        self::assertSameSql($countReference, $formatted->toString());
         self::assertSame($referenceArguments, $formatted->prepareArgumentsWith(new DefaultConverter()));
 
         $clonedQuery = clone $query;
         $formatted = $formatter->prepare($clonedQuery);
-        self::assertSameSql($reference, $formatted->getRawSQL());
+        self::assertSameSql($reference, $formatted->toString());
         self::assertSame($referenceArguments, $formatted->prepareArgumentsWith(new DefaultConverter()));
     }
 

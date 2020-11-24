@@ -152,7 +152,7 @@ abstract class AbstractSqlWriter implements SqlWriter
     /**
      * {@inheritdoc}
      */
-    final public function prepare($query): FormattedQuery
+    final public function prepare($query, ?WriterContext $context = null): FormattedQuery
     {
         $preparedSQL = $types = $arguments = $identifier = null;
 
@@ -163,7 +163,7 @@ abstract class AbstractSqlWriter implements SqlWriter
                 $identifier = $query->getIdentifier();
             }
 
-            $context = new WriterContext();
+            $context = $context ?? new WriterContext();
             $rawSql = $this->format($query, $context);
             $arguments = $context->getArgumentBag();
 

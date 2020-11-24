@@ -86,7 +86,7 @@ abstract class AbstractPDORunner extends AbstractRunner
         // @merge argument types from query
         $this->prepared[$identifier] = [
             $this->connection->prepare(
-                $prepared->getRawSQL(),
+                $prepared->toString(),
                 [\PDO::ATTR_CURSOR => \PDO::CURSOR_FWDONLY]
             ),
             $prepared,

@@ -75,7 +75,7 @@ and "range_b" not between ? and ?
 and "baz" not in (?, ?, ?)
 and (
     "theWorld" is not ?
-    or count(theWorld) = ?::int4
+    or count(theWorld) = ?
     or (
         1 = ?
         and 2 * 2 = ?

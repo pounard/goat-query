@@ -104,7 +104,7 @@ class ExtPgSQLRunner extends AbstractRunner
     {
         $this->prepared[$identifier] = $prepared;
 
-        if (false === @\pg_prepare($this->connection, $identifier, $prepared->getRawSQL())) {
+        if (false === @\pg_prepare($this->connection, $identifier, $prepared->toString())) {
             $this->serverError($this->connection);
         }
     }

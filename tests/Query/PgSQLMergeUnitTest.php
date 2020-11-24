@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Goat\Query\Tests;
 
-use Goat\Driver\Query\WriterContext;
 use Goat\Query\MergeQuery;
 use Goat\Query\Query;
 use Goat\Query\QueryError;
@@ -36,7 +35,7 @@ final class PgSQLMergeUnitTest extends TestCase
         self::expectException(QueryError::class);
         self::expectExceptionMessageMatches('/Key must be specified/');
 
-        self::createPgSQLWriter()->format($query, new WriterContext());
+        self::createPgSQLWriter()->prepare($query);
     }
 
     public function testKeyIsMandatoryWithOnConflictUpdate(): void
@@ -90,7 +89,7 @@ values (
 on conflict do nothing
 SQL
             ,
-            self::createPgSQLWriter()->format($query, new WriterContext())
+            self::createPgSQLWriter()->prepare($query)
         );
     }
 
@@ -116,7 +115,7 @@ values (
 on conflict do nothing
 SQL
             ,
-            self::createPgSQLWriter()->format($query, new WriterContext())
+            self::createPgSQLWriter()->prepare($query)
         );
     }
 
@@ -145,7 +144,7 @@ on conflict ("foo", "bar")
         "buzz" = excluded."buzz"
 SQL
             ,
-            self::createPgSQLWriter()->format($query, new WriterContext())
+            self::createPgSQLWriter()->prepare($query)
         );
     }
 
@@ -167,7 +166,7 @@ select "a", "b", "c", "d" from "table2"
 on conflict do nothing
 SQL
             ,
-            self::createPgSQLWriter()->format($query, new WriterContext())
+            self::createPgSQLWriter()->prepare($query)
         );
     }
 
@@ -190,7 +189,7 @@ select "a", "b", "c", "d" from "table2"
 on conflict do nothing
 SQL
             ,
-            self::createPgSQLWriter()->format($query, new WriterContext())
+            self::createPgSQLWriter()->prepare($query)
         );
     }
 
@@ -216,7 +215,7 @@ on conflict ("foo", "bar")
         "buzz" = excluded."buzz"
 SQL
             ,
-            self::createPgSQLWriter()->format($query, new WriterContext())
+            self::createPgSQLWriter()->prepare($query)
         );
     }
 }
