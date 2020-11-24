@@ -22,15 +22,6 @@ class MySQLWriter extends DefaultSqlWriter
     /**
      * {@inheritdoc}
      */
-    protected function writeCast(string $placeholder, string $type): string
-    {
-        // This is supposedly SQL-92 standard compliant, but can be overriden
-        return 'cast(' . $placeholder . ' as ' . $type . ')';
-    }
-
-    /**
-     * {@inheritdoc}
-     */
     protected function doFormatInsertNoValuesStatement(WriterContext $context) : string
     {
         return "() VALUES ()";

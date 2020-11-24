@@ -21,16 +21,6 @@ class PgSQLWriter extends DefaultSqlWriter
     /**
      * {@inheritdoc}
      */
-    protected function writeCast(string $placeholder, string $type): string
-    {
-        // No surprises there, PostgreSQL is very straight-forward and just
-        // uses the datatypes as it handles it. Very stable and robust.
-        return $placeholder . '::' . $type;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
     protected function doFormatInsertNoValuesStatement(WriterContext $context): string
     {
         return "DEFAULT VALUES";

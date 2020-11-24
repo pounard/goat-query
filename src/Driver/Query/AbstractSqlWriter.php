@@ -54,25 +54,6 @@ abstract class AbstractSqlWriter implements SqlWriter
     }
 
     /**
-     * Write cast clause
-     *
-     * @param string $placeholder
-     *   Placeholder for the value
-     * @param string $type
-     *   SQL datatype
-     *
-     * @return string
-     *
-     * @codeCoverageIgnore
-     *   You should probably override this method.
-     */
-    protected function writeCast(string $placeholder, string $type): string
-    {
-        // This is supposedly SQL-92 standard compliant, but can be overriden
-        return 'cast(' . $placeholder . ' as ' . $type . ')';
-    }
-
-    /**
      * Uses the connection driven escape sequences to build the parameter
      * matching regex.
      */
