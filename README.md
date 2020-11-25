@@ -75,7 +75,7 @@ For advanced documentation, please see the `./docs/` folder.
 
 All `\Goat\Query\Expression*` classes are now moved to a sub-namespace
 to improve code readability and maintainability, they also have disambiguated
-names for better code compression: there was a possible confusion between `row`
+names for better code readability: there was a possible confusion between `row`
 and `raw` words for example.
 
 All classes that have been moved:
@@ -96,7 +96,7 @@ New classes also have been added:
  - `\Goat\Query\Expression\ComparisonExpression` that expresses any comparison
    with 2 operands and an operator,
  - `\Goat\Query\Expression\IdentifierExpression` that expresses an identifier
-   that explicitely needs escaping, useful only for when instanciating
+   that explicitely needs escaping, useful only for when instantiating
    `ColumnExpression` and `TableExpression` instances.
 
 All legacy classes have been kept, but are deprecated, and as such will raise
@@ -105,8 +105,24 @@ new classes. Legacy classes will all be removed in 5.x.
 
 ### Expressions instanciation changes
 
-All new expression classes static methods for instanciating them have been
-droped and are replaced by the class constructors. Signatures did not change.
+All new expression classes static methods for instantiating them have been
+dropped and are replaced by the class constructors. Signatures did not change.
+
+For example, using the `TableExpression` before:
+
+```php
+use \Goat\Query\ExpressionRelation;
+
+$table = ExpressionRelation::create('my_table', 'my_alias', 'my_schema');
+```
+
+After:
+
+```php
+use \Goat\Query\Expression\TableExpression;
+
+$table = new TableExpression('my_table', 'my_alias', 'my_schema');
+```
 
 ### Expressions everywhere
 
@@ -144,7 +160,7 @@ Possibilities are infinite, any expression can be placed anywhere.
 ### Short arrow syntax
 
 Since 2.x you could use callbacks in `Where::expression()` and
-`Where::condition()` methods, as well as Select::where() and
+`Where::condition()` methods, as well as `Select::where()` and
 `Select::whereExpression()`, but due to the way it was handled
 internally, it was not possible to use short arrow syntax. Now you can.
 
@@ -192,7 +208,7 @@ $queryBuilder
 
 ### Easier AND and OR WHERE nested conditions writing
 
-Four new shortcuts have been added for adding nested `WHERE` clauses with
+Four new shortcuts have been added for nesting `WHERE` clauses with
 `OR` or `AND` operators:
 
 ```php
@@ -247,6 +263,39 @@ pass the exact same methods arguments to `Where::like()`, `Where::notLike()`,
 it more fluent to write, and also allow you to avoid the expression case
 import/use statement.
 
+Before you would write:
+
+```php
+use \Goat\Query\ExpressionLike;
+
+$queryBuilder
+    ->select('some_table')
+    ->whereExpression(
+        ExpressionLike::iLike('some_column', '?%', 'text_to_search')
+    )
+;
+```
+
+And now you can write:
+
+```php
+$queryBuilder
+    ->select('some_table')
+    ->where(
+        fn (Where $where) => $where->likeInsensitive('some_column', '?%', 'text_to_search')
+    )
+;
+```
+
+Which will both result in the following SQL:
+
+```sql
+SELECT *
+FROM "some_table"
+WHERE
+    "some_column" ILIKE 'text_to_search%'
+```
+
 ### SELECT ... UNION ... queries
 
 `SELECT` queries can now have `UNION`:
@@ -263,16 +312,18 @@ else. You may call the `union()` method as many time as you wish to.
 ### Faster query formatter
 
 `ArgumentBag`, `ArgumentList` and a few other classes you were not supposed to
-directly used have been deleted or moved, and `Expression` instances don't have
+directly use have been deleted or moved, and `Expression` instances don't have
 a `getArguments()` method anymore.
 
 In previous versions, the query formatter was traversing the query builder as
 if it was an AST, writing SQL along the way. Then, and only then once finished,
-arguments were fetched from query builder to send them to the driver. This
-caused the AST to be traversed twice instead of once, and caused argument
-ordering troubles: some backend specific SQL writer did not place the arguments
-in the same order due to different SQL dialects co-existing, but arguments were
-fetched in always the same order, causing a few SQL queries such as complex
+arguments were fetched from the query builder using the same kind of traversal
+algorithm then sent the driver.
+
+This caused the AST to be traversed twice instead of once, and caused argument
+ordering troubles: backend specific SQL writers will not always order clauses
+in the same order due to different SQL dialects existing, but arguments were
+always fetched in the same order, causing a few SQL queries such as complex
 `UPDATE` statements to fail on MySQL, for exemple.
 
 A few other minor performance tweaks were applied in the query builder. Let's be
