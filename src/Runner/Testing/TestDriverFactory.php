@@ -82,9 +82,11 @@ class TestDriverFactory
             $ret[] = [Configuration::DRIVER_PDO_MYSQL, 'MYSQL_57_URI'];
             $ret[] = [Configuration::DRIVER_PDO_MYSQL, 'MYSQL_80_URI'];
             $ret[] = [Configuration::DRIVER_PDO_PGSQL, 'PGSQL_95_URI'];
+            $ret[] = [Configuration::DRIVER_PDO_PGSQL, 'PGSQL_13_URI'];
         }
         if (self::getEnv('ENABLE_EXT_PGSQL', true)) {
             $ret[] = [Configuration::DRIVER_EXT_PGSQL, 'PGSQL_95_URI'];
+            $ret[] = [Configuration::DRIVER_EXT_PGSQL, 'PGSQL_13_URI'];
         }
 
         return $ret;

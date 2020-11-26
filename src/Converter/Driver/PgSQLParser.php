@@ -111,7 +111,7 @@ final class PgSQLParser
     /**
      * @internal
      */
-    private static function parseArrayRecursion(string $string, int $start = 0, int $length): array
+    private static function parseArrayRecursion(string $string, int $start, int $length): array
     {
         $ret = [];
 
