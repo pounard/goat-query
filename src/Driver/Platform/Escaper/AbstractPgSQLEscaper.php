@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace Goat\Driver\Platform\Escaper;
 
+/**
+ * @codeCoverageIgnore
+ *   This is a sample implementation, in real life the low level driver will
+ *   do proper escaping for us instead.
+ */
 abstract class AbstractPgSQLEscaper extends AbstractEscaper
 {
     /**

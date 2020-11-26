@@ -24,6 +24,9 @@ abstract class AbstractEscaper implements Escaper
 
     /**
      * {@inheritdoc}
+     *
+     * @codeCoverageIgnore
+     *   This should be done by the driver.
      */
     public function escapeLike(string $string): string
     {
