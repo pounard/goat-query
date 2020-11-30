@@ -43,6 +43,7 @@ final class Configuration
         'server_version' => null,
         'socket' => null,
         'username' => null,
+        'timezone' => null,
     ];
 
     /** @deprecated @todo fix this */
@@ -241,6 +242,14 @@ final class Configuration
     public function getClientEncoding(): string
     {
         return $this->options['charset'];
+    }
+
+    /**
+     * Get client timezone.
+     */
+    public function getClientTimeZone(): string
+    {
+        return $this->options['timezone'] ?? (@\date_default_timezone_get()) ?? 'UTC';
     }
 
     /**

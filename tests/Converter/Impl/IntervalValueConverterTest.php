@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Goat\Converter\Tests;
+namespace Goat\Converter\Tests\Impl;
 
 use Goat\Converter\DefaultConverter;
 use Goat\Converter\TypeConversionError;
 use Goat\Converter\Impl\IntervalValueConverter;
 use PHPUnit\Framework\TestCase;
 
-class IntervalTest extends TestCase
+class IntervalValueConverterTest extends TestCase
 {
     /**
      * Data provider

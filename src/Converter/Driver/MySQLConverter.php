@@ -9,7 +9,7 @@ use Goat\Converter\ConverterInterface;
  */
 class MySQLConverter implements ConverterInterface
 {
-    private $default;
+    private ConverterInterface $default;
 
     /**
      * Default constructor
@@ -17,6 +17,24 @@ class MySQLConverter implements ConverterInterface
     public function __construct(ConverterInterface $default)
     {
         $this->default = $default;
+    }
+
+    /**
+     * {@inheritdoc}
+     * @deprecated
+     */
+    public function getClientTimeZone(): string
+    {
+        return $this->default->getClientTimeZone();
+    }
+
+    /**
+     * {@inheritdoc}
+     * @deprecated
+     */
+    public function setClientTimeZone(?string $clientTimeZone = null): void
+    {
+        $this->default->setClientTimeZone($clientTimeZone);
     }
 
     /**

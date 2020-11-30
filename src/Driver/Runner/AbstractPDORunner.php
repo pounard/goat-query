@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Goat\Driver\Runner;
 
+use Goat\Driver\Configuration;
 use Goat\Driver\Platform\Platform;
 use Goat\Driver\Query\FormattedQuery;
 use Goat\Query\QueryError;
@@ -18,9 +19,9 @@ abstract class AbstractPDORunner extends AbstractRunner
     /**
      * Default constructor
      */
-    public function __construct(Platform $platform, \PDO $connection)
+    public function __construct(Platform $platform, Configuration $configuration, \PDO $connection)
     {
-        parent::__construct($platform);
+        parent::__construct($platform, $configuration);
 
         $this->connection = $connection;
     }

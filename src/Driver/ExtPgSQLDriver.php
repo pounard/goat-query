@@ -101,11 +101,12 @@ class ExtPgSQLDriver extends AbstractDriver
 
             \pg_set_error_verbosity($resource,  PGSQL_ERRORS_VERBOSE);
             \pg_query($resource, "SET client_encoding TO ".\pg_escape_literal($configuration->getClientEncoding()));
+            \pg_query($resource, "SET TIME ZONE ".\pg_escape_literal($configuration->getClientTimeZone()));
 
             $this->escaper = new ExtPgSQLEscaper($this, $this->connection);
             $this->platform = new PgSQLPlatform($this->escaper, $this->getServerVersion());
 
-            $runner = new ExtPgSQLRunner($this->platform, $resource);
+            $runner = new ExtPgSQLRunner($this->platform, $configuration, $resource);
             $runner->setLogger($configuration->getLogger());
             $this->runner = $runner;
 

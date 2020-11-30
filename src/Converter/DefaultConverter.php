@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Goat\Converter;
 
+use Goat\Converter\Impl\DateValueConverter;
 use Goat\Converter\Impl\IntervalValueConverter;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
@@ -17,11 +18,6 @@ use Ramsey\Uuid\UuidInterface;
  */
 final class DefaultConverter implements ConverterInterface
 {
-    const TIMESTAMP_FORMAT = 'Y-m-d H:i:s';
-    const TIMESTAMP_FORMAT_DATE = 'Y-m-d';
-    const TIMESTAMP_FORMAT_TIME = 'H:i:s';
-    const TIMESTAMP_FORMAT_TIME_INT = 'H:I:S';
-
     /**
      * Get default converter map
      *
@@ -31,6 +27,7 @@ final class DefaultConverter implements ConverterInterface
      *     - second value is a type aliases array
      *
      * @codeCoverageIgnore
+     * @deprecated
      */
     public static function getDefautConverterMap() : array
     {
@@ -88,10 +85,39 @@ final class DefaultConverter implements ConverterInterface
         ];
     }
 
-    private $converters = [];
-    private $convertersTypeMap = [];
-    private $debug = false;
-    private $uuidSupport;
+    private string $clientTimeZone;
+    /** @var ValueConverterInterface[] */
+    private array $converters = [];
+    /** @var array<string,ValueConverterInterface> */
+    private array $convertersTypeMap = [];
+    private bool $debug = false;
+    private ?bool $uuidSupport = null;
+
+    public function __construct(bool $setupDateSupport = true)
+    {
+        if ($setupDateSupport) {
+            $this->register(new DateValueConverter());
+            $this->register(new IntervalValueConverter());
+        }
+        $this->clientTimeZone = @\date_default_timezone_get() ?? 'UTC';
+    }
+
+    /**
+     * {@inheritdoc}
+     * @deprecated
+     */
+    public function getClientTimeZone(): string
+    {
+        return $this->clientTimeZone;
+    }
+
+    /**
+     * @deprecated
+     */
+    public function setClientTimeZone(?string $clientTimeZone = null): void
+    {
+        $this->clientTimeZone = $clientTimeZone ?? @\date_default_timezone_get() ?? 'UTC';
+    }
 
     /**
      * Toggle debug mode
@@ -220,32 +246,26 @@ final class DefaultConverter implements ConverterInterface
 
             // UUID
             case 'uuid':
-              if ($this->supportsUuid()) {
-                  return UuidInterface::class;
-              }
-              return 'string'; // @todo third party library support ?
-
-            // Timestamp, Date without time and time without date
-            case 'datetime':
-            case 'timestamp':
-            case 'timestampz':
-            case 'date':
-            case 'time':
-            case 'timez':
-                return \DateTimeImmutable::class;
+                if ($this->supportsUuid()) {
+                    return UuidInterface::class;
+                }
+                return 'string'; // @todo third party library support ?
 
             // Binary objects
             // @todo handle object stream
             case 'blob':
             case 'bytea':
                 return 'string';
-        }
 
-        if ($converter = $this->get($type)) {
-            return $converter->getPhpType($type);
+            default:
+                // @todo This can be optimized by adding an array cache.
+                foreach ($this->converters as $valueConverter) {
+                    if ($phpType = $valueConverter->getPhpType($type)) {
+                        return $phpType;
+                    }
+                }
+                return null;
         }
-
-        return null;
     }
 
     /**
@@ -319,38 +339,18 @@ final class DefaultConverter implements ConverterInterface
                 }
                 return (string)$value;
 
-            // Timestamp, Date without time and time without date
-            case 'datetime':
-            case 'timestamp':
-            case 'timestampz':
-            case 'date':
-            case 'time':
-            case 'timez':
-                // @todo This needs a serious rewrite...
-                if (!$data = \trim($value)) {
-                    return null;
-                }
-                // Time is supposed to be standard: just attempt to find if there
-                // is a timezone there, if not provide the PHP current one in the
-                // \DateTime object.
-                if (false !== \strpos($value, '.')) {
-                    return new \DateTimeImmutable($data);
-                }
-                $tzId = @\date_default_timezone_get() ?? "UTC";
-                return new \DateTimeImmutable($data, new \DateTimeZone($tzId));
-
             // Binary objects
             // @todo handle object stream
             case 'blob':
             case 'bytea':
                 return $value;
-        }
 
-        if ($converter = $this->getValueConverter($type)) {
-            return $converter->fromSQL($type, $value, $this);
+            default:
+                if ($converter = $this->getValueConverter($type)) {
+                    return $converter->fromSQL($type, $value, $this);
+                }
+                return (string)$value;
         }
-
-        return (string)$value;
     }
 
     /**
@@ -450,50 +450,17 @@ final class DefaultConverter implements ConverterInterface
             case 'uuid':
                 return (string)$value;
 
-            // Timestamp
-            //
-            // Default implementation don't care about timezone, most RDBMS
-            // won't store timezones for you, or proceed to automatic convertions
-            // depending on the server locale/timezone (for example MySQL) more
-            // specific timezeone handling will be implemened within each driver
-            // that supports it.
-            case 'datetime':
-            case 'timestamp':
-            case 'timestampz':
-                if (!$value instanceof \DateTimeInterface) {
-                    throw new TypeConversionError(\sprintf("given value '%s' is not instanceof \DateTimeInterface", $value));
-                }
-                return $value->format(self::TIMESTAMP_FORMAT);
-
-            // Date without time
-            case 'date':
-                if (!$value instanceof \DateTimeInterface) {
-                    throw new TypeConversionError(\sprintf("given value '%s' is not instanceof \DateTimeInterface", $value));
-                }
-                return $value->format(self::TIMESTAMP_FORMAT_DATE);
-
-            // Time without date
-            case 'time':
-            case 'timez':
-                if ($value instanceof \DateTimeInterface) {
-                    return $value->format(self::TIMESTAMP_FORMAT_TIME);
-                }
-                if ($value instanceof \DateInterval) {
-                    return $value->format(self::TIMESTAMP_FORMAT_TIME_INT);
-                }
-                throw new TypeConversionError(\sprintf("given value '%s' is not instanceof \DateTimeInterface not \DateInterval", $value));
-
             // Binary objects
             // @todo handle object stream
             case 'blob':
             case 'bytea':
                 return (string)$value;
-        }
 
-        if ($converter = $this->getValueConverter($type)) {
-            return $converter->toSQL($type, $value, $this);
+            default:
+                if ($converter = $this->getValueConverter($type)) {
+                    return $converter->toSQL($type, $value, $this);
+                }
+                return (string)$value;
         }
-
-        return (string)$value;
     }
 }
