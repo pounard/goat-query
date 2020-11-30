@@ -6,6 +6,7 @@ namespace Goat\Driver\Runner;
 
 use Goat\Converter\ConverterInterface;
 use Goat\Converter\DefaultConverter;
+use Goat\Driver\Configuration;
 use Goat\Driver\Error\TransactionError;
 use Goat\Driver\Instrumentation\ProfilerAware;
 use Goat\Driver\Instrumentation\ProfilerAwareTrait;
@@ -36,6 +37,7 @@ abstract class AbstractRunner implements Runner, ProfilerAware
 
     private LoggerInterface $logger;
     private Platform $platform;
+    private Configuration $configuration;
     private ?Transaction $currentTransaction = null;
     private bool $debug = false;
     private ?HydratorRegistry $hydratorRegistry = null;
@@ -44,12 +46,10 @@ abstract class AbstractRunner implements Runner, ProfilerAware
     protected ConverterInterface $converter;
     protected SqlWriter $formatter;
 
-    /**
-     * Constructor
-     */
-    public function __construct(Platform $platform)
+    public function __construct(Platform $platform, Configuration $configuration)
     {
         $this->logger = new NullLogger();
+        $this->configuration = $configuration;
         $this->platform = $platform;
         $this->formatter = $platform->getSqlWriter();
         $this->setConverter(new DefaultConverter());
@@ -116,6 +116,7 @@ abstract class AbstractRunner implements Runner, ProfilerAware
     public function setConverter(ConverterInterface $converter): void
     {
         $this->converter = new RunnerConverter($converter, $this->getPlatform()->getEscaper());
+        $this->converter->setClientTimeZone($this->configuration->getClientTimeZone());
     }
 
     /**

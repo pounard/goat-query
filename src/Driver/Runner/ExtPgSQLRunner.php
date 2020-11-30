@@ -6,6 +6,7 @@ namespace Goat\Driver\Runner;
 
 use Goat\Converter\ConverterInterface;
 use Goat\Converter\Driver\PgSQLConverter;
+use Goat\Driver\Configuration;
 use Goat\Driver\Platform\Platform;
 use Goat\Driver\Query\FormattedQuery;
 use Goat\Query\QueryError;
@@ -29,9 +30,9 @@ class ExtPgSQLRunner extends AbstractRunner
      * @param resource $resource
      *   pgsql extension connection resource.
      */
-    public function __construct(Platform $platform, $connection)
+    public function __construct(Platform $platform, Configuration $configuration, $connection)
     {
-        parent::__construct($platform);
+        parent::__construct($platform, $configuration);
 
         if (!\is_resource($connection)) {
             throw new QueryError(\sprintf("First parameter must be a resource, %s given", \gettype($connection)));

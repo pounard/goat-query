@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Goat\Runner\Testing;
 
+use Goat\Driver\Configuration;
 use Goat\Driver\Query\FormattedQuery;
 use Goat\Driver\Runner\AbstractRunner;
 use Goat\Runner\AbstractResultIterator;
@@ -15,7 +16,7 @@ class NullRunner extends AbstractRunner
      */
     public function __construct()
     {
-        parent::__construct(new NullPlatform());
+        parent::__construct(new NullPlatform(), new Configuration(['driver' => 'null']));
     }
 
     /**

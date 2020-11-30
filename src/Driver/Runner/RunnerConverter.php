@@ -24,16 +24,43 @@ final class RunnerConverter implements ConverterInterface
         $this->escaper = $escaper;
     }
 
+    /**
+     * {@inheritdoc}
+     * @deprecated
+     */
+    public function getClientTimeZone(): string
+    {
+        return $this->decorated->getClientTimeZone();
+    }
+
+    /**
+     * {@inheritdoc}
+     * @deprecated
+     */
+    public function setClientTimeZone(?string $clientTimeZone = null): void
+    {
+        $this->decorated->setClientTimeZone($clientTimeZone);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function guessType($value): string
     {
         return $this->decorated->guessType($value);
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function getPhpType(string $sqlType): ?string
     {
         return $this->decorated->getPhpType($sqlType);
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function toSQL(string $type, $value): ?string
     {
         if ('bytea' === $type || 'blob' === $type) {
@@ -42,6 +69,9 @@ final class RunnerConverter implements ConverterInterface
         return $this->decorated->toSQL($type, $value);
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function fromSQL(string $type, $value)
     {
         if ('bytea' === $type || 'blob' === $type) {

@@ -109,7 +109,9 @@ class PDODriver extends AbstractDriver
                 $this->escaper = new PDOMySQLEscaper($this->connection);
                 $this->platform = new MySQLPlatform($this->escaper, $serverVersion);
 
-                $runner = new PDOMySQLRunner($this->platform, $this->connection);
+                $runner = new PDOMySQLRunner($this->platform, $configuration, $this->connection);
+                $runner->execute("SET time_zone = " . $this->escaper->escapeLiteral($configuration->getClientTimeZone()));
+
                 $runner->setLogger($configuration->getLogger());
                 $this->runner = $runner;
                 break;
@@ -118,7 +120,9 @@ class PDODriver extends AbstractDriver
                 $this->escaper = new PDOPgSQLEscaper($this->connection);
                 $this->platform = new PgSQLPlatform($this->escaper, $serverVersion);
 
-                $runner = new PDOPgSQLRunner($this->platform, $this->connection);
+                $runner = new PDOPgSQLRunner($this->platform, $configuration, $this->connection);
+                $runner->execute("SET TIME ZONE " . $this->escaper->escapeLiteral($configuration->getClientTimeZone()));
+
                 $runner->setLogger($configuration->getLogger());
                 $this->runner = $runner;
                 break;

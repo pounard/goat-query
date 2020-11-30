@@ -7,6 +7,7 @@ Goat
 
    install/install
    datatype
+   dates
    query/index
    result
    hydrator/index

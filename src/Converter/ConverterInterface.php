@@ -13,6 +13,24 @@ interface ConverterInterface
     const TYPE_UNKNOWN = '_';
 
     /**
+     * Get client time zone.
+     *
+     * @deprecated
+     *   This exists to workaround wrong date behavior, but will be removed in
+     *   next major that will refactor the whole Converter namespace.
+     */
+    public function getClientTimeZone(): string;
+
+    /**
+     * Set client time zone, null resets.
+     *
+     * @deprecated
+     *   This exists to workaround wrong date behavior, but will be removed in
+     *   next major that will refactor the whole Converter namespace.
+     */
+    public function setClientTimeZone(?string $clientTimeZone = null): void;
+
+    /**
      * Get native PHP type
      *
      * @param string $type
