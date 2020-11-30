@@ -147,7 +147,7 @@ class DateValueConverterTest extends TestCase
         $instance = new DateValueConverter();
 
         self::assertSame(
-            $instance->toSQL('timestampz', $date, $converter),
+            $instance->toSQL('timestamptz', $date, $converter),
             '2020-11-27 11:42:34.000000'
         );
     }

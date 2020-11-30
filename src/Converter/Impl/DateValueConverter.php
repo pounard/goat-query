@@ -49,8 +49,10 @@ class DateValueConverter implements ValueConverterInterface
             case 'date':
             case 'datetime':
             case 'time':
+            case 'timestamp with time zone':
+            case 'timestamp without time zone':
             case 'timestamp':
-            case 'timestampz':
+            case 'timestamptz':
             case 'timez':
                 return \DateTimeImmutable::class;
 
@@ -68,8 +70,10 @@ class DateValueConverter implements ValueConverterInterface
             case 'date':
             case 'datetime':
             case 'time':
+            case 'timestamp with time zone':
+            case 'timestamp without time zone':
             case 'timestamp':
-            case 'timestampz':
+            case 'timestamptz':
             case 'timez':
                 return true;
 
@@ -98,8 +102,10 @@ class DateValueConverter implements ValueConverterInterface
 
         switch ($type) {
             case 'datetime':
+            case 'timestamp with time zone':
+            case 'timestamp without time zone':
             case 'timestamp':
-            case 'timestampz':
+            case 'timestamptz':
                 $userTimeZone = $this->getUserTimeZone($converter);
 
                 // Attempt all possible outcomes.
@@ -184,10 +190,11 @@ class DateValueConverter implements ValueConverterInterface
         }
 
         switch ($type) {
-
             case 'datetime':
+            case 'timestamp with time zone':
+            case 'timestamp without time zone':
             case 'timestamp':
-            case 'timestampz':
+            case 'timestamptz':
                 $userTimeZone = $this->getUserTimeZone($converter);
                 // If user given date time is not using the client timezone
                 // enfore conversion on the PHP side, since the SQL backend
@@ -232,7 +239,7 @@ class DateValueConverter implements ValueConverterInterface
     public function guessType($value, ConverterInterface $converter): ?string
     {
         // @todo from configuration.
-        return $value instanceof \DateTimeInterface ? 'timestampz' : null;
+        return $value instanceof \DateTimeInterface ? 'timestamptz' : null;
     }
 
     /**
