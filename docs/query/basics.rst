@@ -41,8 +41,8 @@ write arbitrary identifiers, they will be left untouched within the generated SQ
 .. note::
 
    **Each identifier, value, predicate, table, ... any method parameter can be replaced**
-   **by ``\Goat\Query\Expression`` instances: those objects will be considered as raw SQL**
-   **and formated as they should be independently of the context they were passed.**
+   **by** ``\Goat\Query\Expression`` **instances: those objects will be considered as raw**
+   **SQL and formated as they should be independently of the context they were passed.**
 
 This explicitely allow you to go beyond the query builder capabilities and write
 custom or specific arbitrary SQL.
@@ -79,6 +79,8 @@ rightful respective order at execute time.
       SELECT bar ?? foo WHERE baz = ?;
 
    will be sent to the driver rewritten as such:
+
+   .. code-block:: sql
 
       SELECT bar ? foo WHERE baz = 'your value';
 

@@ -176,9 +176,6 @@ Which will be left untouched in SQL sent to the server:
 
    select cast(1 as int)
 
-If your SQL backend does not support SQL standard cast please refer to its documentation.
+If your SQL backend does not support SQL standard type cast please refer to
+its documentation.
 
-Explicit result casting
-^^^^^^^^^^^^^^^^^^^^^^^
-
-See the :ref:`result iterator <result-iterator-cast>` chapter.

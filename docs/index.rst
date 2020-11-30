@@ -10,7 +10,6 @@ Goat
    dates
    query/index
    result
-   hydrator/index
 
 Introduction
 ^^^^^^^^^^^^
@@ -21,7 +20,7 @@ type-safe, stream-based result iterators able to hydrate objects.
 Top features are:
 
  * it provides a **database driver connector abstraction**, as of now supporting
-   **MySQL 5.7**, **PostgreSQL from 9.x to current**,
+   **MySQL** and **PostgreSQL**,
 
  * it provides a **complete, powerful and easy-to-use query builder**,
 
@@ -50,38 +49,13 @@ software design and approach:
  * types are important, this query builder focuses on validating and converting
    data types from PHP to SQL as well as from SQL to PHP.
 
-Future plans
-^^^^^^^^^^^^
-
-API is mostly stable, in use in production projects. 1.x version will continue
-to be maintained for bugfixes and maintenance only, while 2.x provides new
-features and some minimal API changes (for most users those changes will be
-completely transparent).
-
-2.x focuses on various visible and less visible improvements:
-
- - query builder public API method names are more coherent with each other,
-
- - driver and platform API aren't tied together anymore, SQL writer
-   implementations become driver agnostic and re-usable,
-
- - direct optional dependency to ocramius/generated-hydrator will be added for
-   having a much cleaner and more direct result hydration,
-
- - some basic schema introspection API will be added in a near future,
-
- - result iterators can be explicitely set as being rewindable, which consumes
-   more memory when done, but allow them to be rewinded and re-iterated,
-
- - API drops internal array usage and replaces them by properly typed objets
-   when applicable.
-
 Current driver support
 ^^^^^^^^^^^^^^^^^^^^^^
 
  * **MySQL 5.7** via **PDO**,
- * **PostgreSQL >= 9.5** via **PDO**.
- * **PostgreSQL >= 9.5** via **ext-pgsql**.
+ * **MySQL 5.8** via **PDO**,
+ * **PostgreSQL >= 9.5** (until current) via **PDO**,
+ * **PostgreSQL >= 9.5** (until current) via **ext-pgsql** *(recommended driver)*.
  
 Why the name?
 ^^^^^^^^^^^^^

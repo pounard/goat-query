@@ -17,21 +17,6 @@ Result iterator is an iterator of values, values can be either:
 
  * **any object** hydrated by the callback provided in the ``hydrator`` option.
 
-.. warning::
-
-   One very important fact to know: **a result can always be iterated only once**,
-   results are never kept into memory for performance reasons.
-
-If you need to iterate more than once over it, fetch the result as an array:
-
-.. code-block:: php
-
-   <?php
-
-   $result = $runner->execute("SELECT ...");
-
-   $array = \iterator_to_array($result);
-
 But it also a value object that carries some metadata, such as:
 
  * column names,
@@ -40,6 +25,41 @@ But it also a value object that carries some metadata, such as:
 
 Every value the SQL server will send back to you will be automatically converted
 to PHP native types using the converter. See the :ref:`data types matrix <data-typing>`.
+
+.. warning::
+
+   Per default: **a result can always be iterated only once**, results are not
+   kept into memory for performance reasons.
+
+If you need to iterate more than once over it, call the ``ResultIterator::setRewindable()``
+method on your result:
+
+.. code-block:: php
+
+   <?php
+
+   $result = $runner
+       ->execute("SELECT ...")
+       ->setRewindable()
+   ;
+
+   foreach ($result as $row) {
+       // First iteration will work as expected.
+   }
+
+   foreach ($result as $row) {
+       // Second, third, ... iteration will work as well.
+   }
+
+Using the ``ResultIterator::setRewindable()`` method will not impact speed for
+small results, but will raise memory usage.
+
+.. warning::
+
+   When you enable the rewindable behavior of a result iterator, all results
+   will be kept in memory until the ``ResultIterator`` is being garbage
+   collected, this is something your need to think about carefuly before
+   using.
 
 Fetching data
 ^^^^^^^^^^^^^
@@ -196,14 +216,6 @@ Will give you:
 Hydrating rows
 ^^^^^^^^^^^^^^
 
-Using a custom hydrator
-#######################
-
-@todo
-
-Using a callback
-################
-
 You may arbitrarily use any callable for hydrating rows, callable signature must be:
 
 .. code-block:: php
@@ -259,7 +271,8 @@ But you also may directly call ``ResultIteratorInterface::setHydrator()`` this w
        })
    ;
 
-Result type casting
-^^^^^^^^^^^^^^^^^^^
+.. note::
 
-@todo
+   You can also use ``ocramius/generated-hydrator`` for hydrating results using the
+   ``class`` option on queries, this is undocumented yet. If you are using this
+   library standalone, it will not work until you set it up right.
