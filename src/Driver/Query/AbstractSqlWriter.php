@@ -85,7 +85,7 @@ abstract class AbstractSqlWriter implements SqlWriter
             // Timestamp
             case 'datetime':
             case 'timestamp':
-            case 'timestampz':
+            case 'timestamptz':
                 return 'timestamp';
 
             // Date without time
