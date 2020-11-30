@@ -8,15 +8,12 @@ use Goat\Converter\ConverterInterface;
 use Goat\Driver\Platform\Escaper\Escaper;
 
 /**
- * Transparently handles runner specificities.
+ * Transparently handles blob/bytea conversion.
  */
 final class RunnerConverter implements ConverterInterface
 {
-    /** @var ConverterInterface */
-    private $decorated;
-
-    /** @var Escaper */
-    private $escaper;
+    private ConverterInterface $decorated;
+    private Escaper $escaper;
 
     public function __construct(ConverterInterface $decorated, Escaper $escaper)
     {
