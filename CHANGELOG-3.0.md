@@ -238,6 +238,45 @@ $queryBuilder
 You can `UNION` with any expression, constant table, raw expression or anything
 else. You may call the `union()` method as many time as you wish to.
 
+## Date handling
+
+Date and time handling has been fully rewritten to be more consistent with
+SQL-92 time zone handling:
+
+ - you can, and you should specify a *client time zone* in driver configuration,
+   if you fail to do so, it will fallback on PHP default time zone,
+
+ - client time zone will always be set at the session level using SQL standard
+   ``SET TIME ZONE 'Foo';`` statement when connecting, non standard SQL dialects
+   will be handled by their respective drivers,
+
+ - when using ``timestamp with time zone`` SQL-92 standard type, time offset
+   will be honored when returning dates and times from the SQL server,
+
+ - when using ``timestamp without time zone`` SQL-92 standard type, more
+   commonly known as simply ``datetime``, the converter will always consider
+   that returned date strings are always converted to the client time zone,
+   and thus will not be converted in any way,
+
+ - when a date and time is returned from the SQL server with a different time
+   zone than the configured client time zone, the PHP date time object time
+   zone will be converter the client time zone one, respecting time offset
+   and not altering the underlaying UTC date.
+
+## Converter changes
+
+``\Goat\Converter\ConverterContext`` class has been added, and carry session and
+runtime information for converters to act upon.
+
+``\Goat\Converter\ValueConverterInterface`` and ``\Goat\Converter\ConverterInterface``
+classes now share a common base interface, all methods now require a new
+``\Goat\Converter\ConverterContext`` parameter.
+
+Since the ``\Goat\Converter\ValueConverterInterface`` changed, all existing
+custom converters must be adapted to the new interface. Behavior remain the
+same, only the new context parameter has been added, and ``getPhpType()``
+method has been dropped.
+
 ## Faster query formatter
 
 `ArgumentBag`, `ArgumentList` and a few other classes you were not supposed to
@@ -271,3 +310,10 @@ query.
 
 Note that it also make the query formatting a tiny bit faster, even thought
 there's no chance you'll ever notice it.
+
+## Testing improvements
+
+A docker environement using docker-composer is provided for running unit and
+functional tests. You may or may not use it. Authoritative way for running test
+remains PHPUnit, configured via environment variables. Please read
+``TESTING.md`` file for more information.
