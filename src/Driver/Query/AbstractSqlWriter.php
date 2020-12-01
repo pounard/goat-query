@@ -57,7 +57,7 @@ abstract class AbstractSqlWriter implements SqlWriter
      * Uses the connection driven escape sequences to build the parameter
      * matching regex.
      */
-    final private function buildParameterRegex(): void
+    private function buildParameterRegex(): void
     {
         // Please see this really excellent Stack Overflow answer:
         //   https://stackoverflow.com/a/23589204
@@ -101,7 +101,7 @@ abstract class AbstractSqlWriter implements SqlWriter
      *   First value is the query string, second is the reworked array
      *   of parameters, if conversions were needed
      */
-    final private function rewriteQueryAndParameters(string $formattedSQL, ArgumentBag $arguments): string
+    private function rewriteQueryAndParameters(string $formattedSQL, ArgumentBag $arguments): string
     {
         $index = 0;
 

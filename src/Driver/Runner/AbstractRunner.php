@@ -166,7 +166,7 @@ abstract class AbstractRunner implements Runner, ProfilerAware
     /**
      * Get current transaction if any
      */
-    final private function findCurrentTransaction(): ?Transaction
+    private function findCurrentTransaction(): ?Transaction
     {
         if ($this->currentTransaction) {
             if ($this->currentTransaction->isStarted()) {
