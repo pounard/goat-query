@@ -73,14 +73,14 @@ foreach ($result as $user) {
 
 For advanced documentation, please see the `./docs/` folder.
 
-# Roadamp
+# Roadmap
 
  - 2.0 - bumps requirement to PHP 7.4,
- - 2.0 - will include MERGE query support, functional testing, driver and platform
+ - 2.1 - includes MERGE query support, functional testing, driver and platform
    segregation, as well as many fixes, and deprecated some 1.x methods,
- - 2.1 - will include many minor features additions,
- - 2.2 - may include a schema introspector,
- - 3.0 - will drop 1.x deprecations.
+ - 3.0 - is a major overhaul of sql writer, converter context, and query builder,
+ - 3.1 - will be a features with many shortcuts and sugar candy additions,
+ - 4.0 - may contain schema introspector.
 
 # Driver organisation
 
@@ -118,7 +118,7 @@ In other words:
 
 # Framework integration
 
- - Symfony bundle in https://github.com/makinacorpus/php-goat/
+ - Symfony bundle in https://github.com/pounard/goat-query-bundle
 
 # Upgrade
 
@@ -136,6 +136,12 @@ In other words:
  - 3.x removes the `\Goat\Query\ArgumentBag`, `\Goat\Query\ArgumentList`,
    `\Goat\Query\Value`, `\Goat\Query\ValueRepresentation` classes and
    interfaces, people using those must adapt their code.
+
+ - 3.x changes the ``\Goat\Converter\ValueConverterInterface`` contracts
+   slightly, you need to adapt your existing custom value converters,
+
+ - 3.x completely changes date handling, for most people, it should go
+   unnoticed and fix many bugs,
 
  - Generally speaking, this will be the last version providing backward
    compatible deprecated code, following deprecation notices and the `@deprecated`
