@@ -36,7 +36,7 @@ trait AliasHolderTrait
 
             $alias = $this->createAliasForName($tableName, $alias ?? $tableAlias);
 
-            return new TableExpression($tableName, $alias, $table->getSchema());
+            return new TableExpression($table->getName(), $alias, $table->getSchema());
         }
 
         if ($table instanceof Expression) {
@@ -77,7 +77,7 @@ trait AliasHolderTrait
 
             $alias = $this->createAliasForName($tableName, $alias ?? $tableAlias);
 
-            return new TableExpression($tableName, $alias, $table->getSchema());
+            return new TableExpression($table->getName(), $alias, $table->getSchema());
         }
 
         if (\is_string($table)) {
