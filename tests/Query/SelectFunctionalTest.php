@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Goat\Query\Tests;
 
+use Goat\Converter\Tests\WithConverterTestTrait;
 use Goat\Driver\Query\DefaultSqlWriter;
 use Goat\Query\Query;
 use Goat\Query\SelectQuery;
@@ -11,11 +12,11 @@ use Goat\Query\Expression\ColumnExpression;
 use Goat\Query\Expression\RawExpression;
 use Goat\Runner\Testing\NullEscaper;
 use PHPUnit\Framework\TestCase;
-use Goat\Converter\DefaultConverter;
 
 final class SelectFunctionalTest extends TestCase
 {
     use BuilderTestTrait;
+    use WithConverterTestTrait;
 
     public function testSimpleQuery(): void
     {
@@ -74,17 +75,17 @@ final class SelectFunctionalTest extends TestCase
 
         $formatted = $formatter->prepare($query);
         self::assertSameSql($reference, $formatted->toString());
-        self::assertSame($referenceArguments, $formatted->prepareArgumentsWith(new DefaultConverter()));
+        self::assertSame($referenceArguments, $formatted->prepareArgumentsWith(self::context()));
 
         $countQuery = $query->getCountQuery();
         $formatted = $formatter->prepare($countQuery);
         self::assertSameSql($countReference, $formatted->toString());
-        self::assertSame($referenceArguments, $formatted->prepareArgumentsWith(new DefaultConverter()));
+        self::assertSame($referenceArguments, $formatted->prepareArgumentsWith(self::context()));
 
         $clonedQuery = clone $query;
         $formatted = $formatter->prepare($query);
         self::assertSameSql($reference, $formatted->toString());
-        self::assertSame($referenceArguments, $formatted->prepareArgumentsWith(new DefaultConverter()));
+        self::assertSame($referenceArguments, $formatted->prepareArgumentsWith(self::context()));
 
         // We have to reset the reference because using a more buildish way we
         // do set precise where conditions on join conditions, and field names
@@ -145,17 +146,17 @@ final class SelectFunctionalTest extends TestCase
 
         $formatted = $formatter->prepare($query);
         self::assertSameSql($reference, $formatted->toString());
-        self::assertSame($referenceArguments, $formatted->prepareArgumentsWith(new DefaultConverter()));
+        self::assertSame($referenceArguments, $formatted->prepareArgumentsWith(self::context()));
 
         $countQuery = $query->getCountQuery();
         $formatted = $formatter->prepare($countQuery);
         self::assertSameSql($countReference, $formatted->toString());
-        self::assertSame($referenceArguments, $formatted->prepareArgumentsWith(new DefaultConverter()));
+        self::assertSame($referenceArguments, $formatted->prepareArgumentsWith(self::context()));
 
         $clonedQuery = clone $query;
         $formatted = $formatter->prepare($clonedQuery);
         self::assertSameSql($reference, $formatted->toString());
-        self::assertSame($referenceArguments, $formatted->prepareArgumentsWith(new DefaultConverter()));
+        self::assertSame($referenceArguments, $formatted->prepareArgumentsWith(self::context()));
 
         // Same without alias
         $reference = <<<EOT
@@ -207,17 +208,17 @@ final class SelectFunctionalTest extends TestCase
 
         $formatted = $formatter->prepare($query);
         self::assertSameSql($reference, $formatted->toString());
-        self::assertSame($referenceArguments, $formatted->prepareArgumentsWith(new DefaultConverter()));
+        self::assertSame($referenceArguments, $formatted->prepareArgumentsWith(self::context()));
 
         $countQuery = $query->getCountQuery();
         $formatted = $formatter->prepare($countQuery);
         self::assertSameSql($countReference, $formatted->toString());
-        self::assertSame($referenceArguments, $formatted->prepareArgumentsWith(new DefaultConverter()));
+        self::assertSame($referenceArguments, $formatted->prepareArgumentsWith(self::context()));
 
         $clonedQuery = clone $query;
         $formatted = $formatter->prepare($clonedQuery);
         self::assertSameSql($reference, $formatted->toString());
-        self::assertSame($referenceArguments, $formatted->prepareArgumentsWith(new DefaultConverter()));
+        self::assertSame($referenceArguments, $formatted->prepareArgumentsWith(self::context()));
     }
 
     public function testWith(): void

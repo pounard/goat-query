@@ -101,16 +101,15 @@ abstract class AbstractSqlWriter implements SqlWriter
      *   First value is the query string, second is the reworked array
      *   of parameters, if conversions were needed
      */
-    final private function rewriteQueryAndParameters(string $formattedSQL): array
+    final private function rewriteQueryAndParameters(string $formattedSQL, ArgumentBag $arguments): string
     {
         $index = 0;
-        $types = [];
 
         // See https://stackoverflow.com/a/3735908 for the  starting
         // sequence explaination, the rest should be comprehensible.
         $preparedSQL = \preg_replace_callback(
             $this->matchParametersRegex,
-            function ($matches) use (&$index, &$types) {
+            function ($matches) use (&$index, $arguments) {
                 $match  = $matches[0];
 
                 if ('??' === $match) {
@@ -120,14 +119,14 @@ abstract class AbstractSqlWriter implements SqlWriter
                     return $match;
                 }
 
-                $types[$index] = empty($matches[6]) ? null : $matches[6];
+                $arguments->setTypeAt($index, empty($matches[6]) ? null : $matches[6]);
 
                 return $this->escaper->writePlaceholder($index++);
             },
             $formattedSQL
         );
 
-        return [$preparedSQL, $types];
+        return $preparedSQL;
     }
 
     /**
@@ -135,10 +134,11 @@ abstract class AbstractSqlWriter implements SqlWriter
      */
     final public function prepare($query, ?WriterContext $context = null): FormattedQuery
     {
-        $preparedSQL = $types = $arguments = $identifier = null;
+        $preparedSQL = $arguments = $identifier = null;
 
         if (\is_string($query)) {
-            list($preparedSQL, $types) = $this->rewriteQueryAndParameters($query);
+            $arguments = new ArgumentBag();
+            $preparedSQL = $this->rewriteQueryAndParameters($query, $arguments);
         } else if ($query instanceof Statement) {
             if ($query instanceof Query) {
                 $identifier = $query->getIdentifier();
@@ -148,11 +148,11 @@ abstract class AbstractSqlWriter implements SqlWriter
             $rawSql = $this->format($query, $context);
             $arguments = $context->getArgumentBag();
 
-            list($preparedSQL, $types) = $this->rewriteQueryAndParameters($rawSql);
+            $preparedSQL = $this->rewriteQueryAndParameters($rawSql, $arguments);
         } else {
             throw new QueryError(\sprintf("query must be a bare string or an instance of %s", Statement::class));
         }
 
-        return new FormattedQuery($preparedSQL, $types, $identifier, $arguments);
+        return new FormattedQuery($preparedSQL, $identifier, $arguments);
     }
 }

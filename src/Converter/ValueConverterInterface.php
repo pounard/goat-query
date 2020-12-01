@@ -7,43 +7,22 @@ namespace Goat\Converter;
 interface ValueConverterInterface
 {
     /**
-     * Get native PHP type.
-     */
-    public function getPhpType(string $type, ConverterInterface $converter): ?string;
-
-    /**
      * Can this value converter handle this type.
      */
-    public function isTypeSupported(string $type, ConverterInterface $converter): bool;
+    public function isTypeSupported(string $type, ConverterContext $context): bool;
 
     /**
      * From the given raw SQL string, get the PHP value.
-     *
-     * @param string $type
-     * @param mixed $value
-     *   This can't be type hinted, because some drivers will convert
-     *   scalar types by themselves?
-     * @param ConverterInterface $converter
-     *   Global converter, in case you need it to handle subtypes.
-     *
-     * @return mixed
      */
-    public function fromSQL(string $type, $value, ConverterInterface $converter);
+    public function fromSQL(string $type, /* null|int|float|string */ $value, ConverterContext $context) /* : mixed */;
 
     /**
      * From the given PHP value, get the raw SQL string.
-     *
-     * @param string $type
-     * @param mixed $value
-     * @param ConverterInterface $converter
-     *   Global converter, in case you need it to handle subtypes.
-     *
-     * @return string
      */
-    public function toSQL(string $type, $value, ConverterInterface $converter): ?string;
+    public function toSQL(string $type, /* mixed */ $value, ConverterContext $context): ?string;
 
     /**
-     * Can this value converter handle this value.
+     * Guess SQL type for the given value.
      */
-    public function guessType($value, ConverterInterface $converter): ?string;
+    public function guessType($value, ConverterContext $context): string;
 }

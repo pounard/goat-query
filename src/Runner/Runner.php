@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Goat\Runner;
 
 use Goat\Converter\ConverterInterface;
+use Goat\Converter\ValueConverterRegistry;
 use Goat\Driver\Platform\Platform;
 use Goat\Query\QueryBuilder;
 use Goat\Runner\Hydrator\HydratorRegistry;
@@ -23,6 +24,11 @@ interface Runner
     public function getPlatform(): Platform;
 
     /**
+     * Get current session configuration.
+     */
+    public function getSessionConfiguration(): SessionConfiguration;
+
+    /**
      * Is debug mode enabled
      */
     public function isDebugEnabled(): bool;
@@ -38,6 +44,11 @@ interface Runner
     public function isResultMetadataSlow(): bool;
 
     /**
+     * Set value converter registry.
+     */
+    public function setValueConverterRegistry(ValueConverterRegistry $valueConverterRegistry): void;
+
+    /**
      * Set result metadata cache.
      */
     public function setResultMetadataCache(ResultMetadataCache $metadataCache): void;
@@ -46,11 +57,6 @@ interface Runner
      * Set hydrator registry.
      */
     public function setHydratorRegistry(HydratorRegistry $hydratorRegistry): void;
-
-    /**
-     * Set converter.
-     */
-    public function setConverter(ConverterInterface $converter): void;
 
     /**
      * Get converter

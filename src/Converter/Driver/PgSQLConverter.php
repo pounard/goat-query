@@ -2,81 +2,21 @@
 
 namespace Goat\Converter\Driver;
 
-use Goat\Converter\ConverterInterface;
 use Goat\Converter\DefaultConverter;
-use Goat\Converter\TypeConversionError;
+use Goat\Converter\ValueConverterRegistry;
 
 /**
  * PostgreSQL all versions converter.
  */
-class PgSQLConverter implements ConverterInterface
+class PgSQLConverter extends DefaultConverter
 {
-    private ConverterInterface $default;
-
-    /**
-     * Default constructor
-     */
-    public function __construct(ConverterInterface $default)
-    {
-        if (!$default instanceof DefaultConverter) {
-            throw new TypeConversionError(\sprintf(
-                "Converter must be an instance of '%s'",
-                DefaultConverter::class
-            ));
-        }
-
-        $default->register(new PgSQLArrayConverter());
-
-        $this->default = $default;
-    }
-
-    /**
-     * {@inheritdoc}
-     * @deprecated
-     */
-    public function getClientTimeZone(): string
-    {
-        return $this->default->getClientTimeZone();
-    }
-
-    /**
-     * {@inheritdoc}
-     * @deprecated
-     */
-    public function setClientTimeZone(?string $clientTimeZone = null): void
-    {
-        $this->default->setClientTimeZone($clientTimeZone);
-    }
-
     /**
      * {@inheritdoc}
      */
-    public function getPhpType(string $sqlType): ?string
+    public function setValueConverterRegistry(ValueConverterRegistry $valueConverterRegistry): void
     {
-        return $this->default->getPhpType($sqlType);
-    }
+        $valueConverterRegistry->register(new PgSQLArrayConverter());
 
-    /**
-     * {@inheritdoc}
-     */
-    public function fromSQL(string $type, $value)
-    {
-        return $this->default->fromSQL($type, $value);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function guessType($value): string
-    {
-        return $this->default->guessType($value);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function toSQL(string $type, $value): ?string
-    {
-        return $this->default->toSQL($type, $value);
+        parent::setValueConverterRegistry($valueConverterRegistry);
     }
 }

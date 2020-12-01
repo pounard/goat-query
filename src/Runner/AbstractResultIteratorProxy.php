@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Goat\Runner;
 
-use Goat\Converter\ConverterInterface;
+use Goat\Converter\ConverterContext;
 use Goat\Driver\Instrumentation\QueryProfiler;
 use Goat\Query\QueryError;
 use Goat\Runner\Metadata\ResultMetadata;
@@ -69,9 +69,9 @@ abstract class AbstractResultIteratorProxy implements ResultIterator, \IteratorA
     /**
      * {@inheritdoc}
      */
-    final public function setConverter(ConverterInterface $converter): ResultIterator
+    final public function setConverterContext(ConverterContext $context): ResultIterator
     {
-        $this->getResult()->setConverter($converter);
+        $this->getResult()->setConverterContext($context);
 
         return $this;
     }

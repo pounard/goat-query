@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Goat\Runner;
 
 use Goat\Converter\ConverterInterface;
+use Goat\Converter\ValueConverterRegistry;
 use Goat\Driver\Platform\Platform;
 use Goat\Driver\Runner\AbstractRunner;
 use Goat\Query\QueryBuilder;
@@ -55,17 +56,17 @@ abstract class AbstractRunnerProxy implements Runner
     /**
      * {@inheritdoc}
      */
-    public function setResultMetadataCache(ResultMetadataCache $metadataCache): void
+    public function setValueConverterRegistry(ValueConverterRegistry $valueConverterRegistry): void
     {
-        $this->decorated->setResultMetadataCache($metadataCache);
+        $this->decorated->setValueConverterRegistry($valueConverterRegistry);
     }
 
     /**
      * {@inheritdoc}
      */
-    public function setConverter(ConverterInterface $converter): void
+    public function setResultMetadataCache(ResultMetadataCache $metadataCache): void
     {
-        $this->decorated->setConverter($converter);
+        $this->decorated->setResultMetadataCache($metadataCache);
     }
 
     /**
@@ -90,6 +91,14 @@ abstract class AbstractRunnerProxy implements Runner
     public function getPlatform(): Platform
     {
         return $this->decorated->getPlatform();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getSessionConfiguration(): SessionConfiguration
+    {
+        return $this->decorated->getSessionConfiguration();
     }
 
     /**

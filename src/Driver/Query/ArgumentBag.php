@@ -74,6 +74,28 @@ final class ArgumentBag
     }
 
     /**
+     * Get types.
+     */
+    public function getTypes(): array
+    {
+        return $this->types;
+    }
+
+    /**
+     * Set type at index if not set.
+     */
+    public function setTypeAt(int $index, ?string $type): void
+    {
+        if (!\array_key_exists($index, $this->types)) {
+            $this->types[$index] = $type;
+            // Avoid PHP warnings in certain circumstances.
+            if (!\array_key_exists($index, $this->data)) {
+                $this->data[$index] = null;
+            }
+        }
+    }
+
+    /**
      * Get datatype for given index.
      */
     public function getTypeAt(int $index): ?string

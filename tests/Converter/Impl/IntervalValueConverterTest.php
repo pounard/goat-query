@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace Goat\Converter\Tests\Impl;
 
-use Goat\Converter\DefaultConverter;
 use Goat\Converter\TypeConversionError;
 use Goat\Converter\Impl\IntervalValueConverter;
+use Goat\Converter\Tests\WithConverterTestTrait;
 use PHPUnit\Framework\TestCase;
 
-class IntervalValueConverterTest extends TestCase
+final class IntervalValueConverterTest extends TestCase
 {
+    use WithConverterTestTrait;
+
     /**
      * Data provider
      */
@@ -28,12 +30,12 @@ class IntervalValueConverterTest extends TestCase
     /**
      * @dataProvider getValidFromSQLData
      */
-    public function testFromSQL(string $value, string $expected)
+    public function testFromSQL(string $value, string $expected): void
     {
-        $defaultConverter = new DefaultConverter();
         $converter = new IntervalValueConverter();
+        $context = self::context();
 
-        $extracted = $converter->fromSQL('interval', $value, $defaultConverter);
+        $extracted = $converter->fromSQL('interval', $value, $context);
         $this->assertInstanceOf(\DateInterval::class, $extracted);
         $this->assertSame($expected, IntervalValueConverter::formatIntervalAsISO8601($extracted));
     }
@@ -52,13 +54,13 @@ class IntervalValueConverterTest extends TestCase
     /**
      * @dataProvider getValidToSQLData
      */
-    public function testValidToSQL($expected, $value)
+    public function testValidToSQL($expected, $value): void
     {
-        $defaultConverter = new DefaultConverter();
         $converter = new IntervalValueConverter();
+        $context = self::context();
 
         // Converter only supports PHP \DateInterval structures as input
-        $this->assertSame($expected, $converter->toSQL('interval', $value, $defaultConverter));
+        $this->assertSame($expected, $converter->toSQL('interval', $value, $context));
     }
 
     /**
@@ -79,12 +81,12 @@ class IntervalValueConverterTest extends TestCase
     /**
      * @dataProvider getInvalidToSQLData
      */
-    public function testInvalidToSQL($invalidValue)
+    public function testInvalidToSQL($invalidValue): void
     {
-        $defaultConverter = new DefaultConverter();
         $converter = new IntervalValueConverter();
+        $context = self::context();
 
         $this->expectException(TypeConversionError::class);
-        $converter->toSQL('interval', $invalidValue, $defaultConverter);
+        $converter->toSQL('interval', $invalidValue, $context);
     }
 }

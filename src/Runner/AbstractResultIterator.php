@@ -9,6 +9,7 @@ use Goat\Query\QueryError;
 use Goat\Runner\Hydrator\ResultHydrator;
 use Goat\Runner\Metadata\DefaultResultMetadata;
 use Goat\Runner\Metadata\ResultMetadata;
+use Goat\Converter\ConverterContext;
 
 abstract class AbstractResultIterator implements ResultIterator, \Iterator
 {
@@ -26,7 +27,7 @@ abstract class AbstractResultIterator implements ResultIterator, \Iterator
     private array $userTypeMap = [];
 
     // Object hydration and value convertion.
-    protected ?ConverterInterface $converter = null;
+    protected ?ConverterContext $context = null;
     private ?ResultHydrator $hydrator = null;
 
     // Iterator properties.
@@ -154,9 +155,9 @@ abstract class AbstractResultIterator implements ResultIterator, \Iterator
     /**
      * {@inheritdoc}
      */
-    public function setConverter(ConverterInterface $converter): ResultIterator
+    public function setConverterContext(ConverterContext $context): ResultIterator
     {
-        $this->converter = $converter;
+        $this->context = $context;
 
         return $this;
     }
@@ -190,8 +191,8 @@ abstract class AbstractResultIterator implements ResultIterator, \Iterator
         if (!$this->iterationStarted) {
             $this->iterationStarted = true;
         }
-        if ($this->converter) {
-            return $this->converter->fromSQL($this->getColumnType($name), $value);
+        if ($this->context) {
+            return $this->context->getConverter()->fromSQL($this->getColumnType($name), $value, $this->context);
         }
         return $value;
     }
@@ -208,11 +209,13 @@ abstract class AbstractResultIterator implements ResultIterator, \Iterator
     final protected function hydrate(array $row)
     {
         $ret = [];
-        if ($this->converter) {
+        if ($this->context) {
+            $converter = $this->context->getConverter();
+
             foreach ($row as $name => $value) {
                 $name = (string)$name; // Column name can be an integer (eg. SELECT 1 ...).
                 if (null !== $value) {
-                    $ret[$name] = $this->converter->fromSQL($this->getColumnType($name), $value);
+                    $ret[$name] = $converter->fromSQL($this->getColumnType($name), $value, $this->context);
                 } else {
                     $ret[$name] = null;
                 }

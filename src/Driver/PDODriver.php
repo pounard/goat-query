@@ -13,6 +13,7 @@ use Goat\Driver\Platform\Escaper\PDOPgSQLEscaper;
 use Goat\Driver\Runner\PDOMySQLRunner;
 use Goat\Driver\Runner\PDOPgSQLRunner;
 use Goat\Runner\Runner;
+use Goat\Runner\SessionConfiguration;
 
 class PDODriver extends AbstractDriver
 {
@@ -103,14 +104,25 @@ class PDODriver extends AbstractDriver
         $configuration = $this->getConfiguration();
         $serverVersion = $this->getServerVersion();
 
-        switch ($driver = $configuration->getDriver()) {
+        $driver = $configuration->getDriver();
+        $clientEncoding = $configuration->getClientEncoding();
+        $clientTimeZone = $configuration->getClientTimeZone();
+
+        $sessionConfiguration = new SessionConfiguration(
+            $clientEncoding,
+            $clientTimeZone,
+            $driver,
+            []
+        );
+
+        switch ($driver) {
 
             case 'mysql':
                 $this->escaper = new PDOMySQLEscaper($this->connection);
                 $this->platform = new MySQLPlatform($this->escaper, $serverVersion);
 
-                $runner = new PDOMySQLRunner($this->platform, $configuration, $this->connection);
-                $runner->execute("SET time_zone = " . $this->escaper->escapeLiteral($configuration->getClientTimeZone()));
+                $runner = new PDOMySQLRunner($this->platform, $sessionConfiguration, $this->connection);
+                $runner->execute("SET time_zone = " . $this->escaper->escapeLiteral($clientTimeZone));
 
                 $runner->setLogger($configuration->getLogger());
                 $this->runner = $runner;
@@ -120,8 +132,8 @@ class PDODriver extends AbstractDriver
                 $this->escaper = new PDOPgSQLEscaper($this->connection);
                 $this->platform = new PgSQLPlatform($this->escaper, $serverVersion);
 
-                $runner = new PDOPgSQLRunner($this->platform, $configuration, $this->connection);
-                $runner->execute("SET TIME ZONE " . $this->escaper->escapeLiteral($configuration->getClientTimeZone()));
+                $runner = new PDOPgSQLRunner($this->platform, $sessionConfiguration, $this->connection);
+                $runner->execute("SET TIME ZONE " . $this->escaper->escapeLiteral($clientTimeZone));
 
                 $runner->setLogger($configuration->getLogger());
                 $this->runner = $runner;
@@ -147,16 +159,11 @@ class PDODriver extends AbstractDriver
             $configuration->getPassword()
         );
 
-        /*
-        $connection->query(\sprintf(
-            "SET character_set_client = %s",
-            $connection->quote($configuration->getClientEncoding())
-        ));
-         */
-
         $connection->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
 
         /*
+         * @todo?
+         *
         foreach ($configuration->getDriverOptions() as $attribute => $value) {
             $connection->setAttribute($attribute, $value);
         }

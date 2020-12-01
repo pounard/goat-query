@@ -21,9 +21,9 @@ class PDOPgSQLRunner extends AbstractPDORunner
     /**
      * {@inheritdoc}
      */
-    public function setConverter(ConverterInterface $converter): void
+    protected function doCreateConverter(): ConverterInterface
     {
-        parent::setConverter(new PgSQLConverter($converter));
+        return new PgSQLConverter();
     }
 
     /**

@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace Goat\Converter\Tests;
 
 use Goat\Converter\ConverterInterface;
-use Goat\Converter\DefaultConverter;
-use Goat\Converter\Impl\IntervalValueConverter;
 use PHPUnit\Framework\TestCase;
 
 class DefaultConverterTest extends TestCase
@@ -24,15 +22,18 @@ class DefaultConverterTest extends TestCase
         'decimal', 'double', 'float4', 'float8', 'numeric', 'real'
     ];
 
-    public function testNullConversion()
-    {
-        $converter = new DefaultConverter();
+    use WithConverterTestTrait;
 
-        $this->assertNull($converter->fromSQL(ConverterInterface::TYPE_NULL, "null"));
-        $this->assertNull($converter->fromSQL(ConverterInterface::TYPE_NULL, "some string"));
-        $this->assertNull($converter->fromSQL(ConverterInterface::TYPE_NULL, 12));
-        $this->assertNull($converter->toSQL(ConverterInterface::TYPE_NULL, null));
-        $this->assertSame(ConverterInterface::TYPE_NULL, $converter->guessType(null));
+    public function testNullConversion(): void
+    {
+        $converter = self::defaultConverter();
+        $context = self::context($converter);
+
+        self::assertNull($converter->fromSQL(ConverterInterface::TYPE_NULL, "null", $context));
+        self::assertNull($converter->fromSQL(ConverterInterface::TYPE_NULL, "some string", $context));
+        self::assertNull($converter->fromSQL(ConverterInterface::TYPE_NULL, 12, $context));
+        self::assertNull($converter->toSQL(ConverterInterface::TYPE_NULL, null, $context));
+        self::assertSame(ConverterInterface::TYPE_NULL, $converter->guessType(null, $context));
     }
 
     /**
@@ -46,11 +47,13 @@ class DefaultConverterTest extends TestCase
     /**
      * @dataProvider getIntTypes
      */
-    public function testIntConversion($type)
+    public function testIntConversion($type): void
     {
-        $converter = new DefaultConverter();
-        $this->assertSame("12", $converter->toSQL($type, 12));
-        $this->assertSame(12, $converter->fromSQL($type, "12"));
+        $converter = self::defaultConverter();
+        $context = self::context($converter);
+
+        self::assertSame("12", $converter->toSQL($type, 12, $context));
+        self::assertSame(12, $converter->fromSQL($type, "12", $context));
     }
 
     /**
@@ -64,36 +67,38 @@ class DefaultConverterTest extends TestCase
     /**
      * @dataProvider getStringTypes
      */
-    public function testStringConversion($type)
+    public function testStringConversion($type): void
     {
-        $converter = new DefaultConverter();
-        $this->assertSame("Yeah !", $converter->toSQL($type, "Yeah !"));
-        $this->assertSame("Booh...", $converter->fromSQL($type, "Booh..."));
+        $converter = self::defaultConverter();
+        $context = self::context($converter);
+
+        self::assertSame("Yeah !", $converter->toSQL($type, "Yeah !", $context));
+        self::assertSame("Booh...", $converter->fromSQL($type, "Booh...", $context));
     }
 
-    public function testUuidConversion()
+    public function testUuidConversion(): void
     {
-        $this->markTestSkipped("Implement me");
+        self::markTestSkipped("Implement me");
     }
 
-    public function testJsonConversion()
+    public function testJsonConversion(): void
     {
-        $this->markTestSkipped("Implement me");
+        self::markTestSkipped("Implement me");
     }
 
-    public function testBoolConversion()
+    public function testBoolConversion(): void
     {
-        $this->markTestSkipped("Implement me");
+        self::markTestSkipped("Implement me");
     }
 
-    public function testDatetimeConversion()
+    public function testDatetimeConversion(): void
     {
-        $this->markTestSkipped("Implement me");
+        self::markTestSkipped("Implement me");
     }
 
-    public function testDateConversion()
+    public function testDateConversion(): void
     {
-        $this->markTestSkipped("Implement me");
+        self::markTestSkipped("Implement me");
     }
 
     /**
@@ -107,64 +112,67 @@ class DefaultConverterTest extends TestCase
     /**
      * @dataProvider getDecimalAndFloatTypes
      */
-    public function testDecimalAndFloatConversion($type)
+    public function testDecimalAndFloatConversion($type): void
     {
-        $converter = new DefaultConverter();
+        $converter = self::defaultConverter();
+        $context = self::context($converter);
 
-        $this->assertSame("12.3456789", $converter->toSQL($type, 12.3456789));
-        $value = $converter->fromSQL($type, "12.3456789");
-        $this->assertTrue(\is_float($value));
-        $this->assertEquals(12.3456789, $value);
+        self::assertSame("12.3456789", $converter->toSQL($type, 12.3456789, $context));
+        $value = $converter->fromSQL($type, "12.3456789", $context);
+        self::assertTrue(\is_float($value));
+        self::assertEquals(12.3456789, $value);
 
         // Integer will go through
         // Integer will be given as float once converted back from SQL
-        $this->assertSame("42", $converter->toSQL($type, 42));
-        $value = $converter->fromSQL($type, "42");
-        $this->assertTrue(\is_float($value));
-        $this->assertEquals(42, $value);
+        self::assertSame("42", $converter->toSQL($type, 42, $context));
+        $value = $converter->fromSQL($type, "42", $context);
+        self::assertTrue(\is_float($value));
+        self::assertEquals(42, $value);
     }
 
-    public function testUnknownTypeConversionToString()
+    public function testUnknownTypeConversionToString(): void
     {
-        $converter = new DefaultConverter();
-        $this->assertSame("I am a string", $converter->toSQL('varchar', new StupidObjectWithToString()));
+        $converter = self::defaultConverter();
+        $context = self::context($converter);
+
+        self::assertSame("I am a string", $converter->toSQL('varchar', new StupidObjectWithToString(), $context));
     }
 
-    public function testBlobConversion()
+    public function testBlobConversion(): void
     {
-        $this->markTestSkipped("Implement me");
+        self::markTestSkipped("Implement me");
     }
 
-    public function testBlobWithNulChar()
+    public function testBlobWithNulChar(): void
     {
-        $this->markTestSkipped("Implement me");
+        self::markTestSkipped("Implement me");
     }
 
-    public function testRegisterOverride()
+    public function testRegisterOverride(): void
     {
-        $this->markTestSkipped("Implement me");
+        self::markTestSkipped("Implement me");
     }
 
-    public function testRegisterOverrideNonAllowedFails()
+    public function testRegisterOverrideNonAllowedFails(): void
     {
-        $this->markTestSkipped("Implement me");
+        self::markTestSkipped("Implement me");
     }
 
-    public function testTypeRegisterWithAliases()
+    public function testTypeRegisterWithAliases(): void
     {
-        $this->markTestSkipped("Implement me");
+        self::markTestSkipped("Implement me");
     }
 
-    public function testTypeGuessing()
+    public function testTypeGuessing(): void
     {
-        $converter = new DefaultConverter();
-        $converter->register(new IntervalValueConverter());
+        $converter = self::defaultConverter();
+        $context = self::context($converter);
 
-        $this->assertSame('bool', $converter->guessType(true));
-        $this->assertSame('interval', $converter->guessType(\DateInterval::createFromDateString('1 hour')));
-        $this->assertSame('numeric', $converter->guessType(12.34));
-        $this->assertSame('timestamp', $converter->guessType(new \DateTime()));
-        $this->assertSame('varchar', $converter->guessType('pouet'));
-        $this->assertSame('varchar', $converter->guessType(new StupidObjectWithToString()));
+        self::assertSame('bool', $converter->guessType(true, $context));
+        self::assertSame('interval', $converter->guessType(\DateInterval::createFromDateString('1 hour'), $context));
+        self::assertSame('numeric', $converter->guessType(12.34, $context));
+        self::assertSame('timestamptz', $converter->guessType(new \DateTime(), $context));
+        self::assertSame('varchar', $converter->guessType('pouet', $context));
+        self::assertSame('varchar', $converter->guessType(new StupidObjectWithToString(), $context));
     }
 }

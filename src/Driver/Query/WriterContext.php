@@ -13,9 +13,9 @@ final class WriterContext
         $this->arguments = new ArgumentBag();
     }
 
-    public function append(array $arguments): void
+    public function append($value, ?string $type = null): void
     {
-        $this->arguments->addAll($arguments);
+        $this->arguments->add($value, $type);
     }
 
     public function getArgumentBag(): ArgumentBag

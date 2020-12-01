@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Goat\Driver\Runner;
 
+use Goat\Converter\ConverterContext;
 use Goat\Converter\ConverterInterface;
+use Goat\Converter\ValueConverterRegistry;
 use Goat\Driver\Platform\Escaper\Escaper;
 
 /**
@@ -23,57 +25,49 @@ final class RunnerConverter implements ConverterInterface
 
     /**
      * {@inheritdoc}
-     * @deprecated
      */
-    public function getClientTimeZone(): string
+    public function setValueConverterRegistry(ValueConverterRegistry $valueConverterRegistry): void
     {
-        return $this->decorated->getClientTimeZone();
-    }
-
-    /**
-     * {@inheritdoc}
-     * @deprecated
-     */
-    public function setClientTimeZone(?string $clientTimeZone = null): void
-    {
-        $this->decorated->setClientTimeZone($clientTimeZone);
+        $this->decorated->setValueConverterRegistry($valueConverterRegistry);
     }
 
     /**
      * {@inheritdoc}
      */
-    public function guessType($value): string
+    public function isTypeSupported(string $type, ConverterContext $context): bool
     {
-        return $this->decorated->guessType($value);
+        return $this->decorated->isTypeSupported($type, $context);
     }
 
     /**
      * {@inheritdoc}
      */
-    public function getPhpType(string $sqlType): ?string
-    {
-        return $this->decorated->getPhpType($sqlType);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function toSQL(string $type, $value): ?string
+    public function toSQL(string $type, $value, ConverterContext $context): ?string
     {
         if ('bytea' === $type || 'blob' === $type) {
             return $this->escaper->escapeBlob($value);
         }
-        return $this->decorated->toSQL($type, $value);
+
+        return $this->decorated->toSQL($type, $value, $context);
     }
 
     /**
      * {@inheritdoc}
      */
-    public function fromSQL(string $type, $value)
+    public function fromSQL(string $type, $value, ConverterContext $context)
     {
         if ('bytea' === $type || 'blob' === $type) {
             return $this->escaper->unescapeBlob($value);
         }
-        return $this->decorated->fromSQL($type, $value);
+
+        return $this->decorated->fromSQL($type, $value, $context);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function guessType($value, ConverterContext $context): string
+    {
+        return $this->decorated->guessType($value, $context);
     }
 }

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Goat\Driver\Runner;
 
+use Goat\Converter\ConverterContext;
 use Goat\Converter\ConverterInterface;
-use Goat\Converter\DefaultConverter;
-use Goat\Driver\Configuration;
+use Goat\Converter\ValueConverterRegistry;
 use Goat\Driver\Error\TransactionError;
 use Goat\Driver\Instrumentation\ProfilerAware;
 use Goat\Driver\Instrumentation\ProfilerAwareTrait;
@@ -23,6 +23,7 @@ use Goat\Runner\EmptyResultIterator;
 use Goat\Runner\ResultIterator;
 use Goat\Runner\Runner;
 use Goat\Runner\ServerError;
+use Goat\Runner\SessionConfiguration;
 use Goat\Runner\Transaction;
 use Goat\Runner\Hydrator\DefaultHydratorRegistry;
 use Goat\Runner\Hydrator\HydratorRegistry;
@@ -37,7 +38,7 @@ abstract class AbstractRunner implements Runner, ProfilerAware
 
     private LoggerInterface $logger;
     private Platform $platform;
-    private Configuration $configuration;
+    private SessionConfiguration $sessionConfiguration;
     private ?Transaction $currentTransaction = null;
     private bool $debug = false;
     private ?HydratorRegistry $hydratorRegistry = null;
@@ -46,13 +47,13 @@ abstract class AbstractRunner implements Runner, ProfilerAware
     protected ConverterInterface $converter;
     protected SqlWriter $formatter;
 
-    public function __construct(Platform $platform, Configuration $configuration)
+    public function __construct(Platform $platform, SessionConfiguration $sessionConfiguration)
     {
         $this->logger = new NullLogger();
-        $this->configuration = $configuration;
+        $this->sessionConfiguration = $sessionConfiguration;
         $this->platform = $platform;
         $this->formatter = $platform->getSqlWriter();
-        $this->setConverter(new DefaultConverter());
+        $this->converter = new RunnerConverter($this->doCreateConverter(), $this->getPlatform()->getEscaper());
         if ($this->isResultMetadataSlow()) {
             $this->metadataCache = new ArrayResultMetadataCache();
         }
@@ -64,6 +65,14 @@ abstract class AbstractRunner implements Runner, ProfilerAware
     final public function getPlatform(): Platform
     {
         return $this->platform;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    final public function getSessionConfiguration(): SessionConfiguration
+    {
+        return $this->sessionConfiguration;
     }
 
     /**
@@ -103,20 +112,19 @@ abstract class AbstractRunner implements Runner, ProfilerAware
     }
 
     /**
-     * Inject the result metadata cache implementation?
+     * {@inheritdoc}
      */
-    final public function setResultMetadataCache(ResultMetadataCache $metadataCache): void
+    public function setValueConverterRegistry(ValueConverterRegistry $valueConverterRegistry): void
     {
-        $this->metadataCache = $metadataCache;
+        $this->converter->setValueConverterRegistry($valueConverterRegistry);
     }
 
     /**
      * {@inheritdoc}
      */
-    public function setConverter(ConverterInterface $converter): void
+    final public function setResultMetadataCache(ResultMetadataCache $metadataCache): void
     {
-        $this->converter = new RunnerConverter($converter, $this->getPlatform()->getEscaper());
-        $this->converter->setClientTimeZone($this->configuration->getClientTimeZone());
+        $this->metadataCache = $metadataCache;
     }
 
     /**
@@ -240,6 +248,14 @@ abstract class AbstractRunner implements Runner, ProfilerAware
     }
 
     /**
+     * Create and configure converter context.
+     */
+    protected function createConverterContext(): ConverterContext
+    {
+        return new ConverterContext($this->converter, $this->sessionConfiguration);
+    }
+
+    /**
      * Create the result iterator instance.
      *
      * @param string $identifier
@@ -251,9 +267,9 @@ abstract class AbstractRunner implements Runner, ProfilerAware
      *
      * @return ResultIterator
      */
-    private function configureResultIterator(string $identifier, ResultIterator $result, array $options): ResultIterator
+    private function configureResultIterator(string $identifier, ConverterContext $context, ResultIterator $result, array $options): ResultIterator
     {
-        $result->setConverter($this->converter);
+        $result->setConverterContext($context);
 
         if (isset($options['hydrator'])) {
             if (isset($options['class'])) {
@@ -322,6 +338,11 @@ abstract class AbstractRunner implements Runner, ProfilerAware
     }
 
     /**
+     * Create converter for this runner.
+     */
+    protected abstract function doCreateConverter(): ConverterInterface;
+
+    /**
      * execute() implementation.
      */
     protected abstract function doExecute(string $sql, array $args, array $options): AbstractResultIterator;
@@ -354,6 +375,7 @@ abstract class AbstractRunner implements Runner, ProfilerAware
             }
         }
 
+        $context = $this->createConverterContext();
         $options = $this->normalizeOptions($options);
         $args = null;
         $rawSQL = '';
@@ -363,7 +385,7 @@ abstract class AbstractRunner implements Runner, ProfilerAware
             $profiler->begin('prepare');
             $prepared = $this->formatter->prepare($query);
             $rawSQL = $prepared->toString();
-            $args = $prepared->prepareArgumentsWith($this->converter, $arguments);
+            $args = $prepared->prepareArgumentsWith($context, $arguments);
             $profiler->end('prepare');
 
             $profiler->begin('execute');
@@ -372,7 +394,7 @@ abstract class AbstractRunner implements Runner, ProfilerAware
 
             $result->setQueryProfiler($profiler);
 
-            return $this->configureResultIterator($prepared->getIdentifier(), $result, $options);
+            return $this->configureResultIterator($prepared->getIdentifier(), $context, $result, $options);
 
         } catch (DatabaseError $e) {
             if ($this->isTransactionPending()) {
@@ -394,6 +416,7 @@ abstract class AbstractRunner implements Runner, ProfilerAware
      */
     public function perform($query, $arguments = null, $options = null) : int
     {
+        $context = $this->createConverterContext();
         $options = $this->normalizeOptions($options);
         $args = null;
         $rawSQL = '';
@@ -403,7 +426,7 @@ abstract class AbstractRunner implements Runner, ProfilerAware
             $profiler->begin('prepare');
             $prepared = $this->formatter->prepare($query);
             $rawSQL = $prepared->toString();
-            $args = $prepared->prepareArgumentsWith($this->converter, $arguments);
+            $args = $prepared->prepareArgumentsWith($context, $arguments);
             $profiler->end('prepare');
 
             $profiler->begin('execute');
@@ -471,6 +494,7 @@ abstract class AbstractRunner implements Runner, ProfilerAware
      */
     public function executePreparedQuery(string $identifier, $arguments = null, $options = null): ResultIterator
     {
+        $context = $this->createConverterContext();
         $options = $this->normalizeOptions($options);
         $args = $arguments ?? [];
         $profiler = $this->startProfilerQuery();
@@ -482,7 +506,7 @@ abstract class AbstractRunner implements Runner, ProfilerAware
 
             $result->setQueryProfiler($profiler);
 
-            return $this->configureResultIterator($identifier, $result, $options);
+            return $this->configureResultIterator($identifier, $context, $result, $options);
 
         } catch (DatabaseError $e) {
             if ($this->isTransactionPending()) {

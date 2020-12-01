@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Goat\Runner\Testing;
 
-use Goat\Driver\Configuration;
+use Goat\Converter\ConverterInterface;
+use Goat\Converter\DefaultConverter;
 use Goat\Driver\Query\FormattedQuery;
 use Goat\Driver\Runner\AbstractRunner;
 use Goat\Runner\AbstractResultIterator;
+use Goat\Runner\SessionConfiguration;
 
 class NullRunner extends AbstractRunner
 {
@@ -16,7 +18,7 @@ class NullRunner extends AbstractRunner
      */
     public function __construct()
     {
-        parent::__construct(new NullPlatform(), new Configuration(['driver' => 'null']));
+        parent::__construct(new NullPlatform(), SessionConfiguration::empty());
     }
 
     /**
@@ -25,6 +27,11 @@ class NullRunner extends AbstractRunner
     public function getDriverName(): string
     {
         return 'null';
+    }
+
+    protected function doCreateConverter(): ConverterInterface
+    {
+        return new DefaultConverter();
     }
 
     /**

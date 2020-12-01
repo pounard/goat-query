@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Goat\Runner\Tests;
 
-use Goat\Converter\DefaultConverter;
+use Goat\Converter\Tests\WithConverterTestTrait;
 use Goat\Driver\Instrumentation\QueryProfiler;
 use Goat\Query\QueryError;
 use PHPUnit\Framework\TestCase;
@@ -14,6 +14,8 @@ use PHPUnit\Framework\TestCase;
  */
 final class AbstractResultIteratorTest extends TestCase
 {
+    use WithConverterTestTrait;
+
     /**
      * Foo result iterator
      */
@@ -105,7 +107,7 @@ final class AbstractResultIteratorTest extends TestCase
     public function testHydrationWithNothing()
     {
         $result = $this->createArrayResultIterator();
-        $result->setConverter(new DefaultConverter());
+        $result->setConverterContext(self::context());
 
         $row = $result->fetch();
 
@@ -121,7 +123,7 @@ final class AbstractResultIteratorTest extends TestCase
     public function testHydrationWithCallback()
     {
         $result = $this->createArrayResultIterator();
-        $result->setConverter(new DefaultConverter());
+        $result->setConverterContext(self::context());
 
         $result->setHydrator(function (array $row) {
             self::assertIsArray($row);
@@ -143,7 +145,7 @@ final class AbstractResultIteratorTest extends TestCase
     public function testHydrationWithHydrator()
     {
         $result = $this->createArrayResultIterator();
-        $result->setConverter(new DefaultConverter());
+        $result->setConverterContext(self::context());
 
         $result->setHydrator(static function (array $values) {
             if (!$values['c'] instanceof \DateTimeInterface) {
@@ -176,7 +178,7 @@ final class AbstractResultIteratorTest extends TestCase
     public function testSetHydratorRaiseErrorWhenStarted()
     {
         $result = $this->createArrayResultIterator();
-        $result->setConverter(new DefaultConverter());
+        $result->setConverterContext(self::context());
 
         $result->fetch();
 

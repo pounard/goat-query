@@ -2,82 +2,32 @@
 
 namespace Goat\Converter\Driver;
 
+use Goat\Converter\ConverterContext;
 use Goat\Converter\ConverterInterface;
+use Goat\Converter\DefaultConverter;
 
 /**
  * MySQL 5.x converter, should work for 8.x as well.
  */
-class MySQLConverter implements ConverterInterface
+class MySQLConverter extends DefaultConverter
 {
-    private ConverterInterface $default;
-
-    /**
-     * Default constructor
-     */
-    public function __construct(ConverterInterface $default)
-    {
-        $this->default = $default;
-    }
-
-    /**
-     * {@inheritdoc}
-     * @deprecated
-     */
-    public function getClientTimeZone(): string
-    {
-        return $this->default->getClientTimeZone();
-    }
-
-    /**
-     * {@inheritdoc}
-     * @deprecated
-     */
-    public function setClientTimeZone(?string $clientTimeZone = null): void
-    {
-        $this->default->setClientTimeZone($clientTimeZone);
-    }
-
     /**
      * {@inheritdoc}
      */
-    public function getPhpType(string $sqlType): ?string
-    {
-        return $this->default->getPhpType($sqlType);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function fromSQL(string $type, $value)
-    {
-        return $this->default->fromSQL($type, $value);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function guessType($value): string
-    {
-        return $this->default->guessType($value);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function toSQL(string $type, $value): ?string
+    public function toSQL(string $type, $value, ConverterContext $context): ?string
     {
         if (ConverterInterface::TYPE_UNKNOWN === $type) {
-            $type = $this->guessType($value);
+            $type = $this->guessType($value, $context);
         }
 
         switch ($type) {
-
+            // MySQL does not have a boolean native type.
             case 'bool':
             case 'boolean':
-                // MySQL does not have a boolean native type
                 return $value ? '1' : '0';
-        }
 
-        return $this->default->toSQL($type, $value);
+            default:
+                return parent::toSQL($type, $value, $context);
+        }
     }
 }

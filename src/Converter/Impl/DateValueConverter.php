@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Goat\Converter\Impl;
 
+use Goat\Converter\ConverterContext;
 use Goat\Converter\ConverterInterface;
 use Goat\Converter\TypeConversionError;
 use Goat\Converter\ValueConverterInterface;
@@ -43,28 +44,7 @@ class DateValueConverter implements ValueConverterInterface
     /**
      * {@inheritdoc}
      */
-    public function getPhpType(string $type, ConverterInterface $converter): ?string
-    {
-        switch ($type) {
-            case 'date':
-            case 'datetime':
-            case 'time':
-            case 'timestamp with time zone':
-            case 'timestamp without time zone':
-            case 'timestamp':
-            case 'timestamptz':
-            case 'timez':
-                return \DateTimeImmutable::class;
-
-            default:
-                return null;
-        }
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function isTypeSupported(string $type, ConverterInterface $converter): bool
+    public function isTypeSupported(string $type, ConverterContext $context): bool
     {
         switch ($type) {
             case 'date':
@@ -91,7 +71,7 @@ class DateValueConverter implements ValueConverterInterface
      * explored. I believe that \DateTimeImmutable::createFromFormat() to be
      * fast enough; I might be wrong.
      */
-    public function fromSQL(string $type, $value, ConverterInterface $converter)
+    public function fromSQL(string $type, $value,  ConverterContext $context)
     {
         // I have no idea why this is still here. Probably an old bug.
         if (!$value = \trim($value)) {
@@ -106,7 +86,7 @@ class DateValueConverter implements ValueConverterInterface
             case 'timestamp without time zone':
             case 'timestamp':
             case 'timestamptz':
-                $userTimeZone = $this->getUserTimeZone($converter);
+                $userTimeZone = new \DateTimeZone($context->getClientTimeZone());
 
                 // Attempt all possible outcomes.
                 if ($ret = \DateTimeImmutable::createFromFormat(self::FORMAT_DATETIME_USEC_TZ, $value)) {
@@ -137,7 +117,7 @@ class DateValueConverter implements ValueConverterInterface
 
             case 'time':
             case 'timez':
-                $userTimeZone = $this->getUserTimeZone($converter);
+                $userTimeZone = new \DateTimeZone($context->getClientTimeZone());
 
                 // Attempt all possible outcomes.
                 if ($ret = \DateTimeImmutable::createFromFormat(self::FORMAT_TIME_USEC_TZ, $value)) {
@@ -179,12 +159,8 @@ class DateValueConverter implements ValueConverterInterface
     /**
      * {@inheritdoc}
      */
-    public function toSQL(string $type, $value, ConverterInterface $converter): ?string
+    public function toSQL(string $type, $value, ConverterContext $context): ?string
     {
-        if (ConverterInterface::TYPE_UNKNOWN === $type) {
-            $type = $this->guessType($value);
-        }
-
         if (!$value instanceof \DateTimeInterface) {
             throw new TypeConversionError(\sprintf("Given value '%s' is not instanceof \DateTimeInterface.", $value));
         }
@@ -195,7 +171,7 @@ class DateValueConverter implements ValueConverterInterface
             case 'timestamp without time zone':
             case 'timestamp':
             case 'timestamptz':
-                $userTimeZone = $this->getUserTimeZone($converter);
+                $userTimeZone = new \DateTimeZone($context->getClientTimeZone());
                 // If user given date time is not using the client timezone
                 // enfore conversion on the PHP side, since the SQL backend
                 // does not care about the time zone at this point and will
@@ -214,7 +190,7 @@ class DateValueConverter implements ValueConverterInterface
 
             case 'time':
             case 'timez':
-                $userTimeZone = $this->getUserTimeZone($converter);
+                $userTimeZone = new \DateTimeZone($context->getClientTimeZone());
                 // If user given date time is not using the client timezone
                 // enfore conversion on the PHP side, since the SQL backend
                 // does not care about the time zone at this point and will
@@ -236,17 +212,9 @@ class DateValueConverter implements ValueConverterInterface
     /**
      * {@inheritdoc}
      */
-    public function guessType($value, ConverterInterface $converter): ?string
+    public function guessType($value, ConverterContext $context): string
     {
         // @todo from configuration.
-        return $value instanceof \DateTimeInterface ? 'timestamptz' : null;
-    }
-
-    /**
-     * Get user configured time zone.
-     */
-    protected function getUserTimeZone(ConverterInterface $converter): \DateTimeZone
-    {
-        return new \DateTimeZone($converter->getClientTimeZone());
+        return $value instanceof \DateTimeInterface ? 'timestamptz' : ConverterInterface::TYPE_UNKNOWN;
     }
 }

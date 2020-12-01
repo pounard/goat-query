@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Goat\Driver\Query;
 
 use Goat\Converter\ConverterInterface;
+use Goat\Converter\ConverterContext;
 
 /**
  * Result of SQL formatter, holds rewritten SQL containing driver specific
@@ -15,22 +16,15 @@ final class FormattedQuery
     private ?string $identifier;
     private string $rawSQL;
     private ?ArgumentBag $arguments = null;
-    /** array<int,null|string> */
-    private array $types;
 
-    /**
-     * Default constructor
-     */
     public function __construct(
         string $rawSQL,
-        array $types,
         ?string $identifier = null,
         ?ArgumentBag $arguments = null
     ) {
         $this->arguments = $arguments ?? new ArgumentBag();
         $this->identifier = $identifier;
         $this->rawSQL = $rawSQL;
-        $this->types = $types;
     }
 
     /**
@@ -42,7 +36,7 @@ final class FormattedQuery
      */
     public function getArgumentTypes(): array
     {
-        return $this->types;
+        return $this->arguments->getTypes();
     }
 
     /**
@@ -56,7 +50,7 @@ final class FormattedQuery
     /**
      * Prepare arguments with the given input.
      */
-    public function prepareArgumentsWith(ConverterInterface $converter, array $arguments = null): array
+    public function prepareArgumentsWith(ConverterContext $context, array $arguments = null): array
     {
         // If null was given, this means that we should use query given
         // arguments, those who are already set in this object.
@@ -73,11 +67,11 @@ final class FormattedQuery
             return [];
         }
 
+        $converter = $context->getConverter();
+
         $ret = [];
         foreach ($arguments as $index => $value) {
-            $type = $this->types[$index] ?? $this->arguments->getTypeAt($index) ?? ConverterInterface::TYPE_UNKNOWN;
-
-            $ret[] = $converter->toSQL($type, $value);
+            $ret[] = $converter->toSQL($this->arguments->getTypeAt($index) ?? ConverterInterface::TYPE_UNKNOWN, $value, $context);
         }
 
         return $ret;

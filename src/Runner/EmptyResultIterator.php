@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Goat\Runner;
 
-use Goat\Converter\ConverterInterface;
+use Goat\Converter\ConverterContext;
 use Goat\Runner\Metadata\ResultMetadata;
 
 /**
@@ -44,7 +44,7 @@ final class EmptyResultIterator implements ResultIterator, \IteratorAggregate
     /**
      * {@inheritdoc}
      */
-    public function setConverter(ConverterInterface $converter): ResultIterator
+    public function setConverterContext(ConverterContext $context): ResultIterator
     {
         return $this;
     }

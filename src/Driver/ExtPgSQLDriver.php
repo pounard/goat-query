@@ -10,6 +10,7 @@ use Goat\Driver\Platform\Escaper\Escaper;
 use Goat\Driver\Platform\Escaper\ExtPgSQLEscaper;
 use Goat\Driver\Runner\ExtPgSQLRunner;
 use Goat\Runner\Runner;
+use Goat\Runner\SessionConfiguration;
 
 class ExtPgSQLDriver extends AbstractDriver
 {
@@ -66,6 +67,17 @@ class ExtPgSQLDriver extends AbstractDriver
         $configuration = $this->getConfiguration();
         $connectionString = $this->buildConnectionString($configuration->getOptions());
 
+        $driver = $configuration->getDriver();
+        $clientEncoding = $configuration->getClientEncoding();
+        $clientTimeZone = $configuration->getClientTimeZone();
+
+        $sessionConfiguration = new SessionConfiguration(
+            $clientEncoding,
+            $clientTimeZone,
+            $driver,
+            []
+        );
+
         try {
             //
             // Setting or not \PGSQL_CONNECT_FORCE_NEW which literally means
@@ -100,13 +112,13 @@ class ExtPgSQLDriver extends AbstractDriver
             $this->connection = $resource = \pg_connect($connectionString, PGSQL_CONNECT_FORCE_NEW);
 
             \pg_set_error_verbosity($resource,  PGSQL_ERRORS_VERBOSE);
-            \pg_query($resource, "SET client_encoding TO ".\pg_escape_literal($configuration->getClientEncoding()));
-            \pg_query($resource, "SET TIME ZONE ".\pg_escape_literal($configuration->getClientTimeZone()));
+            \pg_query($resource, "SET client_encoding TO " . \pg_escape_literal($clientEncoding));
+            \pg_query($resource, "SET TIME ZONE " . \pg_escape_literal($clientTimeZone));
 
             $this->escaper = new ExtPgSQLEscaper($this, $this->connection);
             $this->platform = new PgSQLPlatform($this->escaper, $this->getServerVersion());
 
-            $runner = new ExtPgSQLRunner($this->platform, $configuration, $resource);
+            $runner = new ExtPgSQLRunner($this->platform, $sessionConfiguration, $resource);
             $runner->setLogger($configuration->getLogger());
             $this->runner = $runner;
 

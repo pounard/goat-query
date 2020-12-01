@@ -49,7 +49,7 @@ class PreparedQueryTest extends DatabaseAwareQueryTest
     /**
      * Test that it will raise error if not correctly initialized.
      *
-      * @dataProvider runnerDataProvider
+     * @dataProvider runnerDataProvider
      */
     public function testPreparedQueryErrorWhenNoReturn(TestDriverFactory $factory)
     {

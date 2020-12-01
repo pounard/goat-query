@@ -21,9 +21,9 @@ class PDOMySQLRunner extends AbstractPDORunner
     /**
      * {@inheritdoc}
      */
-    public function setConverter(ConverterInterface $converter): void
+    protected function doCreateConverter(): ConverterInterface
     {
-        parent::setConverter(new MySQLConverter($converter));
+        return new MySQLConverter();
     }
 
     /**

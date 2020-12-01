@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Goat\Runner;
 
-use Goat\Converter\ConverterInterface;
+use Goat\Converter\ConverterContext;
 use Goat\Driver\Instrumentation\QueryProfiler;
 use Goat\Runner\Metadata\ResultMetadata;
 
@@ -28,7 +28,7 @@ interface ResultIterator extends ResultMetadata, \Traversable, \Countable
      *
      * @return $this
      */
-    public function setConverter(ConverterInterface $converter): self;
+    public function setConverterContext(ConverterContext $context): self;
 
     /**
      * Set hydrator.

@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Goat\Driver\Runner;
 
-use Goat\Driver\Configuration;
 use Goat\Driver\Platform\Platform;
 use Goat\Driver\Query\FormattedQuery;
 use Goat\Query\QueryError;
 use Goat\Runner\AbstractResultIterator;
+use Goat\Runner\SessionConfiguration;
 
 abstract class AbstractPDORunner extends AbstractRunner
 {
@@ -19,9 +19,9 @@ abstract class AbstractPDORunner extends AbstractRunner
     /**
      * Default constructor
      */
-    public function __construct(Platform $platform, Configuration $configuration, \PDO $connection)
+    public function __construct(Platform $platform, SessionConfiguration $sessionConfiguration, \PDO $connection)
     {
-        parent::__construct($platform, $configuration);
+        parent::__construct($platform, $sessionConfiguration);
 
         $this->connection = $connection;
     }
@@ -106,7 +106,7 @@ abstract class AbstractPDORunner extends AbstractRunner
         list($statement, $prepared) = $this->prepared[$identifier];
         \assert($prepared instanceof FormattedQuery);
 
-        $args = $prepared->prepareArgumentsWith($this->converter, $args);
+        $args = $prepared->prepareArgumentsWith($this->createConverterContext(), $args);
 
         try {
             $statement->execute($args);

@@ -6,11 +6,11 @@ namespace Goat\Driver\Runner;
 
 use Goat\Converter\ConverterInterface;
 use Goat\Converter\Driver\PgSQLConverter;
-use Goat\Driver\Configuration;
 use Goat\Driver\Platform\Platform;
 use Goat\Driver\Query\FormattedQuery;
 use Goat\Query\QueryError;
 use Goat\Runner\AbstractResultIterator;
+use Goat\Runner\SessionConfiguration;
 
 /**
  * ext-pgsql connection implementation
@@ -30,13 +30,14 @@ class ExtPgSQLRunner extends AbstractRunner
      * @param resource $resource
      *   pgsql extension connection resource.
      */
-    public function __construct(Platform $platform, Configuration $configuration, $connection)
+    public function __construct(Platform $platform, SessionConfiguration $sessionConfiguration, $connection)
     {
-        parent::__construct($platform, $configuration);
-
         if (!\is_resource($connection)) {
             throw new QueryError(\sprintf("First parameter must be a resource, %s given", \gettype($connection)));
         }
+
+        parent::__construct($platform, $sessionConfiguration);
+
         $this->connection = $connection;
     }
 
@@ -51,9 +52,9 @@ class ExtPgSQLRunner extends AbstractRunner
     /**
      * {@inheritdoc}
      */
-    public function setConverter(ConverterInterface $converter): void
+    protected function doCreateConverter(): ConverterInterface
     {
-        parent::setConverter(new PgSQLConverter($converter));
+        return new PgSQLConverter();
     }
 
     /**
@@ -122,7 +123,7 @@ class ExtPgSQLRunner extends AbstractRunner
         $prepared = $this->prepared[$identifier];
         \assert($prepared instanceof FormattedQuery);
 
-        $args = $prepared->prepareArgumentsWith($this->converter, $args);
+        $args = $prepared->prepareArgumentsWith($this->createConverterContext(), $args);
         $resource = @\pg_execute($this->connection, $identifier, $args);
         if (false === $resource) {
             $this->serverError($this->connection, $identifier);
