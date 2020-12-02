@@ -22,6 +22,9 @@
         <testsuite name="Runner">
             <directory>./tests/Runner</directory>
         </testsuite>
+        <testsuite name="Schema">
+            <directory>./tests/Schema</directory>
+        </testsuite>
     </testsuites>
 
     <filter>

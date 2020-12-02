@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Goat\Driver\Platform;
 
-use Goat\Driver\ConfigurationError;
 use Goat\Driver\Platform\Escaper\Escaper;
 use Goat\Driver\Platform\Query\PgSQLWriter;
+use Goat\Driver\Platform\Schema\PgSQLSchemaIntrospector;
 use Goat\Driver\Platform\Transaction\PgSQLTransaction;
 use Goat\Driver\Query\SqlWriter;
 use Goat\Runner\Runner;
@@ -48,11 +48,19 @@ class PgSQLPlatform extends AbstractPlatform
     }
 
     /**
-     * Get schema introspector
+     * {@inheritdoc}
      */
-    public function getSchemaIntrospector(): SchemaIntrospector
+    public function createTransaction(Runner $runner, int $isolationLevel = Transaction::REPEATABLE_READ): Transaction
     {
-        throw new ConfigurationError("Schema introspector is not implemented yet.");
+        return new PgSQLTransaction($runner, $isolationLevel);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function createSchemaIntrospector(Runner $runner): SchemaIntrospector
+    {
+        return new PgSQLSchemaIntrospector($runner);
     }
 
     /**
@@ -61,13 +69,5 @@ class PgSQLPlatform extends AbstractPlatform
     protected function createSqlWriter(Escaper $escaper): SqlWriter
     {
         return new PgSQLWriter($escaper);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function createTransaction(Runner $runner, int $isolationLevel = Transaction::REPEATABLE_READ): Transaction
-    {
-        return new PgSQLTransaction($runner, $isolationLevel);
     }
 }

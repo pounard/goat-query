@@ -25,7 +25,7 @@ trait WithConverterTestTrait
     {
         return self::context(
             $converter ?? self::defaultConverter(),
-            new SessionConfiguration('UTF-8', $clientTimeZone, 'null', [])
+            new SessionConfiguration('UTF-8', $clientTimeZone, 'null', 'null', [])
         );
     }
 

@@ -111,6 +111,7 @@ class PDODriver extends AbstractDriver
         $sessionConfiguration = new SessionConfiguration(
             $clientEncoding,
             $clientTimeZone,
+            $configuration->getDatabase(),
             $driver,
             []
         );

@@ -49,11 +49,19 @@ class MySQLPlatform extends AbstractPlatform
     }
 
     /**
-     * Get schema introspector
+     * {@inheritdoc}
      */
-    public function getSchemaIntrospector(): SchemaIntrospector
+    public function createSchemaIntrospector(Runner $runner): SchemaIntrospector
     {
         throw new ConfigurationError("Schema introspector is not implemented yet.");
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function createTransaction(Runner $runner, int $isolationLevel = Transaction::REPEATABLE_READ): Transaction
+    {
+        return new MySQLTransaction($runner, $isolationLevel);
     }
 
     /**
@@ -68,13 +76,5 @@ class MySQLPlatform extends AbstractPlatform
         }
 
         return new MySQL8Writer($escaper);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function createTransaction(Runner $runner, int $isolationLevel = Transaction::REPEATABLE_READ): Transaction
-    {
-        return new MySQLTransaction($runner, $isolationLevel);
     }
 }

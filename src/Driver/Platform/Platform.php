@@ -38,11 +38,6 @@ interface Platform
     public function supportsDeferingConstraints(): bool;
 
     /**
-     * Get schema introspector.
-     */
-    public function getSchemaIntrospector(): SchemaIntrospector;
-
-    /**
      * Get escaper.
      */
     public function getEscaper(): Escaper;
@@ -51,6 +46,11 @@ interface Platform
      * Get SQL query writer.
      */
     public function getSqlWriter(): SqlWriter;
+
+    /**
+     * Create a schema introspector.
+     */
+    public function createSchemaIntrospector(Runner $runner): SchemaIntrospector;
 
     /**
      * Create a non started yet transaction object.

@@ -74,6 +74,7 @@ class ExtPgSQLDriver extends AbstractDriver
         $sessionConfiguration = new SessionConfiguration(
             $clientEncoding,
             $clientTimeZone,
+            $configuration->getDatabase(),
             $driver,
             []
         );

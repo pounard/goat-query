@@ -16,6 +16,7 @@ final class SessionConfiguration
 {
     private string $clientEncoding; 
     private string $clientTimeZone;
+    private string $database;
     private string $driver;
     /** @var array<string,string> */
     private array $options = [];
@@ -23,23 +24,30 @@ final class SessionConfiguration
     public function __construct(
         string $clientEncoding,
         string $clientTimeZone,
+        string $database,
         string $driver,
         array $options
     ) {
         $this->clientEncoding = $clientEncoding;
         $this->clientTimeZone = $clientTimeZone;
+        $this->database = $database;
         $this->driver = $driver;
         $this->options = $options;
     }
 
     public static function empty(): self
     {
-        return new self('UTF-8', "UTC", 'null', []);
+        return new self('UTF-8', "UTC", 'null', 'null', []);
     }
 
     public function getDriver(): string
     {
         return $this->driver;
+    }
+
+    public function getDatabase(): string
+    {
+        return $this->database;
     }
 
     public function getClientEncoding(): string

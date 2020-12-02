@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Goat\Schema;
 
 /**
- * Component able to introspect schema
+ * Service that introspects SQL schema.
  *
  * @todo (immediate)
  *   - cached implementation
@@ -18,28 +18,38 @@ namespace Goat\Schema;
 interface SchemaIntrospector
 {
     /**
-     * Get namespaces (database or schemas)
+     * Get current database name.
+     */
+    public function getCurrentDatabase(): string;
+
+    /**
+     * List databases.
      *
-     * @return list<string>
+     * @return string[]
      */
     public function listDatabases(): array;
 
     /**
-     * Get namespaces (database or schemas)
+     * List schemas in the current database.
      *
-     * @return list<string>
+     * @return string[]
      */
-    public function listTablesIn(string $database): array;
+    public function listSchemas(): array;
 
     /**
-     * Get a single table metadata
+     * List tables in the current database.
      *
-     * If no schema provided use the default one in case of conflict.
+     * @return string[]
      */
-    public function fetchTableMetadata(string $database, string $name, ?string $schema = null): TableMetadata;
+    public function listTables(string $schema): array;
 
     /**
-     * Does table exists?
+     * Get a single table metadata in the current database.
      */
-    public function tableExists(string $database, string $name, ?string $schema = null): bool;
+    public function fetchTableMetadata(string $schema, string $name): TableMetadata;
+
+    /**
+     * Does table exists in the current database.
+     */
+    public function tableExists(string $schema, string $name): bool;
 }

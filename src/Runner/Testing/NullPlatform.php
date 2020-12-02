@@ -67,14 +67,6 @@ class NullPlatform implements Platform
     }
 
     /**
-     * {@inheritdoc}
-     */
-    public function getSchemaIntrospector(): SchemaIntrospector
-    {
-        throw new \Exception("Null runner cannot actually run queries.");
-    }
-
-    /**
      * Get escaper.
      */
     public function getEscaper(): Escaper
@@ -88,6 +80,14 @@ class NullPlatform implements Platform
     public function getSqlWriter(): SqlWriter
     {
         return $this->writer;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function createSchemaIntrospector(Runner $runner): SchemaIntrospector
+    {
+        throw new \Exception("Null runner cannot actually run queries.");
     }
 
     /**

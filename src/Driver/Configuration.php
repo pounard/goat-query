@@ -221,6 +221,14 @@ final class Configuration
     }
 
     /**
+     * Get database name.
+     */
+    public function getDatabase(): string
+    {
+        return $this->options['database'];
+    }
+
+    /**
      * Get username if specified
      */
     public function getUsername(): ?string
