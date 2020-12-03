@@ -6,10 +6,6 @@ namespace Goat\Schema;
 
 /**
  * Table metadata.
- *
- * This is an interface to allow implementations to generate code,
- * for performance purpose, it opens the door to very fast automatic
- * table based repositories.
  */
 interface TableMetadata extends ObjectMetadata
 {
