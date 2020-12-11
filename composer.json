@@ -28,7 +28,8 @@
             "Goat\\Converter\\Tests\\": "tests/Converter",
             "Goat\\Driver\\Tests\\": "tests/Driver",
             "Goat\\Query\\Tests\\": "tests/Query",
-            "Goat\\Runner\\Tests\\": "tests/Runner"
+            "Goat\\Runner\\Tests\\": "tests/Runner",
+            "Goat\\Schema\\Tests\\": "tests/Schema"
         }
     },
     "require" : {

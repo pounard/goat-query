@@ -4,44 +4,13 @@ declare(strict_types=1);
 
 namespace Goat\Schema\Tests;
 
-use Goat\Runner\Runner;
 use Goat\Runner\Testing\DatabaseAwareQueryTest;
 use Goat\Runner\Testing\TestDriverFactory;
 use Goat\Schema\ObjectMetadata;
 
 final class SchemaIntrospectorTest extends DatabaseAwareQueryTest
 {
-    private function createInitialSchema(Runner $runner): void
-    {
-        $driver = $runner->getDriverName();
-
-        if (false !== \strpos($driver, 'pgsql')) {
-            $this->createInitialSchemaFromFile($runner, __DIR__ . '/Schema/schema.pgsql.sql');
-        }
-
-        if (false !== \strpos($driver, 'mysql')) {
-            self::markTestSkipped("Schema introspector is not implemented in MySQL yet.");
-        }
-    }
-
-    private function createInitialSchemaFromFile(Runner $runner, string $filename): void
-    {
-        $statements = \array_filter(
-            \array_map(
-                // Do not execute void (empty lines).
-                fn ($text) => \trim($text),
-                // Hopefully, we don't have any dangling ';' in escaped text.
-                \explode(
-                    ';',
-                    \file_get_contents($filename)
-                )
-            )
-        );
-
-        foreach ($statements as $statement) {
-            $runner->execute($statement);
-        }
-    }
+    use TestWithSchemaTrait;
 
     /**
      * @dataProvider runnerDataProvider
@@ -117,11 +86,11 @@ final class SchemaIntrospectorTest extends DatabaseAwareQueryTest
         $this->createInitialSchema($runner);
         $schemaIntrospector = $runner->getPlatform()->createSchemaIntrospector($runner);
 
-        $table = $schemaIntrospector->fetchTableMetadata($factory->getSchema(), 'event_index');
+        $table = $schemaIntrospector->fetchTableMetadata($factory->getSchema(), 'event_default');
 
         self::assertSame($runner->getSessionConfiguration()->getDatabase(), $table->getDatabase());
         self::assertSame($factory->getSchema(), $table->getSchema());
-        self::assertSame('event_index', $table->getName());
+        self::assertSame('event_default', $table->getName());
         self::assertSame(ObjectMetadata::OBJECT_TYPE_TABLE, $table->getObjectType());
         //self::assertSame(['position'], $table->getPrimaryKey());
         self::assertCount(14, $table->getColumnTypeMap());

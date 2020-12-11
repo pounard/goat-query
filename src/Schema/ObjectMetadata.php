@@ -32,4 +32,9 @@ interface ObjectMetadata extends NamedMetadata
      * Get schema this table is into.
      */
     public function getSchema(): string;
+
+    /**
+     * Tell if both instance targets the same object.
+     */
+    public function equals(ObjectMetadata $other): bool;
 }
