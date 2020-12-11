@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Goat\Driver\Platform\Schema;
 
+use Goat\Query\QueryError;
 use Goat\Runner\Runner;
 use Goat\Schema\SchemaIntrospector;
 use Goat\Schema\TableMetadata;
-use Goat\Query\QueryError;
-use Goat\Schema\DefaultColumnMetadata;
-use Goat\Schema\DefaultTableMetadata;
+use Goat\Schema\Implementation\DefaultColumnMetadata;
+use Goat\Schema\Implementation\DefaultForeignKeyMetatadata;
+use Goat\Schema\Implementation\DefaultKeyMetatadata;
+use Goat\Schema\Implementation\DefaultTableMetadata;
 
 /**
  * Please note that some functions here might use information_schema tables
@@ -187,32 +189,94 @@ class PgSQLSchemaIntrospector implements SchemaIntrospector
             );
         }
 
-        $primaryKey = $this
+        $allKeyInfo = $this
             ->runner
             ->execute(
                 <<<SQL
                 SELECT
-                    kcu.column_name
-                FROM information_schema.key_column_usage kcu
-                JOIN information_schema.table_constraints tc
-                    ON tc.constraint_catalog = kcu.constraint_catalog
-                    AND tc.constraint_schema = kcu.constraint_schema
-                    AND tc.constraint_name = kcu.constraint_name
-                JOIN information_schema.columns c
-                    ON c.column_name = kcu.column_name
-                    AND c.table_catalog = kcu.table_catalog
-                    AND c.table_schema = kcu.table_schema
-                    AND c.table_name = kcu.table_name
+                    con.conname AS name,
+                    class_src.relname AS table_source,
+                    (
+                        SELECT nspname
+                        FROM pg_catalog.pg_namespace
+                        WHERE
+                            oid = class_src.relnamespace
+                    ) AS table_source_schema,
+                    class_tgt.relname AS table_target,
+                    (
+                        SELECT nspname
+                        FROM pg_catalog.pg_namespace
+                        WHERE
+                            oid = class_tgt.relnamespace
+                    ) AS table_target_schema,
+                    (
+                        SELECT array_agg(attname)
+                        FROM pg_catalog.pg_attribute
+                        WHERE
+                            attrelid = con.conrelid
+                            AND attnum IN (SELECT * FROM unnest(con.conkey))
+                    ) AS column_source,
+                    (
+                        SELECT array_agg(attname)
+                        FROM pg_catalog.pg_attribute
+                        WHERE
+                            attrelid = con.confrelid
+                            AND attnum IN (SELECT * FROM unnest(con.confkey))
+                    ) AS column_target,
+                    con.contype AS type
+                FROM pg_catalog.pg_constraint con
+                JOIN pg_catalog.pg_class class_src
+                    ON class_src.oid = con.conrelid
+                LEFT JOIN pg_catalog.pg_class class_tgt
+                    ON class_tgt.oid = con.confrelid
                 WHERE
-                    tc.constraint_type = 'PRIMARY KEY'
-                    AND kcu.table_catalog = ?
-                    AND kcu.table_schema = ?
-                    AND kcu.table_name = ?
+                    con.contype IN ('f', 'p')
+                    AND con.connamespace =  to_regnamespace(?)
+                    AND (
+                        con.conrelid =  to_regclass(?)
+                        OR con.confrelid =  to_regclass(?)
+                    )
                 SQL,
-                [$database, $schema, $name]
+                [$schema, $name, $name]
             )
-            ->fetchColumn()
         ;
+
+        $primaryKey = null;
+        $foreignKeys = [];
+        $reverseForeignKeys = [];
+
+        foreach ($allKeyInfo as $row) {
+            switch ($row['type']) {
+                case 'f':
+                    $key = new DefaultForeignKeyMetatadata(
+                        $database,
+                        $row['table_source_schema'],
+                        $row['table_source'],
+                        $row['name'],
+                        null, // @todo comment
+                        $row['column_source'],
+                        $row['table_target_schema'],
+                        $row['table_target'],
+                        $row['column_target']
+                    );
+                    if ($key->getTable() === $name) {
+                        $foreignKeys[] = $key;
+                    } else {
+                        $reverseForeignKeys[] = $key;
+                    }
+                    break;
+                case 'p':
+                    $primaryKey = new DefaultKeyMetatadata(
+                        $database,
+                        $row['table_source_schema'],
+                        $row['table_source'],
+                        $row['name'],
+                        null, // @todo comment
+                        $row['column_source'],
+                    );
+                    break;
+            }
+        }
 
         return new DefaultTableMetadata(
             $database,
@@ -220,7 +284,9 @@ class PgSQLSchemaIntrospector implements SchemaIntrospector
             $name,
             null, // @todo comment
             $primaryKey,
-            $columns
+            $columns,
+            $foreignKeys,
+            $reverseForeignKeys
         );
     }
 }

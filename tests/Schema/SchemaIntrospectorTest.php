@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Goat\Runner\Tests;
+namespace Goat\Schema\Tests;
 
 use Goat\Runner\Runner;
 use Goat\Runner\Testing\DatabaseAwareQueryTest;
@@ -117,13 +117,15 @@ final class SchemaIntrospectorTest extends DatabaseAwareQueryTest
         $this->createInitialSchema($runner);
         $schemaIntrospector = $runner->getPlatform()->createSchemaIntrospector($runner);
 
-        $table = $schemaIntrospector->fetchTableMetadata($factory->getSchema(), 'event_default');
+        $table = $schemaIntrospector->fetchTableMetadata($factory->getSchema(), 'event_index');
 
         self::assertSame($runner->getSessionConfiguration()->getDatabase(), $table->getDatabase());
         self::assertSame($factory->getSchema(), $table->getSchema());
-        self::assertSame('event_default', $table->getName());
+        self::assertSame('event_index', $table->getName());
         self::assertSame(ObjectMetadata::OBJECT_TYPE_TABLE, $table->getObjectType());
-        self::assertSame(['position'], $table->getPrimaryKey());
+        //self::assertSame(['position'], $table->getPrimaryKey());
         self::assertCount(14, $table->getColumnTypeMap());
+
+        // @todo test (reverse) foreign keys
     }
 }

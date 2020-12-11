@@ -14,18 +14,27 @@ interface TableMetadata extends ObjectMetadata
      *
      * Implementations should make this function really fast, it's one that
      * may be used at runtime for database operations.
-     *
-     * @return null|list<string>
-     *   If null is returned, table has no primary key.
      */
-    public function getPrimaryKey(): ?array;
+    public function getPrimaryKey(): ?KeyMetatadata;
 
     /**
      * Does this table have a primary key.
      */
     public function hasPrimaryKey(): bool;
 
-    // @todo get foreign key associations
+    /**
+     * Get foreign keys on this table referencing another tables.
+     *
+     * @return ForeignKeyMetatadata[]
+     */
+    public function getForeignKeys(): array;
+
+    /**
+     * Get foreign keys on another tables referencing this table.
+     *
+     * @return ForeignKeyMetatadata[]
+     */
+    public function getReverseForeignKeys(): array;
 
     /**
      * Get column type map.

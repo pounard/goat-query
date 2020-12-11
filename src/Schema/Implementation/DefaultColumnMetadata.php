@@ -2,7 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Goat\Schema;
+namespace Goat\Schema\Implementation;
+
+use Goat\Schema\ColumnMetadata;
+use Goat\Schema\ObjectMetadata;
 
 class DefaultColumnMetadata implements ColumnMetadata
 {

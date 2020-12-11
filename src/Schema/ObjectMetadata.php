@@ -11,6 +11,9 @@ interface ObjectMetadata extends NamedMetadata
 {
     const OBJECT_TYPE_COLUMN = 'column';
     const OBJECT_TYPE_CONSTRAINT = 'constraint';
+    const OBJECT_TYPE_FOREIGN_KEY = 'foreignkey';
+    const OBJECT_TYPE_KEY = 'key';
+    const OBJECT_TYPE_PRIMARY_KEY = 'primarykey';
     const OBJECT_TYPE_SEQUENCE = 'sequence';
     const OBJECT_TYPE_TABLE = 'table';
     const OBJECT_TYPE_VIEW = 'view';
