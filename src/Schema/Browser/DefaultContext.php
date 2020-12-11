@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Goat\Schema\Browser;
 
-use Goat\Schema\KeyMetatadata;
+use Goat\Schema\ObjectMetadata;
 
 /**
  * Schema browsing context brings a few utilities to know where you are:
@@ -22,7 +22,18 @@ final class DefaultContext implements Context
     private int $depth = 0;
     private string $schema;
     private string $table;
-    private array $browed = [];
+
+    /**
+     * Circular dependency browse breaker.
+     *
+     * This is the single and only piece of code in the whole schema browsing
+     * API that is not scalable and will progressively eat memory and never
+     * release it.
+     *
+     * @todo
+     *   Find a way to make this more scalable by storing less data.
+     */
+    private array $broswed = [];
 
     public function __construct(int $browserMode, string $schema, string $table)
     {
@@ -50,14 +61,14 @@ final class DefaultContext implements Context
         return $this->table;
     }
 
-    public function markAsBrowed(KeyMetatadata $key): void
+    public function markAsBroswed(ObjectMetadata $object): void
     {
-        $this->browed[$this->compteKeyHash($key)] = true;
+        $this->broswed[$object->getObjectHash()] = true;
     }
 
-    public function hasAlreadyBrowsed(KeyMetatadata $key): bool
+    public function hasAlreadyBrowsed(ObjectMetadata $object): bool
     {
-        return isset($this->browed[$this->compteKeyHash($key)]);
+        return isset($this->broswed[$object->getObjectHash()]);
     }
 
     public function switch(string $schema, string $table)
@@ -74,10 +85,5 @@ final class DefaultContext implements Context
     public function leave(): void
     {
         $this->depth--;
-    }
-
-    private function compteKeyHash(KeyMetatadata $key): string
-    {
-        return $key->getDatabase() . ':' . $key->getSchema() . ':' . $key->getTable() . ':' . $key->getName();
     }
 }

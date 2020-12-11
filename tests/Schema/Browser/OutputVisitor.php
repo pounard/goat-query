@@ -47,7 +47,7 @@ final class OutputVisitor extends AbstractSchemaVisitor
             $context->getDepth(),
             /* $context->getRootSchema() . '.' . */ $context->getRootTable(),
             'COLUMN',
-            $column->getName(),
+            $this->column($column),
         ]));
     }
 
@@ -95,6 +95,11 @@ final class OutputVisitor extends AbstractSchemaVisitor
     private function write(string $line)
     {
         $this->output .= $line . "\n";
+    }
+
+    private function column(ColumnMetadata $column): string
+    {
+        return /* $column->getSchema() . '.' . */ $column->getTable() . '.' . $column->getName();
     }
 
     private function table(TableMetadata $table): string

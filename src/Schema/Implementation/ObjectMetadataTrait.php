@@ -13,6 +13,7 @@ trait ObjectMetadataTrait /* implements ObjectMetadata */
     private string $objectType;
     private string $database;
     private string $schema;
+    private ?string $hash = null;
 
     /**
      * {@inheritdoc}
@@ -43,11 +44,35 @@ trait ObjectMetadataTrait /* implements ObjectMetadata */
      */
     public function equals(ObjectMetadata $other): bool
     {
-        return $other === $this || (
+        if ($other === $this) {
+            return true;
+        }
+        if ($this->getObjectHash() !== $other->getObjectHash()) {
+            return false;
+        }
+
+        // If hash is the same, ensure there was no colisions in hashes.
+        // @todo It's actually possible to have different objects having the
+        //   same name, for example keys in different tables.
+        return
             $other->getObjectType() === $this->objectType &&
             $other->getName() === $this->name  &&
             $other->getSchema() === $this->schema &&
             $other->getDatabase() === $this->database
-        );
+        ;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getObjectHash(): string
+    {
+        return $this->hash ?? ($this->hash = $this->computeObjectHash());
+    }
+
+    private function computeObjectHash(): string
+    {
+        // Collisitions are possible, even thought there's not probable.
+        return \sha1($this->database . ':' . $this->schema . ':' . $this->objectType . ':' . $this->name);
     }
 }

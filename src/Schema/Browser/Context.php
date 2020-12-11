@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Goat\Schema\Browser;
 
-use Goat\Schema\KeyMetatadata;
+use Goat\Schema\ObjectMetadata;
 
 /**
  * Schema browsing context brings a few utilities to know where you are:
@@ -32,5 +32,5 @@ interface Context
 
     public function getRootTable(): string;
 
-    public function hasAlreadyBrowsed(KeyMetatadata $key): bool;
+    public function hasAlreadyBrowsed(ObjectMetadata $object): bool;
 }
