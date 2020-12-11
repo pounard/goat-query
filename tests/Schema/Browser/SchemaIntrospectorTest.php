@@ -8,10 +8,28 @@ use Goat\Runner\Testing\DatabaseAwareQueryTest;
 use Goat\Runner\Testing\TestDriverFactory;
 use Goat\Schema\Browser\SchemaBrowser;
 use Goat\Schema\Tests\TestWithSchemaTrait;
+use Goat\Schema\Analytics\PgSQLAnalyticsVisitor;
 
 final class SchemaBrowserTest extends DatabaseAwareQueryTest
 {
     use TestWithSchemaTrait;
+
+    /**
+     * @dataProvider runnerDataProvider
+     */
+    public function testAnalytics(TestDriverFactory $factory): void
+    {
+        $runner = $factory->getRunner();
+        $this->createInitialSchema($runner);
+        $schemaIntrospector = $runner->getPlatform()->createSchemaIntrospector($runner);
+
+        $visitor = new PgSQLAnalyticsVisitor($runner);
+
+        (new SchemaBrowser($schemaIntrospector))
+            ->visitor($visitor)
+            ->browseTable($factory->getSchema(), 'event_index', SchemaBrowser::MODE_RELATION_BOTH)
+        ;
+    }
 
     /**
      * @dataProvider runnerDataProvider
