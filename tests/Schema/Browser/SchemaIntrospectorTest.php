@@ -6,9 +6,10 @@ namespace Goat\Schema\Tests\Browser;
 
 use Goat\Runner\Testing\DatabaseAwareQueryTest;
 use Goat\Runner\Testing\TestDriverFactory;
+use Goat\Schema\Analytics\PgSQLAnalyticsVisitor;
 use Goat\Schema\Browser\SchemaBrowser;
 use Goat\Schema\Tests\TestWithSchemaTrait;
-use Goat\Schema\Analytics\PgSQLAnalyticsVisitor;
+use Goat\Schema\Tools\GraphvizVisitor;
 
 final class SchemaBrowserTest extends DatabaseAwareQueryTest
 {
@@ -19,6 +20,12 @@ final class SchemaBrowserTest extends DatabaseAwareQueryTest
      */
     public function testAnalytics(TestDriverFactory $factory): void
     {
+        self::expectNotToPerformAssertions();
+
+        if (false === \strpos($factory->getDriverName(), 'pg')) {
+            self::markTestSkipped("Only PostgreSQL supports this");
+        }
+
         $runner = $factory->getRunner();
         $this->createInitialSchema($runner);
         $schemaIntrospector = $runner->getPlatform()->createSchemaIntrospector($runner);
@@ -29,6 +36,30 @@ final class SchemaBrowserTest extends DatabaseAwareQueryTest
             ->visitor($visitor)
             ->browseTable($factory->getSchema(), 'event_index', SchemaBrowser::MODE_RELATION_BOTH)
         ;
+
+        // @todo I can't actually assert anything, because statistics will be
+        //   empty since we have no data in the temporary schema.
+    }
+
+    /**
+     * @dataProvider runnerDataProvider
+     */
+    public function testGraphviz(TestDriverFactory $factory): void
+    {
+        self::expectNotToPerformAssertions();
+
+        $runner = $factory->getRunner();
+        $this->createInitialSchema($runner);
+        $schemaIntrospector = $runner->getPlatform()->createSchemaIntrospector($runner);
+
+        $visitor = new GraphvizVisitor();
+
+        (new SchemaBrowser($schemaIntrospector))
+            ->visitor($visitor)
+            ->browseSchema($factory->getSchema(), SchemaBrowser::MODE_RELATION_NORMAL)
+        ;
+
+        // @todo What can be tested here?
     }
 
     /**

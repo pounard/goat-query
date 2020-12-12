@@ -11,6 +11,11 @@ use Goat\Schema\TableMetadata;
 
 interface SchemaVisitor
 {
+    public function onSchema(
+        Context $context,
+        string $schema
+    ): void;
+
     public function onTable(
         Context $context,
         TableMetadata $table
