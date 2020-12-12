@@ -16,6 +16,7 @@
     "autoload" : {
         "classmap": ["src/Query/Deprecated.php"],
         "psr-4" : {
+            "Goat\\Console\\" : "src/Console",
             "Goat\\Converter\\" : "src/Converter",
             "Goat\\Driver\\" : "src/Driver",
             "Goat\\Query\\" : "src/Query",
@@ -34,7 +35,8 @@
     },
     "require" : {
         "php" : ">=7.4",
-        "psr/log": "^1.1"
+        "psr/log": "^1.1",
+        "symfony/console": "5.*"
     },
     "require-dev" : {
         "makinacorpus/generated-hydrator-bundle": "^1.0.0-alpha2",
