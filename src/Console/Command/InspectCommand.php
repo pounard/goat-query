@@ -52,7 +52,7 @@ final class InspectCommand extends Command
             $this->doListSchemas($driver, $output);
         }
 
-        return self::SUCCESS;
+        return 0;
     }
 
     private function doListSchemas(Driver $driver, OutputInterface $output): void

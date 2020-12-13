@@ -45,6 +45,6 @@ final class GraphvizCommand extends Command
 
         $output->writeln($visitor->getOutput());
 
-        return self::SUCCESS;
+        return 0;
     }
 }

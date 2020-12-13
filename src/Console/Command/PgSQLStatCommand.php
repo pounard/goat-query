@@ -90,11 +90,15 @@ final class PgSQLStatCommand extends Command
             " - 'live' is the estimated row count from pg stat collector.",
         ]);
 
-        return self::SUCCESS;
+        return 0;
     }
 
-    private static function right($value): TableCell
+    private static function right($value)
     {
+        if (!\class_exists(TableCellStyle::class)) {
+            return $value;
+        }
+
         return new TableCell((string) $value, [
             'style' => new TableCellStyle([
                 'align' => 'right',

@@ -36,12 +36,12 @@
     "require" : {
         "php" : ">=7.4",
         "psr/log": "^1.1",
-        "symfony/console": "5.*"
+        "symfony/console": ">= 4.4 || 5.*"
     },
     "require-dev" : {
         "makinacorpus/generated-hydrator-bundle": "^1.0.0-alpha2",
         "ocramius/generated-hydrator": "^3.1",
-        "phpunit/phpunit" : "8.*",
+        "phpunit/phpunit" : "9.*",
         "ramsey/uuid": "^3.8 || ^4"
     },
     "suggest": {
