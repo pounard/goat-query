@@ -179,7 +179,7 @@ class PgSQLSchemaIntrospector implements SchemaIntrospector
                 $columnName,
                 null, // @todo comment
                 $row['udt_name'],
-                (bool) $row['is_nullable'] !== 'NO',
+                $row['is_nullable'] !== 'NO',
                 null, // @todo collation,
                 $row['character_maximum_length'],
                 $row['numeric_precision'],

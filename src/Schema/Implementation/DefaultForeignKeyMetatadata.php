@@ -79,4 +79,12 @@ final class DefaultForeignKeyMetatadata implements ForeignKeyMetatadata
     {
         return $this->foreignColumnNames;
     }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function contains(string $columnName): bool
+    {
+        return \in_array($columnName, $this->columnNames);
+    }
 }

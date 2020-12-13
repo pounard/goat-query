@@ -9,7 +9,7 @@ use Goat\Schema\Browser\AbstractSchemaVisitor;
 /**
  * @experimental
  */
-final class TableStatistics extends AbstractSchemaVisitor
+final class PgSQLTableStatistics extends AbstractSchemaVisitor
 {
     public string $database;
     public string $schema;
@@ -18,6 +18,7 @@ final class TableStatistics extends AbstractSchemaVisitor
     public ?int $sizeIndex = null;
     public ?int $sizeTable = null;
     public ?int $sizeTotal = null;
+    public ?int $rowCount = null;
 
     public ?int $readIndexScans = null;
     public ?int $readIndexTupFetches = null;
@@ -38,7 +39,7 @@ final class TableStatistics extends AbstractSchemaVisitor
     public ?int $vacuumCount = null;
     public ?\DateTimeInterface $vacuumLast = null;
 
-    /** @var ColumnStatistics[] */
+    /** @var PgSQLColumnStatistics[] */
     public ?array $columns = null;
 
     public function __construct(string $database, string $schema, string $table)

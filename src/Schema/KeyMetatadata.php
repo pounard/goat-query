@@ -15,4 +15,9 @@ interface KeyMetatadata extends ObjectMetadata
      * Get ordered columns names.
      */
     public function getColumnNames(): array;
+
+    /**
+     * Does this column appears in this key?
+     */
+    public function contains(string $columnName): bool;
 }
