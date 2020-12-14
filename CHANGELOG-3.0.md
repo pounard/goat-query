@@ -311,6 +311,51 @@ query.
 Note that it also make the query formatting a tiny bit faster, even thought
 there's no chance you'll ever notice it.
 
+## Experimental schema introspection API
+
+The `\Goat\Schema` namespace has been introduced along with several value
+self-descripting value objects for describing the SQL schema.
+
+New `\Goat\Schema\SchemaIntrospector` component has been introduced and can
+be used to read current database SQL schemas, tables and columns, as well a primary
+key and foreign key constraints using PHP code.
+
+**This API is still experimental and may change. Only the PostgreSQL implementation**
+**is working at the time being**.
+
+Usage is quite simple:
+
+```php
+$schemaIntrospector = $runner->getPlatform()->createSchemaIntrospector($runner);
+
+foreach ($schemaIntrospector->listTables('some_schema') as $tableName) {
+    $tableMetadata = $schemaIntrospector->fetchTableMetadata($tableName);
+
+    // From here, you have access to all columns descriptions and primary
+    // and foreign keys on $tableMetadata object.
+}
+```
+
+This schema introspection API also implements a schema browser, graph-oriented
+browsing API on which you can implement your own visitor very easily.
+
+Please see `\Goat\Schema\Browser\SchemaVisitor` for more information.
+
+## Experimental console tool
+
+This verison introduces an experimental console tool, which can be used
+standalone, for reading SQL schema, fetch PostgreSQL analytics, generated a
+GraphViz representation of an SQL schema...
+
+**This console tool is still experimental and may change.**
+
+```sh
+cd /path/to/goat-query
+composer install --no-dev
+export DATABASE_URI=user:pass@hostname/database?option=value
+bin/goat-db --help
+```
+
 ## Testing improvements
 
 A docker environement using docker-composer is provided for running unit and

@@ -21,7 +21,6 @@ final class App
     public static function boostrap(): void
     {
         $input = new ArgvInput();
-        // $debug = (\filter_var($_ENV['DEBUG'] ?? "0", FILTER_VALIDATE_BOOLEAN) ? true : false) && !$input->hasParameterOption('--no-debug', true);
         $application = new Application('goat-db', '3.0.0-alpha');
 
         $application->add(new GraphvizCommand());
