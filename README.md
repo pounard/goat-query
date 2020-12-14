@@ -79,8 +79,9 @@ For advanced documentation, please see the `./docs/` folder.
  - 2.1 - includes MERGE query support, functional testing, driver and platform
    segregation, as well as many fixes, and deprecated some 1.x methods,
  - 3.0 - is a major overhaul of sql writer, converter context, and query builder,
+ - 3.0 - brings an experimental version of schema introspector and console tool,
  - 3.1 - will be a features with many shortcuts and sugar candy additions,
- - 4.0 - may contain schema introspector.
+ - 4.0 - will stabilize schema introspector and console tool.
 
 # Driver organisation
 

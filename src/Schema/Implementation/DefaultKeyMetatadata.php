@@ -46,4 +46,12 @@ final class DefaultKeyMetatadata implements KeyMetatadata
     {
         return $this->columnNames;
     }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function contains(string $columnName): bool
+    {
+        return \in_array($columnName, $this->columnNames);
+    }
 }

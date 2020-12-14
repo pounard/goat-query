@@ -9,7 +9,7 @@ use Goat\Schema\Browser\AbstractSchemaVisitor;
 /**
  * @experimental
  */
-final class ColumnStatistics extends AbstractSchemaVisitor
+final class PgSQLColumnStatistics extends AbstractSchemaVisitor
 {
     public string $database;
     public string $schema;
