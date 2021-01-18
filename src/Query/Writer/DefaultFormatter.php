@@ -971,13 +971,13 @@ class DefaultFormatter extends FormatterBase
         }
 
         $output[] = $this->formatGroupBy($query->getAllGroupBy());
-        $output[] = $this->formatOrderBy($query->getAllOrderBy());
-        $output[] = $this->formatRange(...$query->getRange());
-
         $having = $query->getHaving();
         if (!$having->isEmpty()) {
             $output[] = \sprintf('having %s', $this->formatWhere($having));
         }
+
+        $output[] = $this->formatOrderBy($query->getAllOrderBy());
+        $output[] = $this->formatRange(...$query->getRange());
 
         foreach ($query->getUnion() as $expression) {
             $output[] = "union " . $this->format($expression);
