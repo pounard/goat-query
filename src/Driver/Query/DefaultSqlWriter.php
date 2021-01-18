@@ -759,13 +759,14 @@ class DefaultSqlWriter extends AbstractSqlWriter
         }
 
         $output[] = $this->doFormatGroupBy($context, $query->getAllGroupBy());
-        $output[] = $this->doFormatOrderBy($context, $query->getAllOrderBy());
-        $output[] = $this->doFormatRange($context, ...$query->getRange());
 
         $having = $query->getHaving();
         if (!$having->isEmpty()) {
             $output[] = 'having ' . $this->formatWhere($context, $having);
         }
+
+        $output[] = $this->doFormatOrderBy($context, $query->getAllOrderBy());
+        $output[] = $this->doFormatRange($context, ...$query->getRange());
 
         foreach ($query->getUnion() as $expression) {
             $output[] = "union " . $this->format($expression, $context);

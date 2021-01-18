@@ -112,6 +112,21 @@ final class SelectUnitTest extends TestCase
         );
     }
 
+    public function testHavingWithOrderAndLimit(): void
+    {
+        $select = (new SelectQuery('a'))
+            ->having('b', 12)
+            ->orderBy('foo')
+            ->groupBy('bar')
+            ->range(12, 7)
+        ;
+
+        self::assertSameSql(
+            'select * from "a" group by "bar" having "b" = ? order by "foo" asc limit 12 offset 7',
+            self::format($select)
+        );
+    }
+
     public function testUnion(): void
     {
         $select = new SelectQuery('some_table');
