@@ -7,6 +7,7 @@ namespace Goat\Driver\Runner;
 use Goat\Converter\ConverterContext;
 use Goat\Converter\ConverterInterface;
 use Goat\Converter\ValueConverterRegistry;
+use Goat\Driver\Driver;
 use Goat\Driver\Error\TransactionError;
 use Goat\Driver\Instrumentation\ProfilerAware;
 use Goat\Driver\Instrumentation\ProfilerAwareTrait;
@@ -38,25 +39,54 @@ abstract class AbstractRunner implements Runner, ProfilerAware
 
     private LoggerInterface $logger;
     private Platform $platform;
+    private Driver $driver;
     private SessionConfiguration $sessionConfiguration;
     private ?Transaction $currentTransaction = null;
     private bool $debug = false;
     private ?HydratorRegistry $hydratorRegistry = null;
     private ?QueryBuilder $queryBuilder = null;
     private ?ResultMetadataCache $metadataCache = null;
-    protected ConverterInterface $converter;
-    protected SqlWriter $formatter;
+    private /* mixed */ $connection = null;
+    private ?ConverterInterface $converter = null;
 
-    public function __construct(Platform $platform, SessionConfiguration $sessionConfiguration)
+    public function __construct(Driver $driver, SessionConfiguration $sessionConfiguration)
     {
         $this->logger = new NullLogger();
         $this->sessionConfiguration = $sessionConfiguration;
-        $this->platform = $platform;
-        $this->formatter = $platform->getSqlWriter();
-        $this->converter = new RunnerConverter($this->doCreateConverter(), $this->getPlatform()->getEscaper());
+        $this->driver = $driver;
         if ($this->isResultMetadataSlow()) {
             $this->metadataCache = new ArrayResultMetadataCache();
         }
+    }
+
+    /**
+     * Create converter, will be called only once.
+     *
+     * Using this method allows lazy initialiation.
+     */
+    protected function createConverter(): ConverterInterface
+    {
+        return new RunnerConverter($this->doCreateConverter(), $this->getPlatform()->getEscaper());
+    }
+
+    /**
+     * Call the connection initializer callback and return its result.
+     *
+     * Using this method allows lazy initialiation.
+     */
+    protected function getConnection()
+    {
+        return $this->connection ?? $this->connection = $this->driver->connect();
+    }
+
+    /**
+     * Get SQL writer.
+     *
+     * Using this method allows lazy initialiation.
+     */
+    final protected function getSqlWriter(): SqlWriter
+    {
+        return $this->getPlatform()->getSqlWriter();
     }
 
     /**
@@ -64,7 +94,7 @@ abstract class AbstractRunner implements Runner, ProfilerAware
      */
     final public function getPlatform(): Platform
     {
-        return $this->platform;
+        return $this->platform ?? $this->platform = $this->driver->getPlatform();
     }
 
     /**
@@ -116,7 +146,7 @@ abstract class AbstractRunner implements Runner, ProfilerAware
      */
     public function setValueConverterRegistry(ValueConverterRegistry $valueConverterRegistry): void
     {
-        $this->converter->setValueConverterRegistry($valueConverterRegistry);
+        $this->getConverter()->setValueConverterRegistry($valueConverterRegistry);
     }
 
     /**
@@ -132,7 +162,7 @@ abstract class AbstractRunner implements Runner, ProfilerAware
      */
     final public function getConverter(): ConverterInterface
     {
-        return $this->converter;
+        return $this->converter ?? $this->converter = $this->createConverter();
     }
 
     /**
@@ -184,13 +214,14 @@ abstract class AbstractRunner implements Runner, ProfilerAware
      */
     final public function createTransaction(int $isolationLevel = Transaction::REPEATABLE_READ, bool $allowPending = true): Transaction
     {
+        $platform = $this->getPlatform();
         $transaction = $this->findCurrentTransaction();
 
         if ($transaction) {
             if (!$allowPending) {
                 throw new TransactionError("a transaction already been started, you cannot nest transactions");
             }
-            if (!$this->platform->supportsTransactionSavepoints()) {
+            if (!$platform->supportsTransactionSavepoints()) {
                 throw new TransactionError("Cannot create a nested transaction, driver does not support savepoints");
             }
 
@@ -199,7 +230,7 @@ abstract class AbstractRunner implements Runner, ProfilerAware
             return $savepoint;
         }
 
-        $transaction = $this->platform->createTransaction($this, $isolationLevel);
+        $transaction = $platform->createTransaction($this, $isolationLevel);
         $this->currentTransaction = $transaction;
 
         return $transaction;
@@ -252,7 +283,7 @@ abstract class AbstractRunner implements Runner, ProfilerAware
      */
     protected function createConverterContext(): ConverterContext
     {
-        return new ConverterContext($this->converter, $this->sessionConfiguration);
+        return new ConverterContext($this->getConverter(), $this->sessionConfiguration);
     }
 
     /**
@@ -383,7 +414,7 @@ abstract class AbstractRunner implements Runner, ProfilerAware
 
         try {
             $profiler->begin('prepare');
-            $prepared = $this->formatter->prepare($query);
+            $prepared = $this->getSqlWriter()->prepare($query);
             $rawSQL = $prepared->toString();
             $args = $prepared->prepareArgumentsWith($context, $arguments);
             $profiler->end('prepare');
@@ -424,7 +455,7 @@ abstract class AbstractRunner implements Runner, ProfilerAware
 
         try {
             $profiler->begin('prepare');
-            $prepared = $this->formatter->prepare($query);
+            $prepared = $this->getSqlWriter()->prepare($query);
             $rawSQL = $prepared->toString();
             $args = $prepared->prepareArgumentsWith($context, $arguments);
             $profiler->end('prepare');
@@ -460,7 +491,7 @@ abstract class AbstractRunner implements Runner, ProfilerAware
 
         try {
             $profiler->begin('prepare');
-            $prepared = $this->formatter->prepare($query);
+            $prepared = $this->getSqlWriter()->prepare($query);
             $rawSQL = $prepared->toString();
             $profiler->end('prepare');
 

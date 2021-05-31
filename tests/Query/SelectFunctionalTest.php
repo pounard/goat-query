@@ -33,12 +33,12 @@ final class SelectFunctionalTest extends TestCase
                 and "t"."deadline" < now()
             group
                 by "t"."id", "n"."type"
+            having
+                count(n.nid) < ?
             order by
                 "n"."type" asc,
                 count(n.nid) desc
             limit 7 offset 42
-            having
-                count(n.nid) < ?
             EOT;
                     $countReference = <<<EOT
             select count(*) as "count"
@@ -100,12 +100,12 @@ final class SelectFunctionalTest extends TestCase
                 and "t"."deadline" < now()
             group
                 by "t"."id", "n"."type"
+            having
+                count(n.nid) < ?
             order by
                 "n"."type" asc,
                 count(n.nid) desc
             limit 7 offset 42
-            having
-                count(n.nid) < ?
             EOT;
                     $countReference = <<<EOT
             select count(*) as "count"
@@ -169,12 +169,12 @@ final class SelectFunctionalTest extends TestCase
                 and task.deadline < now()
             group by
                 "task"."id", "task_note"."type"
+            having
+                count(task_note.nid) < ?
             order by
                 "task_note"."type" asc,
                 count(task_note.nid) desc
             limit 7 offset 42
-            having
-                count(task_note.nid) < ?
             EOT;
                     $countReference = <<<EOT
             select count(*) as "count"

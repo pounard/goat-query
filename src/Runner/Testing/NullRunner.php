@@ -18,7 +18,7 @@ class NullRunner extends AbstractRunner
      */
     public function __construct()
     {
-        parent::__construct(new NullPlatform(), SessionConfiguration::empty());
+        parent::__construct(new NullDriver(), SessionConfiguration::empty());
     }
 
     /**

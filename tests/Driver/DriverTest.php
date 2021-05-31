@@ -37,6 +37,8 @@ final class DriverTest extends DatabaseAwareQueryTest
     /** @dataProvider driverDataProvider */
     public function testRunQueriesAfterCloseRaiseError(TestDriverFactory $factory): void
     {
+        self::markTestSkipped("Since lazy connection was implemented, we cannot test this anymore.");
+
         $driver = $factory->getDriver();
 
         if (!$driver->canBeClosedProperly()) {
@@ -53,6 +55,8 @@ final class DriverTest extends DatabaseAwareQueryTest
     /** @dataProvider driverDataProvider */
     public function testGetRunQueriesAfterCloseRaiseError(TestDriverFactory $factory): void
     {
+        self::markTestSkipped("Since lazy connection was implemented, we cannot test this anymore.");
+
         self::markTestIncomplete("Implement me properly");
 
         $driver = $factory->getDriver();

@@ -6,11 +6,9 @@ namespace Goat\Driver\Runner;
 
 use Goat\Converter\ConverterInterface;
 use Goat\Converter\Driver\PgSQLConverter;
-use Goat\Driver\Platform\Platform;
 use Goat\Driver\Query\FormattedQuery;
 use Goat\Query\QueryError;
 use Goat\Runner\AbstractResultIterator;
-use Goat\Runner\SessionConfiguration;
 
 /**
  * ext-pgsql connection implementation
@@ -23,23 +21,6 @@ class ExtPgSQLRunner extends AbstractRunner
     private $connection;
     /** @var string[] */
     private array $prepared = [];
-
-    /**
-     * Constructor
-     *
-     * @param resource $resource
-     *   pgsql extension connection resource.
-     */
-    public function __construct(Platform $platform, SessionConfiguration $sessionConfiguration, $connection)
-    {
-        if (!\is_resource($connection)) {
-            throw new QueryError(\sprintf("First parameter must be a resource, %s given", \gettype($connection)));
-        }
-
-        parent::__construct($platform, $sessionConfiguration);
-
-        $this->connection = $connection;
-    }
 
     /**
      * {@inheritdoc}
@@ -62,10 +43,11 @@ class ExtPgSQLRunner extends AbstractRunner
      */
     protected function doExecute(string $sql, array $args, array $options): AbstractResultIterator
     {
-        $resource = @\pg_query_params($this->connection, $sql, $args);
+        $connection = $this->getConnection();
+        $resource = @\pg_query_params($connection, $sql, $args);
 
         if (!\is_resource($resource)) {
-            $this->serverError($this->connection, $sql);
+            $this->serverError($connection, $sql);
         }
 
         return new ExtPgSQLResultIterator($resource);
@@ -76,12 +58,13 @@ class ExtPgSQLRunner extends AbstractRunner
      */
     protected function doPerform(string $sql, array $args, array $options): int
     {
+        $connection = $this->getConnection();
         $resource = null;
 
         try {
-            $resource = @\pg_query_params($this->connection, $sql, $args);
+            $resource = @\pg_query_params($connection, $sql, $args);
             if (!\is_resource($resource)) {
-                $this->serverError($this->connection, $sql);
+                $this->serverError($connection, $sql);
             }
 
             $rowCount = @\pg_affected_rows($resource);
@@ -104,10 +87,12 @@ class ExtPgSQLRunner extends AbstractRunner
      */
     protected function doPrepareQuery(string $identifier, FormattedQuery $prepared, array $options): void
     {
+        $connection = $this->getConnection();
+
         $this->prepared[$identifier] = $prepared;
 
-        if (false === @\pg_prepare($this->connection, $identifier, $prepared->toString())) {
-            $this->serverError($this->connection);
+        if (false === @\pg_prepare($connection, $identifier, $prepared->toString())) {
+            $this->serverError($connection);
         }
     }
 
@@ -120,13 +105,15 @@ class ExtPgSQLRunner extends AbstractRunner
             throw new QueryError(\sprintf("'%s': query was not prepared", $identifier));
         }
 
+        $connection = $this->getConnection();
+
         $prepared = $this->prepared[$identifier];
         \assert($prepared instanceof FormattedQuery);
 
         $args = $prepared->prepareArgumentsWith($this->createConverterContext(), $args);
-        $resource = @\pg_execute($this->connection, $identifier, $args);
+        $resource = @\pg_execute($connection, $identifier, $args);
         if (false === $resource) {
-            $this->serverError($this->connection, $identifier);
+            $this->serverError($connection, $identifier);
         }
 
         return new ExtPgSQLResultIterator($resource);

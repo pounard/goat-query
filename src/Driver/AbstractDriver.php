@@ -6,20 +6,17 @@ namespace Goat\Driver;
 
 use Goat\Driver\Platform\Platform;
 use Goat\Runner\Runner;
+use Goat\Runner\SessionConfiguration;
 
 abstract class AbstractDriver implements Driver
 {
+    private /* null|resource|object $connection */ $connection = null;
     private ?Configuration $configuration = null;
     private bool $isClosed = true;
     private ?string $serverVersion = null;
     private bool $serverVersionLookupDone = false;
-    protected ?Platform $platform = null;
-    protected ?Runner $runner = null;
-
-    /**
-     * Is connection alive
-     */
-    abstract protected function isConnected(): bool;
+    private ?Platform $platform = null;
+    private ?Runner $runner = null;
 
     /**
      * On object destruction, force connection to close.
@@ -30,26 +27,102 @@ abstract class AbstractDriver implements Driver
     }
 
     /**
-     * Really close the connection.
+     * Really connect the connection.
+     *
+     * @return mixed
+     *   Return the connection object/handle. This method is lazy and will be
+     *   called at first SQL query execution attempt. Return type will depend
+     *   upon the implementation.
      */
-    protected abstract function doConnect(): void;
+    protected abstract function doConnect(SessionConfiguration $sessionConfiguration);
+
+    /**
+     * Is connection alive.
+     *
+     * @param mixed $connectionResource
+     *   Anything that was returned by doConnect().
+     */
+    protected abstract function isConnected(/* mixed */ $connectionResource): bool;
+
+    /**
+     * Really close the connection.
+     *
+     * @param mixed $connectionResource
+     *   Anything that was returned by doConnect().
+     */
+    protected abstract function doClose(/* mixed */ $connectionResource): void;
+
+    /**
+     * Lookup server version, result will be cached for the connection lifetime.
+     *
+     * @param mixed $connectionResource
+     *   Anything that was returned by doConnect().
+     */
+    protected abstract function doLookupServerVersion(/* mixed */ $connectionResource): ?string;
+
+    /**
+     * Create platform.
+     *
+     * In opposition with doCreateRunner() this method will be called lazyly
+     * much further in time, usually when first SQL query gets executed, in this
+     * method, you can proceed with SQL query execution.
+     *
+     * In theory, it will never be pending a transaction since that transactions
+     * need the platform to be created previously to handle them.
+     *
+     * @param mixed $connectionResource
+     *   Anything that was returned by doConnect().
+     */
+    protected abstract function doCreatePlatform(/* mixed */ $connectionResource, string $serverVersion): Platform;
+
+    /**
+     * Create runner.
+     *
+     * This method will be called, the connection will NOT be opened, beware
+     * that you MUST NOT execute SQL at runner creation time, or the lazy
+     * initialization will not be lazy anymore, causing potential performance
+     * issues in some applications.
+     */
+    protected abstract function doCreateRunner(SessionConfiguration $sessionConfiguration, Configuration $configuration): Runner;
+
+    /**
+     * Create session configuration.
+     */
+    protected function createSessionConfiguration(): SessionConfiguration
+    {
+        $configuration = $this->getConfiguration();
+
+        return new SessionConfiguration(
+            $configuration->getClientEncoding(),
+            $configuration->getClientTimeZone(),
+            $configuration->getDatabase(),
+            $configuration->getDriver(),
+            []
+        );
+    }
 
     /**
      * {@inheritdoc}
      */
-    final public function connect(): void
+    final public function connect()
     {
+        if ($this->connection) {
+            return $this->connection;
+        }
+
         $configuration = $this->getConfiguration();
         $configuration->getLogger()->info(\sprintf("[goat-query] Connecting to %d using %s.", $configuration->toString(), static::class));
 
-        $this->doConnect();
-        $this->isClosed = false;
-    }
+        $resource = $this->doConnect($this->createSessionConfiguration());
 
-    /**
-     * Lookup server version, result will be cached for the connection lifetime.
-     */
-    protected abstract function doLookupServerVersion(): ?string;
+        if (!$resource || (!\is_resource($resource) && !\is_object($resource))) {
+            throw new \LogicException("Connection is neither a valid resource nor an object.");
+        }
+
+        $this->isClosed = false;
+
+        return $this->connection = $resource;
+    }
 
     /**
      * Get server version.
@@ -68,46 +141,57 @@ abstract class AbstractDriver implements Driver
     }
 
     /**
-     * Really close the connection.
-     */
-    protected abstract function doClose(): void;
-
-    /**
      * {@inheritdoc}
      */
     final public function close(): void
     {
         $configuration = $this->getConfiguration();
+
+        if (!$this->connection) {
+            $configuration->getLogger()->info(\sprintf("[goat-query] Attempting disconnection on an already closed resource using %s.", static::class));
+
+            return;
+        }
+
         $configuration->getLogger()->info(\sprintf("[goat-query] Disconnecting from %s using %s.", $configuration->toString(), static::class));
 
-        $this->isClosed = true;
-        $this->doClose();
-    }
+        try {
+            $this->doClose($this->connection);
+        } finally {
+            $this->connection = null;
+            $this->isClosed = true;
+            $this->platform = null;
+            $this->runner = null;
 
-    /**
-     * Create platform.
-     */
-    protected abstract function doCreatePlatform(): Platform;
+            // Without \gc_collect_cycles() call, unit tests will fail.
+            \gc_collect_cycles();
+        }
+    }
 
     /**
      * {@inheritdoc}
      */
     final public function getPlatform(): Platform
     {
-        return $this->platform ?? ($this->platform = $this->doCreatePlatform());
+        return $this->platform ?? (
+            $this->platform = $this->doCreatePlatform(
+                $this->connect(),
+                $this->getServerVersion()
+            )
+        );
     }
-
-    /**
-     * Create runner.
-     */
-    protected abstract function doCreateRunner(): Runner;
 
     /**
      * {@inheritdoc}
      */
     final public function getRunner(): Runner
     {
-        return $this->runner ?? ($this->runner = $this->doCreateRunner());
+        return $this->runner ?? (
+            $this->runner = $this->doCreateRunner(
+                $this->createSessionConfiguration(),
+                $this->getConfiguration()
+            )
+        );
     }
 
     /**
@@ -115,7 +199,7 @@ abstract class AbstractDriver implements Driver
      */
     public function setConfiguration(Configuration $configuration): void
     {
-        if ($this->isConnected()) {
+        if ($this->connection) {
             throw new ConfigurationError("Cannot set configuration after connection has been made");
         }
         $this->configuration = $configuration;

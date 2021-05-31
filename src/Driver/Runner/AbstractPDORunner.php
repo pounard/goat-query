@@ -4,27 +4,14 @@ declare(strict_types=1);
 
 namespace Goat\Driver\Runner;
 
-use Goat\Driver\Platform\Platform;
 use Goat\Driver\Query\FormattedQuery;
 use Goat\Query\QueryError;
 use Goat\Runner\AbstractResultIterator;
-use Goat\Runner\SessionConfiguration;
 
 abstract class AbstractPDORunner extends AbstractRunner
 {
-    private \PDO $connection;
     /** @var string[] */
     private array $prepared = [];
-
-    /**
-     * Default constructor
-     */
-    public function __construct(Platform $platform, SessionConfiguration $sessionConfiguration, \PDO $connection)
-    {
-        parent::__construct($platform, $sessionConfiguration);
-
-        $this->connection = $connection;
-    }
 
     /**
      * {@inheritdoc}
@@ -35,17 +22,17 @@ abstract class AbstractPDORunner extends AbstractRunner
     }
 
     /**
-     * Get PDO instance, connect if not connected
-     */
-    final protected function getPdo(): \PDO
-    {
-        return $this->connection;
-    }
-
-    /**
      * Convert exception.
      */
     abstract protected function convertPdoError(\PDOException $e): \Throwable;
+
+    /**
+     * For typing only.
+     */
+    protected function getConnection(): \PDO
+    {
+        return parent::getConnection();
+    }
 
     /**
      * {@inheritdoc}
@@ -53,7 +40,7 @@ abstract class AbstractPDORunner extends AbstractRunner
     protected function doExecute(string $sql, array $args, array $options): AbstractResultIterator
     {
         try {
-            $statement = $this->connection->prepare($sql, [\PDO::ATTR_CURSOR => \PDO::CURSOR_FWDONLY]);
+            $statement = $this->getConnection()->prepare($sql, [\PDO::ATTR_CURSOR => \PDO::CURSOR_FWDONLY]);
             $statement->execute($args);
 
             return new PDOResultIterator($statement);
@@ -69,7 +56,7 @@ abstract class AbstractPDORunner extends AbstractRunner
     protected function doPerform(string $sql, array $args, array $options): int
     {
         try {
-            $statement = $this->connection->prepare($sql, [\PDO::ATTR_CURSOR => \PDO::CURSOR_FWDONLY]);
+            $statement = $this->getConnection()->prepare($sql, [\PDO::ATTR_CURSOR => \PDO::CURSOR_FWDONLY]);
             $statement->execute($args);
 
             return $statement->rowCount();
@@ -86,7 +73,7 @@ abstract class AbstractPDORunner extends AbstractRunner
     {
         // @merge argument types from query
         $this->prepared[$identifier] = [
-            $this->connection->prepare(
+            $this->getConnection()->prepare(
                 $prepared->toString(),
                 [\PDO::ATTR_CURSOR => \PDO::CURSOR_FWDONLY]
             ),

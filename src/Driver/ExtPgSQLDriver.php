@@ -6,7 +6,6 @@ namespace Goat\Driver;
 
 use Goat\Driver\Platform\PgSQLPlatform;
 use Goat\Driver\Platform\Platform;
-use Goat\Driver\Platform\Escaper\Escaper;
 use Goat\Driver\Platform\Escaper\ExtPgSQLEscaper;
 use Goat\Driver\Runner\ExtPgSQLRunner;
 use Goat\Runner\Runner;
@@ -14,43 +13,6 @@ use Goat\Runner\SessionConfiguration;
 
 class ExtPgSQLDriver extends AbstractDriver
 {
-    /** @var null|resource */
-    private $connection = null;
-    private ?Escaper $escaper = null;
-
-    /**
-     * {@inheritdoc}
-     */
-    protected function isConnected(): bool
-    {
-        return \is_resource($this->connection);
-    }
-
-    /**
-     * Creates a valid ext-pgsql connection string
-     */
-    private function buildConnectionString(array $options): string
-    {
-        $params = [
-            'port' => $options['port'],
-            'dbname' => $options['database'],
-            'user' => $options['username'],
-            'password' => $options['password'],
-        ];
-
-        // If 'host' is an absolute path, the library will lookup for the
-        // socket by itself, no need to specify it.
-        $dsn = 'host='.$options['host'];
-
-        foreach ($params as $key => $value) {
-            if ($value) {
-                $dsn .= ' '.$key.'='.$value;
-            }
-        }
-
-        return $dsn;
-    }
-
     /**
      * {@inheritdoc}
      */
@@ -62,22 +24,13 @@ class ExtPgSQLDriver extends AbstractDriver
     /**
      * {@inheritdoc}
      */
-    protected function doConnect(): void
+    protected function doConnect(SessionConfiguration $sessionConfiguration)
     {
         $configuration = $this->getConfiguration();
         $connectionString = $this->buildConnectionString($configuration->getOptions());
 
-        $driver = $configuration->getDriver();
-        $clientEncoding = $configuration->getClientEncoding();
-        $clientTimeZone = $configuration->getClientTimeZone();
-
-        $sessionConfiguration = new SessionConfiguration(
-            $clientEncoding,
-            $clientTimeZone,
-            $configuration->getDatabase(),
-            $driver,
-            []
-        );
+        $clientEncoding = $sessionConfiguration->getClientEncoding();
+        $clientTimeZone = $sessionConfiguration->getClientTimeZone();
 
         try {
             //
@@ -110,18 +63,11 @@ class ExtPgSQLDriver extends AbstractDriver
             // poool for speeding up your application, use an external proxy
             // such as pg_bouncer instead: https://www.pgbouncer.org/
             //
-            $this->connection = $resource = \pg_connect($connectionString, PGSQL_CONNECT_FORCE_NEW);
+            $connection = \pg_connect($connectionString, PGSQL_CONNECT_FORCE_NEW);
 
-            \pg_set_error_verbosity($resource,  PGSQL_ERRORS_VERBOSE);
-            \pg_query($resource, "SET client_encoding TO " . \pg_escape_literal($clientEncoding));
-            \pg_query($resource, "SET TIME ZONE " . \pg_escape_literal($clientTimeZone));
-
-            $this->escaper = new ExtPgSQLEscaper($this, $this->connection);
-            $this->platform = new PgSQLPlatform($this->escaper, $this->getServerVersion());
-
-            $runner = new ExtPgSQLRunner($this->platform, $sessionConfiguration, $resource);
-            $runner->setLogger($configuration->getLogger());
-            $this->runner = $runner;
+            \pg_set_error_verbosity($connection,  PGSQL_ERRORS_VERBOSE);
+            \pg_query($connection, "SET client_encoding TO " . \pg_escape_literal($connection, $clientEncoding));
+            \pg_query($connection, "SET TIME ZONE " . \pg_escape_literal($connection, $clientTimeZone));
 
             /*
             foreach ($configuration->getDriverOptions() as $attribute => $value) {
@@ -130,24 +76,87 @@ class ExtPgSQLDriver extends AbstractDriver
              */
 
         } catch (\Throwable $e) {
-            if (\is_resource($this->connection)) {
-                \pg_close($this->connection);
+            if (\is_resource($connection)) {
+                \pg_close($connection);
             }
             throw $e;
+        }
+
+        return $connection;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function isConnected($connectionResource): bool
+    {
+        return \is_resource($connectionResource) /* && is_resource_valid($connection) */;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function doClose($connectionResource): void
+    {
+        if (\is_resource($connectionResource)) {
+            \pg_close($connectionResource);
         }
     }
 
     /**
      * {@inheritdoc}
      */
-    protected function doLookupServerVersion(): ?string
+    protected function doLookupServerVersion($connectionResource): ?string
     {
-        if (!$this->connection) {
-            throw new ConfigurationError("Server connection is closed.");
+        // @todo error handling here?
+        return \pg_version($connectionResource)['server'];
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function doCreatePlatform($connectionResource, string $serverVersion): Platform
+    {
+        return new PgSQLPlatform(
+            new ExtPgSQLEscaper($connectionResource),
+            $serverVersion
+        );
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function doCreateRunner(SessionConfiguration $sessionConfiguration, Configuration $configuration): Runner
+    {
+        $runner = new ExtPgSQLRunner($this, $sessionConfiguration);
+        $runner->setLogger($configuration->getLogger());
+
+        return $runner;
+    }
+
+    /**
+     * Creates a valid ext-pgsql connection string
+     */
+    private function buildConnectionString(array $options): string
+    {
+        $params = [
+            'port' => $options['port'],
+            'dbname' => $options['database'],
+            'user' => $options['username'],
+            'password' => $options['password'],
+        ];
+
+        // If 'host' is an absolute path, the library will lookup for the
+        // socket by itself, no need to specify it.
+        $dsn = 'host='.$options['host'];
+
+        foreach ($params as $key => $value) {
+            if ($value) {
+                $dsn .= ' '.$key.'='.$value;
+            }
         }
 
-        // @todo error handling here?
-        return \pg_version($this->connection)['server'];
+        return $dsn;
     }
 
     /**
@@ -170,7 +179,8 @@ class ExtPgSQLDriver extends AbstractDriver
         // Example string to parse:
         //   PostgreSQL 9.2.9 on x86_64-unknown-linux-gnu, compiled by gcc (GCC) 4.4.7 20120313 (Red Hat 4.4.7-4), 64-bit
         $string = \reset($row);
-        $pieces = \explode(', ', $string);
+        $pieces = \explode(', ', $strin
+        g);
         $server = \explode(' ', $pieces[0]);
 
         return [
@@ -224,41 +234,4 @@ class ExtPgSQLDriver extends AbstractDriver
         return $this;
     }
      */
-
-    /**
-     * {@inheritdoc}
-     */
-    protected function doClose(): void
-    {
-        if (\is_resource($this->connection)) {
-            \pg_close($this->connection);
-            $this->connection = null;
-        }
-        $this->platform = null;
-        $this->runner = null;
-        // Without \gc_collect_cycles() call, unit tests will fail.
-        \gc_collect_cycles();
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    protected function doCreatePlatform(): Platform
-    {
-        if (!$this->connection) {
-            $this->connect();
-        }
-        return $this->platform;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    protected function doCreateRunner(): Runner
-    {
-        if (!$this->connection) {
-            $this->connect();
-        }
-        return $this->runner;
-    }
 }

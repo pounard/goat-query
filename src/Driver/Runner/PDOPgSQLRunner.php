@@ -93,7 +93,7 @@ class PDOPgSQLRunner extends AbstractPDORunner
                 // The exception code is always set to 7 here.
                 // We have to match against the SQLSTATE in the error message in these cases.
                 if (\strpos($error->getMessage(), 'SQLSTATE[08006]') !== false) {
-                    // Connexion error.
+                    // Connection error.
                 }
 
                 break;

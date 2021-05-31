@@ -6,12 +6,8 @@ namespace Goat\Driver\Platform\Escaper;
 
 use Goat\Driver\ConfigurationError;
 use Goat\Driver\Runner\ExtPgSQLErrorTrait;
-use Goat\Driver\ExtPgSQLDriver;
 
 /**
- * The escaper keeps a reference towards the Driver to avoid it from being
- * destructed, which would close the connection unintenionally.
- *
  * The escaper seems like the right place to do this, platform must be
  * connection independent (even if it's not completely, due to this escaper
  * dependency).
@@ -19,16 +15,11 @@ use Goat\Driver\ExtPgSQLDriver;
 class ExtPgSQLEscaper extends AbstractPgSQLEscaper
 {
     use ExtPgSQLErrorTrait;
-
-    /** ExtPgSQLDriver */
-    private $driver;
-
     /** @var resource<\pg_connect> */
     private $connection;
 
-    public function __construct(ExtPgSQLDriver $driver, $connection)
+    public function __construct($connection)
     {
-        $this->driver = $driver;
         if (!\is_resource($connection)) {
             throw new ConfigurationError("\$connection parameter must be a \\pg_connect() opened resource.");
         }

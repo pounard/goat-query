@@ -31,8 +31,13 @@ interface Driver
      *
      * This method might actually never be called, the driver/runner combo
      * can handle it by itself and do lazy-initialization.
+     *
+     * @return mixed
+     *   Return the connection object/handle. This method is lazy and will be
+     *   called at first SQL query execution attempt. Return type will depend
+     *   upon the implementation.
      */
-    public function connect(): void;
+    public function connect();
 
     /**
      * Get server version.
