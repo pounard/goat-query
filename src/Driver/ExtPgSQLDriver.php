@@ -209,7 +209,7 @@ class ExtPgSQLDriver extends AbstractDriver
             ->query(
                 \sprintf(
                     "SET CLIENT_ENCODING TO %s",
-                    $this->getEscaper()->escapeLiteral($encoding)
+                    \pg_escape_literal($connection, $encoding)
                 )
             )
         ;
@@ -226,8 +226,8 @@ class ExtPgSQLDriver extends AbstractDriver
         foreach ($configuration as $key => $value) {
             $pdo->query(\sprintf(
                 "SET %s TO %s",
-                $this->getEscaper()->escapeIdentifier($key),
-                $this->getEscaper()->escapeLiteral($value)
+                \pg_escape_literal($connection, $key),
+                \pg_escape_literal($connection, $value)
             ));
         }
 
