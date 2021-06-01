@@ -48,6 +48,7 @@ abstract class AbstractRunner implements Runner, ProfilerAware
     private ?ResultMetadataCache $metadataCache = null;
     private /* mixed */ $connection = null;
     private ?ConverterInterface $converter = null;
+    private ?ValueConverterRegistry $valueConverterRegistry = null;
 
     public function __construct(Driver $driver, SessionConfiguration $sessionConfiguration)
     {
@@ -60,16 +61,6 @@ abstract class AbstractRunner implements Runner, ProfilerAware
     }
 
     /**
-     * Create converter, will be called only once.
-     *
-     * Using this method allows lazy initialiation.
-     */
-    protected function createConverter(): ConverterInterface
-    {
-        return new RunnerConverter($this->doCreateConverter(), $this->getPlatform()->getEscaper());
-    }
-
-    /**
      * Call the connection initializer callback and return its result.
      *
      * Using this method allows lazy initialiation.
@@ -77,6 +68,25 @@ abstract class AbstractRunner implements Runner, ProfilerAware
     protected function getConnection()
     {
         return $this->connection ?? $this->connection = $this->driver->connect();
+    }
+
+    /**
+     * Create converter, will be called only once.
+     *
+     * Using this method allows lazy initialiation.
+     */
+    final protected function createConverter(): ConverterInterface
+    {
+        $converter = new RunnerConverter(
+            $this->doCreateConverter(),
+            $this->getPlatform()->getEscaper()
+        );
+
+        if ($this->valueConverterRegistry) {
+            $converter->setValueConverterRegistry($this->valueConverterRegistry);
+        }
+
+        return $converter;
     }
 
     /**
@@ -146,7 +156,7 @@ abstract class AbstractRunner implements Runner, ProfilerAware
      */
     public function setValueConverterRegistry(ValueConverterRegistry $valueConverterRegistry): void
     {
-        $this->getConverter()->setValueConverterRegistry($valueConverterRegistry);
+        $this->valueConverterRegistry = $valueConverterRegistry;
     }
 
     /**
