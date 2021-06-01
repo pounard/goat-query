@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Goat\Converter\Driver;
 
 use Goat\Converter\TypeConversionError;
+use Goat\Query\QueryError;
 
 /**
  * In PgSQL, array are types, you can't have an array with different types within.
@@ -31,10 +32,10 @@ final class PgSQLParser
             return [];
         }
         if ($length < 2) {
-            throw new \Exception("malformed input: string length must be 0 or at least 2");
+            throw new QueryError("malformed input: string length must be 0 or at least 2");
         }
         if ('{' !== $string[0] || '}' !== $string[$length - 1]) {
-            throw new \Exception("malformed input: array must be enclosed using {}");
+            throw new QueryError("malformed input: array must be enclosed using {}");
         }
 
         return self::parseArrayRecursion($string, 1, $length)[0];
@@ -90,7 +91,7 @@ final class PgSQLParser
             $char = $string[$i];
             if ('\\' === $char) {
                 if ($i === $length) {
-                    throw new \Exception(\sprintf("misplaced \\ escape char at end of string"));
+                    throw new QueryError(\sprintf("misplaced \\ escape char at end of string"));
                 }
                 $string[$i++]; // Skip escaped char
             } else if ('"' === $char) {

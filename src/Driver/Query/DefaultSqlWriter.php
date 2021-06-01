@@ -934,6 +934,6 @@ class DefaultSqlWriter extends AbstractSqlWriter
             return $this->formatAliasedExpression($query, $context);
         }
 
-        throw new \InvalidArgumentException();
+        throw new QueryError(\sprintf("Unexpected expression object type: ", \get_class($query)));
     }
 }
