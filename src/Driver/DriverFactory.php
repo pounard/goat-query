@@ -13,7 +13,7 @@ final class DriverFactory
      */
     public static function fromPDOConnection(\PDO $connection, string $driverName): Driver
     {
-        return PDODriver::fromPDOConnection($connection, $driverName);
+        return PDODriver::createFromPDO($connection, $driverName);
     }
 
     /**

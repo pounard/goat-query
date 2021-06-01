@@ -17,19 +17,20 @@ use Goat\Runner\SessionConfiguration;
 class PDODriver extends AbstractDriver
 {
     /**
-     * Create driver from existing PDO connection
+     * Create driver from existing PDO connection.
      */
     public static function createFromPDO(\PDO $connection, string $driverName): self
     {
         $configuration = new Configuration([
             'driver' => $driverName,
+            // We have no mean to find the database name with generic PDO
+            // connection so let's just write something false to avoid errors
+            // when SessionConfiguration object is being created.
+            'database' => 'external',
         ]);
 
         $ret = new self();
-        $ret->setConfiguration($configuration);
-        $ret->connection = $connection;
-
-        $ret->preparePlatform();
+        $ret->initializeFromExternalConnection($connection, $configuration);
 
         return $ret;
     }
@@ -48,7 +49,7 @@ class PDODriver extends AbstractDriver
     protected function doConnect(SessionConfiguration $sessionConfiguration)
     {
         $configuration = $this->getConfiguration();
-        $connectionString = $this->buildConnectionString($configuration->getOptions());
+        $connectionString = self::buildConnectionString($configuration->getOptions());
 
         // @todo set the client encoding properly.
         // $clientEncoding = $sessionConfiguration->getClientEncoding();
@@ -95,13 +96,14 @@ class PDODriver extends AbstractDriver
     protected function isConnected(/* mixed */ $connectionResource): bool
     {
         if (!$connectionResource instanceof \PDO) {
-            throw new \InvalidArgumentException("Driver is broken, connection should be a \\PDO instance.");
+            throw new ConfigurationError("Driver is broken, connection should be a \\PDO instance.");
         }
 
         // There is no way to programatically close a PDO connection so we are
         // just going to let the driver set the connection to null and let PDO
         // close gracefuly when being cleaned up by garbage collector. But in
         // real life, it just doesn't work and connection never closes.
+        return true;
     }
 
     /**
@@ -110,7 +112,7 @@ class PDODriver extends AbstractDriver
     protected function doClose(/* mixed */ $connectionResource): void
     {
         if (!$connectionResource instanceof \PDO) {
-            throw new \InvalidArgumentException("Driver is broken, connection should be a \\PDO instance.");
+            throw new ConfigurationError("Driver is broken, connection should be a \\PDO instance.");
         }
         \assert($connectionResource instanceof \PDO);
     }
@@ -158,7 +160,7 @@ class PDODriver extends AbstractDriver
     protected function doCreatePlatform($connectionResource, string $serverVersion): Platform
     {
         if (!$connectionResource instanceof \PDO) {
-            throw new \InvalidArgumentException("Driver is broken, connection should be a \\PDO instance.");
+            throw new ConfigurationError("Driver is broken, connection should be a \\PDO instance.");
         }
 
         switch ($driver = $this->getConfiguration()->getDriver()) {
@@ -175,9 +177,13 @@ class PDODriver extends AbstractDriver
     }
 
     /**
-     * Creates a valid PDO connection string
+     * Creates a valid PDO connection string.
+     *
+     * @internal
+     *   Public for unit testing purpose, do not use it, this method is not
+     *   considered as public API and subject to change.
      */
-    private function buildConnectionString(array $options): string
+    public static function buildConnectionString(array $options): string
     {
         $params = [
             'port' => $options['port'],

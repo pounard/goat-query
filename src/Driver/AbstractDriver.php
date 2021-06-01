@@ -13,8 +13,10 @@ abstract class AbstractDriver implements Driver
     private /* null|resource|object $connection */ $connection = null;
     private ?Configuration $configuration = null;
     private bool $isClosed = true;
+    private bool $hasBeenInitOnce = false;
     private ?string $serverVersion = null;
     private bool $serverVersionLookupDone = false;
+    private bool $createdFromExternalConnexion = false;
     private ?Platform $platform = null;
     private ?Runner $runner = null;
 
@@ -24,6 +26,26 @@ abstract class AbstractDriver implements Driver
     public function __destruct()
     {
         $this->close();
+    }
+
+    /**
+     * Initialize internal connection from an external, unhandled connection.
+     */
+    protected function initializeFromExternalConnection(/* mixed */ $connectionResource, Configuration $configuration): void
+    {
+        if ($this->hasBeenInitOnce) {
+            throw new ConfigurationError("Cannot initialize from an external connection object an already initialized driver.");
+        }
+        if (!$this->isConnected($connectionResource)) {
+            throw new ConfigurationError("Connection resource or object is not connected.");
+        }
+
+        $this->createdFromExternalConnexion = true;
+        $this->hasBeenInitOnce = true;
+
+        $this->configuration = $configuration;
+        $this->connection = $connectionResource;
+        $this->isClosed = false;
     }
 
     /**
@@ -37,7 +59,10 @@ abstract class AbstractDriver implements Driver
     protected abstract function doConnect(SessionConfiguration $sessionConfiguration);
 
     /**
-     * Is connection alive.
+     * Is connection valid and alive.
+     *
+     * You must ensure resource or object is the right type, and that connection
+     * is opened as well.
      *
      * @param mixed $connectionResource
      *   Anything that was returned by doConnect().
@@ -109,6 +134,11 @@ abstract class AbstractDriver implements Driver
         if ($this->connection) {
             return $this->connection;
         }
+        if ($this->createdFromExternalConnexion) {
+            throw new ConfigurationError("Driver was initialized using an external connection which has been closed.");
+        }
+
+        $this->hasBeenInitOnce = true;
 
         $configuration = $this->getConfiguration();
         $configuration->getLogger()->info(\sprintf("[goat-query] Connecting to %d using %s.", $configuration->toString(), static::class));
@@ -137,7 +167,7 @@ abstract class AbstractDriver implements Driver
             return $this->serverVersion;
         }
 
-        return $this->serverVersion = $this->doLookupServerVersion();
+        return $this->serverVersion = $this->doLookupServerVersion($this->connect());
     }
 
     /**
@@ -147,8 +177,14 @@ abstract class AbstractDriver implements Driver
     {
         $configuration = $this->getConfiguration();
 
+        if ($this->createdFromExternalConnexion) {
+            $configuration->getLogger()->warning(\sprintf("[goat-query] Driver attempted to close an external connection resource using %s, ignoring.", static::class));
+
+            return;
+        }
+
         if (!$this->connection) {
-            $configuration->getLogger()->info(\sprintf("[goat-query] Attempting disconnection on an already closed resource using %s.", static::class));
+            $configuration->getLogger()->info(\sprintf("[goat-query] Attempting disconnection on an already closed resource using %s, ignoring.", static::class));
 
             return;
         }
