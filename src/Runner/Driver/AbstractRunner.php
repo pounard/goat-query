@@ -177,7 +177,7 @@ abstract class AbstractRunner implements Runner, EscaperInterface
     /**
      * Get current transaction if any
      */
-    final private function findCurrentTransaction(): ?Transaction
+    private function findCurrentTransaction(): ?Transaction
     {
         if ($this->currentTransaction) {
             if ($this->currentTransaction->isStarted()) {

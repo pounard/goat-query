@@ -146,7 +146,7 @@ abstract class FormatterBase implements FormatterInterface
      * Uses the connection driven escape sequences to build the parameter
      * matching regex.
      */
-    final private function buildParameterRegex(): void
+    private function buildParameterRegex(): void
     {
         // Please see this really excellent Stack Overflow answer:
         //   https://stackoverflow.com/a/23589204
@@ -190,7 +190,7 @@ abstract class FormatterBase implements FormatterInterface
      *   First value is the query string, second is the reworked array
      *   of parameters, if conversions were needed
      */
-    final private function rewriteQueryAndParameters(string $formattedSQL, ?string $identifier = null): FormattedQuery
+    private function rewriteQueryAndParameters(string $formattedSQL, ?string $identifier = null): FormattedQuery
     {
         $index = 0;
         $argumentList = new ArgumentList();
