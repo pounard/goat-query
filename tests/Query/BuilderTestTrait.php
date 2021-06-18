@@ -69,4 +69,9 @@ trait BuilderTestTrait
     {
         return self::prepare($query)->toString();
     }
+
+    protected static function formatWith($query, SqlWriter $writer): string
+    {
+        return $writer->prepare($query)->toString();
+    }
 }

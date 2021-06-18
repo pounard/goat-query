@@ -12,6 +12,8 @@ use Goat\Query\MergeQuery;
 use Goat\Query\Query;
 use Goat\Query\QueryError;
 use Goat\Query\UpdateQuery;
+use Goat\Query\Where;
+use Goat\Query\Expression\LikeExpression;
 use Goat\Query\Expression\RawExpression;
 
 /**
@@ -195,5 +197,35 @@ class MySQLWriter extends DefaultSqlWriter
         }
 
         return \implode("\n", $output);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function formatLikeExpression(LikeExpression $value, WriterContext $context): string
+    {
+        if ($value->hasValue()) {
+            $pattern = $value->getPattern(
+                $this->escaper->escapeLike(
+                    $value->getUnsaveValue()
+                )
+            );
+        } else {
+            $pattern = $value->getPattern();
+        }
+
+        // MySQL doesn't like the ILIKE operator, at least not prior to 8.x.
+        switch ($operator = $value->getOperator()) {
+            case Where::ILIKE:
+                $operator = Where::LIKE;
+                break;
+            case Where::NOT_ILIKE:
+                $operator = Where::NOT_LIKE;
+                break;
+            default:
+                break;
+        }
+
+        return $this->format($value->getColumn(), $context) . ' ' . $operator . ' ' . $this->escaper->escapeLiteral($pattern);
     }
 }

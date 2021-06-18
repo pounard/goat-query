@@ -13,6 +13,26 @@ final class LikeUnitTest extends TestCase
     use BuilderTestTrait;
 
     /**
+     * MySQL does not support ILIKE.
+     */
+    public function testLikeMySql(): void
+    {
+        $expression = LikeExpression::iLike('some column', '%foo?_', 'b%a_r');
+
+        self::assertSameSql("\"some column\" like '%foob\\%a\\_r_'", self::formatWith($expression, self::createMySQLWriter()));
+    }
+
+    /**
+     * MySQL does not support ILIKE.
+     */
+    public function testNotLikeMySql(): void
+    {
+        $expression = LikeExpression::notILike('some column', '%foo?_', 'b%a_r');
+
+        self::assertSameSql("\"some column\" not like '%foob\\%a\\_r_'", self::formatWith($expression, self::createMySQLWriter()));
+    }
+
+    /**
      * Basic like test.
      */
     public function testLikeWithValue(): void
