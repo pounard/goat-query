@@ -4,24 +4,25 @@ declare(strict_types=1);
 
 namespace Goat\Runner;
 
-use Goat\Driver\Instrumentation\QueryProfiler;
+use MakinaCorpus\Profiling\Profiler;
+use MakinaCorpus\Profiling\Implementation\DefaultProfiler;
 
 trait WithQueryProfilerTrait
 {
-    private ?QueryProfiler $profiler = null;
+    private ?Profiler $profiler = null;
 
     /**
      * {@inheritdoc}
      */
-    public function getQueryProfiler(): QueryProfiler
+    public function getQueryProfiler(): Profiler
     {
-        return $this->profiler ?? QueryProfiler::empty();
+        return $this->profiler ?? new DefaultProfiler();
     }
 
     /**
      * @internal
      */
-    public function setQueryProfiler(QueryProfiler $profiler): void
+    public function setQueryProfiler(Profiler $profiler): void
     {
         $this->profiler = $profiler;
     }

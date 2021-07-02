@@ -36,7 +36,8 @@
     "require" : {
         "php" : ">=7.4",
         "psr/log": "^1.1",
-        "symfony/console": ">= 4.4 || 5.*"
+        "symfony/console": ">= 4.4 || 5.*",
+        "makinacorpus/profiling": "^1.1.0"
     },
     "require-dev" : {
         "makinacorpus/generated-hydrator-bundle": "^1.0.0-alpha2",

@@ -9,8 +9,6 @@ use Goat\Converter\ConverterInterface;
 use Goat\Converter\ValueConverterRegistry;
 use Goat\Driver\Driver;
 use Goat\Driver\Error\TransactionError;
-use Goat\Driver\Instrumentation\ProfilerAware;
-use Goat\Driver\Instrumentation\ProfilerAwareTrait;
 use Goat\Driver\Platform\Platform;
 use Goat\Driver\Query\FormattedQuery;
 use Goat\Driver\Query\SqlWriter;
@@ -30,12 +28,14 @@ use Goat\Runner\Hydrator\DefaultHydratorRegistry;
 use Goat\Runner\Hydrator\HydratorRegistry;
 use Goat\Runner\Metadata\ArrayResultMetadataCache;
 use Goat\Runner\Metadata\ResultMetadataCache;
+use MakinaCorpus\Profiling\Implementation\ProfilerContextAware;
+use MakinaCorpus\Profiling\Implementation\ProfilerContextAwareTrait;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
-abstract class AbstractRunner implements Runner, ProfilerAware
+abstract class AbstractRunner implements Runner, ProfilerContextAware
 {
-    use ProfilerAwareTrait;
+    use ProfilerContextAwareTrait;
 
     private LoggerInterface $logger;
     private Platform $platform;
@@ -129,10 +129,6 @@ abstract class AbstractRunner implements Runner, ProfilerAware
     final public function setDebug(bool $value): void
     {
         $this->debug = $value;
-
-        if ($value) {
-            $this->initializeProfiler();
-        }
     }
 
     /**
@@ -420,18 +416,19 @@ abstract class AbstractRunner implements Runner, ProfilerAware
         $options = $this->normalizeOptions($options);
         $args = null;
         $rawSQL = '';
-        $profiler = $this->startProfilerQuery();
+
+        $profiler = $this->getContextProfiler()->start('goat-query/execute');
 
         try {
-            $profiler->begin('prepare');
+            $profiler->start('prepare');
             $prepared = $this->getSqlWriter()->prepare($query);
             $rawSQL = $prepared->toString();
             $args = $prepared->prepareArgumentsWith($context, $arguments);
-            $profiler->end('prepare');
+            $profiler->stop('prepare');
 
-            $profiler->begin('execute');
+            $profiler->start('execute');
             $result = $this->doExecute($rawSQL, $args ?? [], $options);
-            $profiler->end('execute');
+            $profiler->stop('execute');
 
             $result->setQueryProfiler($profiler);
 
@@ -447,7 +444,8 @@ abstract class AbstractRunner implements Runner, ProfilerAware
         } finally {
             $profiler->stop();
             if ($this->isDebugEnabled()) {
-                $profiler->setRawSql($rawSQL, $args);
+                $profiler->setAttribute('sql', $rawSQL);
+                $profiler->setAttribute('args', $args);
             }
         }
     }
@@ -461,18 +459,19 @@ abstract class AbstractRunner implements Runner, ProfilerAware
         $options = $this->normalizeOptions($options);
         $args = null;
         $rawSQL = '';
-        $profiler = $this->startProfilerQuery();
+
+        $profiler = $this->getContextProfiler()->start('goat-query/perform');
 
         try {
-            $profiler->begin('prepare');
+            $profiler->start('prepare');
             $prepared = $this->getSqlWriter()->prepare($query);
             $rawSQL = $prepared->toString();
             $args = $prepared->prepareArgumentsWith($context, $arguments);
-            $profiler->end('prepare');
+            $profiler->stop('prepare');
 
-            $profiler->begin('execute');
+            $profiler->start('execute');
             $rowCount = $this->doPerform($rawSQL, $args ?? [], $options);
-            $profiler->end('execute');
+            $profiler->stop('execute');
 
             return $rowCount;
 
@@ -486,7 +485,8 @@ abstract class AbstractRunner implements Runner, ProfilerAware
         } finally {
             $profiler->stop();
             if ($this->isDebugEnabled()) {
-                $profiler->setRawSql($rawSQL, $args);
+                $profiler->setAttribute('sql', $rawSQL);
+                $profiler->setAttribute('args', $args);
             }
         }
     }
@@ -497,21 +497,22 @@ abstract class AbstractRunner implements Runner, ProfilerAware
     public function prepareQuery($query, string $identifier = null): string
     {
         $rawSQL = '';
-        $profiler = $this->startProfilerQuery();
+
+        $profiler = $this->getContextProfiler()->start('goat-query/prepare');
 
         try {
-            $profiler->begin('prepare');
+            $profiler->start('prepare');
             $prepared = $this->getSqlWriter()->prepare($query);
             $rawSQL = $prepared->toString();
-            $profiler->end('prepare');
+            $profiler->stop('prepare');
 
             if (null === $identifier) {
                 $identifier = \md5($rawSQL); // @todo fast and collision low probability enought?
             }
 
-            $profiler->begin('execute');
+            $profiler->start('execute');
             $this->doPrepareQuery($identifier, $prepared, [] /* no options here? */);
-            $profiler->end('execute');
+            $profiler->stop('execute');
 
             return $identifier;
 
@@ -525,7 +526,8 @@ abstract class AbstractRunner implements Runner, ProfilerAware
         } finally {
             $profiler->stop();
             if ($this->isDebugEnabled()) {
-                $profiler->setRawSql('<prepare statement> ' . $identifier, [$rawSQL]);
+                $profiler->setAttribute('<prepare statement> ' . $identifier);
+                $profiler->setAttribute('args', [$rawSQL]);
             }
         }
     }
@@ -538,12 +540,13 @@ abstract class AbstractRunner implements Runner, ProfilerAware
         $context = $this->createConverterContext();
         $options = $this->normalizeOptions($options);
         $args = $arguments ?? [];
-        $profiler = $this->startProfilerQuery();
+
+        $profiler = $this->getContextProfiler()->start('goat-query/execute-prepared');
 
         try {
-            $profiler->begin('execute');
+            $profiler->start('execute');
             $result = $this->doExecutePreparedQuery($identifier, $args, $options);
-            $profiler->end('execute');
+            $profiler->stop('execute');
 
             $result->setQueryProfiler($profiler);
 
@@ -559,7 +562,8 @@ abstract class AbstractRunner implements Runner, ProfilerAware
         } finally {
             $profiler->stop();
             if ($this->isDebugEnabled()) {
-                $profiler->setRawSql("<execute prepared statement> " . $identifier, $args);
+                $profiler->setAttribute('<execute prepared statement> ' . $identifier);
+                $profiler->setAttribute('args', [$args]);
             }
         }
     }
