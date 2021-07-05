@@ -8,25 +8,27 @@ use Goat\Converter\TypeConversionError;
 use Goat\Query\QueryError;
 
 /**
- * In PgSQL, array are types, you can't have an array with different types within.
- *
- * For now, there are important considerations you should be aware of:
- *   - it will not work recursively, it only handles one dimension,
- *   - it won't convert bothways, only from SQL to PHP.
+ * In PgSQL, array are types, you can't have an array with different types
+ * within, in opposition to rows, which can have different values.
  *
  * This is very sensitive code, any typo will breaks tons of stuff, please
  * always run unit tests, everytime you modify anything in here, really.
+ *
+ * And yes, sadly, it is very slow. This code could heavily benefit from being
+ * pluggable and use some FFI plugged library developed using any other faster
+ * language/techno.
  */
 final class PgSQLParser
 {
     /**
-     * Parse a pgsql array return string
+     * Parse a pgsql array return string.
      *
      * @todo support more than one dimension
      */
     public static function parseArray(string $string): array
     {
-        $length = \mb_strlen($string);
+        $string = \trim($string);
+        $length = \strlen($string);
 
         if (0 === $length) { // Empty string
             return [];
@@ -38,11 +40,48 @@ final class PgSQLParser
             throw new QueryError("malformed input: array must be enclosed using {}");
         }
 
-        return self::parseArrayRecursion($string, 1, $length)[0];
+        return self::parseRecursion($string, 1, $length, '}')[0];
     }
 
     /**
-     * Write array
+     * Parse a row.
+     */
+    public static function parseRow(string $string): array
+    {
+        $length = \strlen($string);
+
+        if (0 === $length) { // Empty string
+            return [];
+        }
+        if ($length < 2) {
+            throw new QueryError("malformed input: string length must be 0 or at least 2");
+        }
+        if ('(' !== $string[0] || ')' !== $string[$length - 1]) {
+            throw new QueryError("malformed input: row must be enclosed using ()");
+        }
+
+        return self::parseRecursion($string, 1, $length, ')')[0];
+    }
+
+    /**
+     * Write a row.
+     *
+     * Each value can have a different type, this is supposed to be called when
+     * the query builder builds the query, it's the value formatter job to know
+     * what to do which each value, which could be itself an Expression object,
+     * hence the need for a serializer callback here.
+     */
+    public static function writeRow(array $row, callable $serializeItem): string
+    {
+        return '{'.\implode(',', \array_map($serializeItem, $row)).'}';
+    }
+
+    /**
+     * Write array.
+     *
+     * Every value is supposed to have the same type, but this is supposed to
+     * be at the discretion of who's asking for writing this array, usually the
+     * SQL formatter, hence the need for a serializer callback here.
      */
     public static function writeArray(array $data, callable $serializeItem): string
     {
@@ -60,8 +99,9 @@ final class PgSQLParser
     }
 
     /**
-     * @internal
-     * @todo I think it is wrong.
+     * Unescape a SQL string.
+     *
+     * @todo I think it is wrong, but up until now, it seem to work.
      */
     private static function escapeString(string $value): string
     {
@@ -69,13 +109,13 @@ final class PgSQLParser
     }
 
     /**
-     * @internal
+     * From a quoted string, find the end of it and return it.
      */
-    private static function findUnquotedStringEnd(string $string, int $start, int $length): int
+    private static function findUnquotedStringEnd(string $string, int $start, int $length, string $endChar): int
     {
         for ($i = $start; $i < $length; $i++) {
             $char = $string[$i];
-            if (',' === $char || '}' === $char) {
+            if (',' === $char || $endChar === $char) {
                 return $i - 1;
             }
         }
@@ -83,7 +123,7 @@ final class PgSQLParser
     }
 
     /**
-     * @internal
+     * From a unquioted string, find the end of it and return it.
      */
     private static function findQuotedStringEnd(string $string, int $start, int $length): int
     {
@@ -102,17 +142,17 @@ final class PgSQLParser
     }
 
     /**
-     * @internal
+     * Unescape escaped user string from SQL.
      */
-    public static function unescapeString(string $string): string
+    private static function unescapeString(string $string): string
     {
         return \str_replace('\\\\', '\\', \str_replace('\\"', '"', $string));
     }
 
     /**
-     * @internal
+     * Parse any coma-separated values string from SQL.
      */
-    private static function parseArrayRecursion(string $string, int $start, int $length): array
+    private static function parseRecursion(string $string, int $start, int $length, string $endChar): array
     {
         $ret = [];
 
@@ -120,20 +160,30 @@ final class PgSQLParser
             $char = $string[$i];
             if (',' === $char) {
                 // Next string
-            } else if ('{' === $char) {
-                list($child, $stop) = self::parseArrayRecursion($string, $i + 1, $length);
+            } else if ('(' === $char) { // Row.
+                list($child, $stop) = self::parseRecursion($string, $i + 1, $length, ')');
                 $ret[] = $child;
                 $i = $stop;
-            } else if ('}' === $char) {
+            } else if ('{' === $char) { // Array.
+                list($child, $stop) = self::parseRecursion($string, $i + 1, $length, '}');
+                $ret[] = $child;
+                $i = $stop;
+            } else if ($endChar === $char) { // End of recursion.
                 return [$ret, $i + 1];
+            } else if ('}' === $char) {
+                throw new QueryError(\sprintf("malformed input: unexpected end of array '}' at position %d", $i));
+            } else if (')' === $char) {
+                throw new QueryError(\sprintf("malformed input: unexpected end of row ')' at position %d", $i));
+            } else if (',' === $char) {
+                throw new QueryError(\sprintf("malformed input: unexpected separator ',' at position %d", $i));
             } else {
                 if ('"' === $char) {
                     $i++; // Skip start quote
                     $stop = self::findQuotedStringEnd($string, $i, $length);
-                    $ret[] = self::unescapeString(\mb_substr($string, $i, $stop - $i));
+                    $ret[] = self::unescapeString(\substr($string, $i, $stop - $i));
                 } else {
-                    $stop = self::findUnquotedStringEnd($string, $i, $length);
-                    $ret[] = \mb_substr($string, $i, $stop - $i + 1);
+                    $stop = self::findUnquotedStringEnd($string, $i, $length, $endChar);
+                    $ret[] = \substr($string, $i, $stop - $i + 1);
                 }
                 $i = $stop;
             }
