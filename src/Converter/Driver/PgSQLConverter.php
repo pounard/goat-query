@@ -16,6 +16,7 @@ class PgSQLConverter extends DefaultConverter
     public function setValueConverterRegistry(ValueConverterRegistry $valueConverterRegistry): void
     {
         $valueConverterRegistry->register(new PgSQLArrayConverter());
+        $valueConverterRegistry->register(new PgSQLRowConverter());
 
         parent::setValueConverterRegistry($valueConverterRegistry);
     }
