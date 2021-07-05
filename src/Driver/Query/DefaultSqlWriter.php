@@ -89,8 +89,16 @@ class DefaultSqlWriter extends AbstractSqlWriter
      */
     protected function doFormatSelectItem(WriterContext $context, Column $column): string
     {
-        // @todo Add parenthesis when necessary.
         $output = $this->format($column->expression, $context);
+
+        // Add parenthesis when necessary.
+        if ($column->expression instanceof ConstantRowExpression) {
+            $output = 'row' . $output;
+        } else if ($column->expression instanceof ConstantTableExpression) {
+            $output = '(' . $output . ')';
+        } else if ($column->expression instanceof Query) {
+            $output = '(' . $output . ')';
+        }
 
         // We cannot alias columns with a numeric identifier;
         // aliasing with the same string as the column name
