@@ -263,6 +263,11 @@ SQL-92 time zone handling:
    zone will be converter the client time zone one, respecting time offset
    and not altering the underlaying UTC date.
 
+There is one known limitation: **client time zone will not be sent to MySQL**
+**connection because we got random errors with various MySQL server versions**
+**preventing the connection from being operational**. This will be fixed before
+stable release.
+
 ## Converter changes
 
 ``\Goat\Converter\ConverterContext`` class has been added, and carry session and
@@ -276,6 +281,70 @@ Since the ``\Goat\Converter\ValueConverterInterface`` changed, all existing
 custom converters must be adapted to the new interface. Behavior remain the
 same, only the new context parameter has been added, and ``getPhpType()``
 method has been dropped.
+
+## Now supports subqueries in SELECT
+
+Wrong formatting ommiting necessary parenthesis has been fixed, you can now
+safely use a nested `Select` instance in `Select::columnExpression()` in order
+write nested subqueries.
+
+## Row converter
+
+You can now format and retrieve rows as values (as known as composite types)
+when using the PostgreSQL driver:
+
+```php
+$queryBuilder
+    ->insert('some_table')
+    ->columns([
+        'some_string',
+        'composite_column'
+    ])
+    ->values([
+        'some value',
+        new ValueExpression(['foo', 2, 'record']
+    ])
+```
+
+Will now translate to:
+
+```sql
+INSERT INTO "some_table" (
+    "some_string",
+    "composite_column"
+) VALUES (
+    'some value',
+    ROW('foo', 2)
+);
+```
+
+The opposite operations, such as:
+
+```php
+$queryBuilder
+    ->select('some_table')
+    ->column('some_string')
+    ->column('composite_column')
+```
+
+Will translate to:
+
+```sql
+SELECT "some_string", "composite_column" FROM "some_table";
+```
+
+And give the following result for the first line (based upon the previous example):
+
+```php
+[
+    'some_string' => 'some value',
+    'composite_column' => ['foo', 2],
+];
+```
+
+There is one known limitation: you can only use array for sending and retrieving
+rows, it is planned to add in a future major release an object to row converter
+for both transparent hydration and serialization.
 
 ## Faster query formatter
 

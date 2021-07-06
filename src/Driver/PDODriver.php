@@ -67,7 +67,10 @@ class PDODriver extends AbstractDriver
 
             case 'mysql':
                 // @todo Warning: escaping.
-                $connection->query("SET time_zone = " . $connection->quote($clientTimeZone));
+                // @todo As of now, it seems that MySQL never accepted this
+                //   syntax, and raise error when sending it. This will be
+                //   fixed in a future version.
+                // $connection->query("SET time_zone = " . $connection->quote($clientTimeZone));
                 break;
 
             case 'pgsql':
