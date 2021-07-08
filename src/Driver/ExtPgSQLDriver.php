@@ -76,7 +76,7 @@ class ExtPgSQLDriver extends AbstractDriver
              */
 
         } catch (\Throwable $e) {
-            if (\is_resource($connection)) {
+            if (isset($connection) && \is_resource($connection)) {
                 \pg_close($connection);
             }
             throw $e;
