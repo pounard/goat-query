@@ -327,6 +327,12 @@ class DefaultSqlWriter extends AbstractSqlWriter
 
             // @todo parenthesis when necessary
             $output[] = $this->format($item, $context);
+
+            if ($item instanceof ConstantTableExpression) {
+                if ($columnAliases = $item->expression->getColumns()) {
+                    $output[] = ' (' . $this->doFormatColumnNameList($context, $columnAliases) . ')';
+                }
+            }
         }
 
         if ($prefix) {
@@ -360,7 +366,12 @@ class DefaultSqlWriter extends AbstractSqlWriter
         foreach ($with as $item) {
             \assert($item instanceof With);
 
-            $output[] = $this->escaper->escapeIdentifier($item->alias) . ' as (' . $this->format($item->table, $context) . ')';
+            // @todo I don't think I can do better than that, but I'm really sorry.
+            if ($item->table instanceof ConstantTableExpression && ($columnAliases = $item->table->getColumns())) {
+                $output[] = $this->escaper->escapeIdentifier($item->alias) . ' (' . $this->doFormatColumnNameList($context, $columnAliases) . ') as (' . $this->format($item->table, $context) . ')';
+            } else {
+                $output[] = $this->escaper->escapeIdentifier($item->alias) . ' as (' . $this->format($item->table, $context) . ')';
+            }
         }
 
         return 'with ' . \implode(', ', $output);
@@ -537,6 +548,9 @@ class DefaultSqlWriter extends AbstractSqlWriter
         $using = $query->getQuery();
         if ($using instanceof ConstantTableExpression) {
             $output[] = 'using ' . $this->format($using, $context) . ' as ' . $escapedUsingAlias;
+            if ($columnAliases = $using->getColumns()) {
+                $output[] = ' (' . $this->doFormatColumnNameList($context, $columnAliases) . ')';
+            }
         } else {
             $output[] = 'using (' . $this->format($using, $context) . ') as ' . $escapedUsingAlias;
         }
@@ -882,10 +896,16 @@ class DefaultSqlWriter extends AbstractSqlWriter
      */
     protected function formatAliasedExpression(AliasedExpression $expression, WriterContext $context): string
     {
+        $decorated = $expression->getExpression();
         if ($alias = $expression->getAlias()) {
-            return '(' . $this->format($expression->getExpression(), $context) . ') as ' . $this->escaper->escapeIdentifier($alias);
+            $output = '(' . $this->format($decorated, $context) . ') as ' . $this->escaper->escapeIdentifier($alias);
+
+            if ($decorated instanceof ConstantTableExpression && ($columnAliases = $decorated->getColumns())) {
+                return $output . ' (' . $this->doFormatColumnNameList($context, $columnAliases) . ')';
+            }
+            return $output;
         }
-        return '(' . $this->format($expression->getExpression(), $context) . ')';
+        return '(' . $this->format($decorated, $context) . ')';
     }
 
     /**

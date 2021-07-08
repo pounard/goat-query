@@ -15,6 +15,9 @@ use Goat\Query\QueryError;
  * PostgreSQL among others allows to use VALUES (...) [, ...] expressions
  * in place of tables in queries. This class allows you to build such
  * expressions.
+ *
+ * You can alias columns, using ->columns(['foo', 'bar']) but it wont be
+ * used in all use cases, only for SELECT on those tables.
  */
 class ConstantTableExpression implements Expression
 {
@@ -23,6 +26,7 @@ class ConstantTableExpression implements Expression
     private bool $rowsInitialized = false;
     /** @var ConstantRowExpression[] */
     private array $rows = [];
+    private ?array $columns = null;
 
     /**
      * Create a constant table expression.
@@ -57,11 +61,29 @@ class ConstantTableExpression implements Expression
     }
 
     /**
+     * Get column names.
+     */
+    public function getColumns(): ?array
+    {
+        return $this->columns;
+    }
+
+    /**
      * Get rows.
      */
     public function getRows(): iterable
     {
         return $this->rows;
+    }
+
+    /**
+     * Set arbitrary column names.
+     */
+    public function columns(array $columns): self
+    {
+        $this->columns = $columns;
+
+        return $this;
     }
 
     /**

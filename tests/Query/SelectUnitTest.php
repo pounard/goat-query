@@ -801,6 +801,63 @@ final class SelectUnitTest extends TestCase
         );
     }
 
+    public function testExpressionAsTableWithAliasAndColumnAliases(): void
+    {
+        $expression = new ConstantTableExpression();
+        $expression->columns(['foo', 'bar', 'baz']);
+        $expression->row([1, 2, 3]);
+
+        $select = new SelectQuery($expression, 'foobar');
+
+        self::assertSameSql(
+            <<<SQL
+            select *
+            from (
+                values
+                (?, ?, ?)
+            ) as "foobar" ("foo", "bar", "baz")
+            SQL,
+            self::format($select)
+        );
+    }
+
+    public function testExpressionInCteWithAlias(): void
+    {
+        $expression = new ConstantTableExpression();
+        $expression->row([1, 2, 3]);
+
+        $select = new SelectQuery('temp_table');
+        $select->with('temp_table', $expression);
+
+        self::assertSameSql(
+            <<<SQL
+            with "temp_table" as (values (?, ?, ?))
+            select *
+            from "temp_table"
+            SQL,
+            self::format($select)
+        );
+    }
+
+    public function testExpressionInCteWithAliasAndColumnAliases(): void
+    {
+        $expression = new ConstantTableExpression();
+        $expression->columns(['foo', 'bar', 'baz']);
+        $expression->row([1, 2, 3]);
+
+        $select = new SelectQuery('temp_table');
+        $select->with('temp_table', $expression);
+
+        self::assertSameSql(
+            <<<SQL
+            with "temp_table" ("foo", "bar", "baz") as (values (?, ?, ?))
+            select *
+            from "temp_table"
+            SQL,
+            self::format($select)
+        );
+    }
+
     /*
      * @todo Fix formatting bug with AliasedExpression
      *
