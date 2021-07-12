@@ -421,7 +421,7 @@ abstract class AbstractRunner implements Runner, ProfilerContextAware
 
         try {
             $profiler->start('prepare');
-            $prepared = $this->getSqlWriter()->prepare($query);
+            $prepared = $this->getSqlWriter()->prepare($query, $arguments);
             $rawSQL = $prepared->toString();
             $args = $prepared->prepareArgumentsWith($context, $arguments);
             $profiler->stop('prepare');
@@ -464,7 +464,7 @@ abstract class AbstractRunner implements Runner, ProfilerContextAware
 
         try {
             $profiler->start('prepare');
-            $prepared = $this->getSqlWriter()->prepare($query);
+            $prepared = $this->getSqlWriter()->prepare($query, $arguments);
             $rawSQL = $prepared->toString();
             $args = $prepared->prepareArgumentsWith($context, $arguments);
             $profiler->stop('prepare');

@@ -17,10 +17,8 @@ interface SqlWriter
      * the result object.
      *
      * @param string|Statement $query
-     * @param ?WriterContext $context
-     *   Under certain scenarios, a user given context can be used.
      *
      * @return FormattedQuery
      */
-    public function prepare($query, ?WriterContext $context = null): FormattedQuery;
+    public function prepare($query): FormattedQuery;
 }

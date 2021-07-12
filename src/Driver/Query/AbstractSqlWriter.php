@@ -8,9 +8,12 @@ use Goat\Driver\Platform\Escaper\Escaper;
 use Goat\Query\Query;
 use Goat\Query\QueryError;
 use Goat\Query\Statement;
+use Goat\Query\Expression\RawExpression;
 
 /**
  * Query rewriting and placeholder generation logic.
+ *
+ * @todo Move this code into DefaultSqlWriter
  */
 abstract class AbstractSqlWriter implements SqlWriter
 {
@@ -101,15 +104,22 @@ abstract class AbstractSqlWriter implements SqlWriter
      *   First value is the query string, second is the reworked array
      *   of parameters, if conversions were needed
      */
-    private function rewriteQueryAndParameters(string $formattedSQL, ArgumentBag $arguments): string
+    protected function parseExpression(RawExpression $expression, WriterContext $context): string
     {
-        $index = 0;
+        $asString = $expression->getString();
+        $values = $expression->getArguments();
+
+        if (!$values && false === \str_contains($asString, '?')) {
+            // Performance shortcut for expressions containing no arguments.
+            return $asString;
+        }
 
         // See https://stackoverflow.com/a/3735908 for the  starting
         // sequence explaination, the rest should be comprehensible.
-        $preparedSQL = \preg_replace_callback(
+        $localIndex = -1;
+        return \preg_replace_callback(
             $this->matchParametersRegex,
-            function ($matches) use (&$index, $arguments) {
+            function ($matches) use (&$localIndex, $values, $context) {
                 $match  = $matches[0];
 
                 if ('??' === $match) {
@@ -119,40 +129,41 @@ abstract class AbstractSqlWriter implements SqlWriter
                     return $match;
                 }
 
-                $arguments->setTypeAt($index, empty($matches[6]) ? null : $matches[6]);
+                $localIndex++;
+                $value = $values[$localIndex] ?? null;
 
-                return $this->escaper->writePlaceholder($index++);
+                if ($value instanceof Statement) {
+                    // @todo prepare() Not in interface
+                    return $this->format($value, $context);
+                } else {
+                    $index = $context->append($value, empty($matches[6]) ? null : $matches[6]);
+
+                    return $this->escaper->writePlaceholder($index);
+                }
             },
-            $formattedSQL
+            $asString
         );
-
-        return $preparedSQL;
     }
 
     /**
      * {@inheritdoc}
      */
-    final public function prepare($query, ?WriterContext $context = null): FormattedQuery
+    final public function prepare($query, ?array $arguments = null, ?WriterContext $context = null): FormattedQuery
     {
-        $preparedSQL = $arguments = $identifier = null;
+        $preparedSQL = $identifier = null;
+        $context = $context ?? new WriterContext();
 
         if (\is_string($query)) {
-            $arguments = new ArgumentBag();
-            $preparedSQL = $this->rewriteQueryAndParameters($query, $arguments);
+            $preparedSQL = $this->parseExpression(new RawExpression($query, $arguments ?? []), $context);
         } else if ($query instanceof Statement) {
             if ($query instanceof Query) {
                 $identifier = $query->getIdentifier();
             }
-
-            $context = $context ?? new WriterContext();
-            $rawSql = $this->format($query, $context);
-            $arguments = $context->getArgumentBag();
-
-            $preparedSQL = $this->rewriteQueryAndParameters($rawSql, $arguments);
+            $preparedSQL = $this->format($query, $context);
         } else {
             throw new QueryError(\sprintf("query must be a bare string or an instance of %s", Statement::class));
         }
 
-        return new FormattedQuery($preparedSQL, $identifier, $arguments);
+        return new FormattedQuery($preparedSQL, $identifier, $context->getArgumentBag());
     }
 }

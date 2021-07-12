@@ -7,6 +7,7 @@ namespace Goat\Query\Tests;
 use Goat\Query\QueryError;
 use Goat\Query\SelectQuery;
 use Goat\Query\Where;
+use Goat\Query\Expression\ConstantRowExpression;
 use Goat\Query\Expression\ConstantTableExpression;
 use Goat\Query\Expression\RawExpression;
 use Goat\Query\Expression\ValueExpression;
@@ -933,5 +934,29 @@ final class SelectUnitTest extends TestCase
         self::expectExceptionMessageMatches('/page must be a positive integer/');
 
         $select->page(10, 0);
+    }
+
+    public function testRawExpressionGetsParsed(): void
+    {
+        $select = new SelectQuery('some_table');
+        $select->columnExpression(new RawExpression('?::int', [1]));
+
+        self::assertSameSql(
+            'select ? from "some_table"',
+            self::format($select)
+        );
+    }
+
+    public function testRawExpressionWithExpressionArgumentAreExpanded(): void
+    {
+        $row = new ConstantRowExpression([1, 'foo']);
+
+        $select = new SelectQuery('some_table');
+        $select->whereExpression(new RawExpression('(foo, bar) = ?', $row));
+
+        self::assertSameSql(
+            'select * from "some_table" where (foo, bar) = (?, ?)',
+            self::format($select)
+        );
     }
 }

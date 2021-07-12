@@ -20,6 +20,8 @@ class RawExpression implements Expression
     {
         if (!\is_array($arguments)) {
             $arguments = [$arguments];
+        } else {
+            $arguments = \array_values($arguments);
         }
 
         $this->expression = $expression;

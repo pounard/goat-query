@@ -806,18 +806,7 @@ class DefaultSqlWriter extends AbstractSqlWriter
      */
     protected function formatRawExpression(RawExpression $expression, WriterContext $context): string
     {
-        foreach ($expression->getArguments() as $argument) {
-            if ($argument instanceof Statement) {
-                if (!$argument instanceof ValueExpression) {
-                    throw new QueryError("Only value expressions or raw values are allowed as raw expression arguments.");
-                }
-                $context->append($argument->getValue(), $argument->getType());
-            } else {
-                $context->append($argument);
-            }
-        }
-
-        return $expression->getString();
+        return $this->parseExpression($expression, $context);
     }
 
     /**
@@ -868,9 +857,9 @@ class DefaultSqlWriter extends AbstractSqlWriter
      */
     protected function formatValueExpression(ValueExpression $value, WriterContext $context): string
     {
-        $context->append($value->getValue(), $value->getType());
+        $index = $context->append($value->getValue(), $value->getType());
 
-        return '?';
+        return $this->escaper->writePlaceholder($index);
     }
 
     /**

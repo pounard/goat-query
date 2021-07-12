@@ -50,7 +50,7 @@ final class FormattedQuery
     /**
      * Prepare arguments with the given input.
      */
-    public function prepareArgumentsWith(ConverterContext $context, array $arguments = null): array
+    public function prepareArgumentsWith(ConverterContext $context, ?array $arguments = null): array
     {
         // If null was given, this means that we should use query given
         // arguments, those who are already set in this object.
