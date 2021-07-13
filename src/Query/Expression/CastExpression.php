@@ -19,7 +19,6 @@ use Goat\Query\Statement;
 class CastExpression implements Expression
 {
     private string $sqlCastToType;
-    private ?string $valueType;
     /** @var mixed|Expression */
     private $value;
 
@@ -54,14 +53,5 @@ class CastExpression implements Expression
     public function getCastToType(): string
     {
         return $this->sqlCastToType;
-    }
-
-    /**
-     * Get value type, if none user-provided, SQL cast to type will be
-     * returned instead.
-     */
-    public function getType(): string
-    {
-        return $this->valueType ?? $this->valueType;
     }
 }
