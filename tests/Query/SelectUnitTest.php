@@ -7,6 +7,7 @@ namespace Goat\Query\Tests;
 use Goat\Query\QueryError;
 use Goat\Query\SelectQuery;
 use Goat\Query\Where;
+use Goat\Query\Expression\CastExpression;
 use Goat\Query\Expression\ConstantRowExpression;
 use Goat\Query\Expression\ConstantTableExpression;
 use Goat\Query\Expression\RawExpression;
@@ -934,6 +935,82 @@ final class SelectUnitTest extends TestCase
         self::expectExceptionMessageMatches('/page must be a positive integer/');
 
         $select->page(10, 0);
+    }
+
+    public function testCastExpressionWithValue(): void
+    {
+        $select = new SelectQuery();
+        $select->columnExpression(
+            new CastExpression(12, 'some_type', 'value_type')
+        );
+
+        self::assertSameSql(
+            'select cast(? as some_type)',
+            self::format($select)
+        );
+    }
+
+    public function testCastExpressionWithExpression(): void
+    {
+        $select = new SelectQuery();
+        $select->columnExpression(
+            new CastExpression(
+                new ConstantRowExpression(['bla', 12]),
+                'some_type'
+            )
+        );
+
+        self::assertSameSql(
+            'select cast(row(?, ?) as some_type)',
+            self::format($select)
+        );
+    }
+
+    public function testCastExpressionWithExpressionInRow(): void
+    {
+        // This test is not necessary, but it correspond to a real life
+        // use case, where the SQL server wrongly guess value types in
+        // UNION query when one of the UNION queries is a constant table
+        // expression (VALUES), just writing it for the posterity.
+        $select = new SelectQuery('some_table', 'st');
+        $select->columns(['st.a', 'st.b']);
+
+        $other = new ConstantTableExpression();
+        $other->row([
+            new CastExpression('60a696b1-e600-4c82-9ee4-4d56601a9120', 'uuid'),
+            'foo'
+        ]);
+
+        $select->union($other);
+
+        self::assertSameSql(
+            <<<'SQL'
+            select "st"."a", "st"."b" from "some_table" as "st"
+            union
+            values
+                (cast(? as uuid), ?)
+            SQL,
+            self::format($select)
+        );
+    }
+
+    public function testCastExpressionWithExpressionWarnValueTypeWillBeIgnored(): void
+    {
+        $select = new SelectQuery();
+        $select->columnExpression(
+            new CastExpression(
+                new ConstantRowExpression(['bla', 12]),
+                'some_type',
+                'value_type'
+            )
+        );
+
+        self::assertSameSql(
+            'select cast(row(?, ?) as some_type)',
+            self::format($select)
+        );
+
+        self::markTestIncomplete("Warning is not implemented yet.");
     }
 
     public function testRawExpressionGetsParsed(): void

@@ -8,7 +8,12 @@ use Goat\Query\Expression;
 use Goat\Query\ValueRepresentation;
 
 /**
- * Represents a raw value.
+ * Represents a raw value, along with an optional type.
+ *
+ * Value type will be used for the value converter, but will not change
+ * anything in the SQL side.
+ *
+ * Value itself can be anything including an Expression instance.
  */
 class ValueExpression implements Expression, ValueRepresentation
 {

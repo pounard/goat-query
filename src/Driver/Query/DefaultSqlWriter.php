@@ -17,6 +17,7 @@ use Goat\Query\UpdateQuery;
 use Goat\Query\Where;
 use Goat\Query\Expression\AliasedExpression;
 use Goat\Query\Expression\BetweenExpression;
+use Goat\Query\Expression\CastExpression;
 use Goat\Query\Expression\ColumnExpression;
 use Goat\Query\Expression\ComparisonExpression;
 use Goat\Query\Expression\ConstantRowExpression;
@@ -1004,6 +1005,22 @@ class DefaultSqlWriter implements SqlWriter
     }
 
     /**
+     * Format cast expression.
+     */
+    protected function formatCastExpression(CastExpression $value, WriterContext $context): string
+    {
+        $expression = $value->getValue();
+        $expressionString = $this->format($expression, $context);
+
+        // Add parenthesis when necessary.
+        if ($expression instanceof ConstantRowExpression) {
+            $expressionString = 'row' . $expressionString;
+        }
+
+        return 'CAST(' . $expressionString . ' AS ' . $value->getCastToType() . ')';
+    }
+
+    /**
      * Format like expression.
      */
     protected function formatLikeExpression(LikeExpression $value, WriterContext $context): string
@@ -1054,6 +1071,9 @@ class DefaultSqlWriter implements SqlWriter
         }
         if ($query instanceof ValueExpression) {
             return $this->formatValueExpression($query, $context);
+        }
+        if ($query instanceof CastExpression) {
+            return $this->formatCastExpression($query, $context);
         }
         if ($query instanceof ComparisonExpression) {
             return $this->formatComparisonExpression($query, $context);
