@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Goat\Query\Expression;
 
 use Goat\Query\Expression;
-use Goat\Query\ValueRepresentation;
 
 /**
  * Represents a raw value, along with an optional type.
@@ -15,7 +14,7 @@ use Goat\Query\ValueRepresentation;
  *
  * Value itself can be anything including an Expression instance.
  */
-class ValueExpression implements Expression, ValueRepresentation
+class ValueExpression implements Expression
 {
     private ?string $type = null;
     /** @var mixed */

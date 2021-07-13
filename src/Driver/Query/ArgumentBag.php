@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Goat\Driver\Query;
 
-use Goat\Query\ValueRepresentation;
+use Goat\Query\Expression\ValueExpression;
 
 /**
  * Stores a copy of all parameters, and matching type if any found.
@@ -41,7 +41,7 @@ final class ArgumentBag
      */
     public function add($value, ?string $type = null): int
     {
-        if ($value instanceof ValueRepresentation) {
+        if ($value instanceof ValueExpression) {
             if (!$type) {
                 $type = $value->getType();
             }
