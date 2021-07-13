@@ -34,16 +34,18 @@ use Goat\Query\Partial\With;
  * Standard SQL query formatter: this implementation conforms as much as it
  * can to SQL-92 standard, and higher revisions for some functions.
  *
- * Here are a few differences with the SQL standard:
+ * Please note that the main target is PostgreSQL, and PostgreSQL has an
+ * excellent SQL-92|1999|2003|2006|2008|2011 standard support, almost
+ * everything in here except MERGE queries is supported by PostgreSQL.
  *
- *  - per default, UPDATE queries allow FROM..JOIN statement, but first JOIN
- *    must be INNER or NATURAL in order to substitute the JOIN per FROM;
+ * We could have override the CastExpression formatting for PostgreSQL using
+ * its ::TYPE shorthand, but since that is is only a syntax shorthand and that
+ * the standard CAST(value AS type) expression may require less parenthesis in
+ * some cases, it's more convention to keep the CAST() expression.
  *
- *  - per default, DELETE queries allow USING..JOIN statement, but first JOIN
- *    must be INNER or NATURAL in order to substitute the JOIN per USING.
- *
- * It will work gracefully with PostgreSQL, but also, from the various
- * documentation I could read, probably with MSSQL too.
+ * @todo Implement properly and unit test using a server connexion the cast
+ *   syntax for both pgsql and mysql, especially mysql that will need different
+ *   types names for casting.
  *
  * All methods starting with "format" do handle a known Expression class,
  * whereas all methods starting with "do" will handle an internal behaviour.
