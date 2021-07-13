@@ -39,9 +39,9 @@ use Goat\Query\Partial\With;
  * everything in here except MERGE queries is supported by PostgreSQL.
  *
  * We could have override the CastExpression formatting for PostgreSQL using
- * its ::TYPE shorthand, but since that is is only a syntax shorthand and that
- * the standard CAST(value AS type) expression may require less parenthesis in
- * some cases, it's more convention to keep the CAST() expression.
+ * its ::TYPE shorthand, but since that is is only a legacy syntax shorthand
+ * and that the standard CAST(value AS type) expression may require less
+ * parenthesis in some cases, it's simply eaiser to keep the CAST() syntax.
  *
  * @todo Implement properly and unit test using a server connexion the cast
  *   syntax for both pgsql and mysql, especially mysql that will need different
@@ -609,7 +609,10 @@ class DefaultSqlWriter implements SqlWriter
     protected function formatWhere(WriterContext $context, Where $where): string
     {
         if ($where->isEmpty()) {
-            // Definitely legit (except for pgsql which awaits a bool).
+            // Definitely legit, except for PostgreSQL which seems to require
+            // a boolean value for those expressions. In theory, booleans are
+            // part of the SQL standard, but a lot of RDBMS don't support them,
+            // so we keep the "1" here.
             return '1';
         }
 
@@ -619,7 +622,7 @@ class DefaultSqlWriter implements SqlWriter
         $first = true;
 
         foreach ($where->getConditions() as $expression) {
-            // Do not allow an empty where to be displayed
+            // Do not allow an empty where to be displayed.
             if ($expression instanceof Where && $expression->isEmpty()) {
                 continue;
             }
@@ -858,15 +861,14 @@ class DefaultSqlWriter implements SqlWriter
         //
         //  - MSSQL: UPDATE SET x = y FROM a, b, c JOIN d WHERE
         //
-        // Current implementation is PgSQL (SQL-92 standard) and arguments
-        // order in ArgumentBag of UpdateQuery will also be, which may cause
-        // other implementations to break if user uses placeholders elsewhere
-        // than in the WHERE clause.
+        // Current implementation is SQL-92 standard (and PostgreSQL which
+        // strictly respect the standard for most of its SQL syntax).
         //
         // Also note that MSSQL will allow UPDATE on a CTE query for example,
         // MySQL will allow UPDATE everywhere, in all cases that's serious
         // violations of the SQL standard and probably quite a dangerous thing
-        // to use.
+        // to use, so it's not officialy supported, even thought using some
+        // expression magic you can write those queries.
         //
 
         $output[] = $this->doFormatWith($context, $query->getAllWith());
