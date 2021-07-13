@@ -1005,6 +1005,11 @@ class DefaultSqlWriter implements SqlWriter
     {
         $index = $context->append($value->getValue(), $value->getType());
 
+        // @todo For now this is hardcoded, but later this will be more generic
+        //   fact is that for deambiguation, PostgreSQL needs arrays to be cast
+        //   explicitly, otherwise it'll interpret it as a string; This might
+        //   the case for some other types as well.
+
         return $this->escaper->writePlaceholder($index);
     }
 
