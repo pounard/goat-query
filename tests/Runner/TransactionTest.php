@@ -95,10 +95,10 @@ final class TransactionTest extends DatabaseAwareQueryTest
         ;
 
         self::assertCount(4, $result);
-        self::assertSame('a', $result->fetch()['bar']);
-        self::assertSame('b', $result->fetch()['bar']);
-        self::assertSame('c', $result->fetch()['bar']);
-        self::assertSame('d', $result->fetch()['bar']);
+        self::assertSame('a', $result->fetch()->get('bar'));
+        self::assertSame('b', $result->fetch()->get('bar'));
+        self::assertSame('c', $result->fetch()->get('bar'));
+        self::assertSame('d', $result->fetch()->get('bar'));
     }
 
     /**
@@ -148,8 +148,8 @@ final class TransactionTest extends DatabaseAwareQueryTest
         ;
 
         self::assertCount(2, $result);
-        self::assertSame('g', $result->fetch()['bar']);
-        self::assertSame('f', $result->fetch()['bar']);
+        self::assertSame('g', $result->fetch()->get('bar'));
+        self::assertSame('f', $result->fetch()->get('bar'));
     }
 
     /**
@@ -200,7 +200,7 @@ final class TransactionTest extends DatabaseAwareQueryTest
         ;
 
         self::assertCount(1, $result);
-        self::assertSame('f', $result->fetch()['bar']);
+        self::assertSame('f', $result->fetch()->get('bar'));
     }
 
     /**

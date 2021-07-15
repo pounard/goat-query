@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Goat\Driver\Query;
 
-use Goat\Converter\ConverterInterface;
 use Goat\Converter\ConverterContext;
 
 /**
@@ -71,7 +70,8 @@ final class FormattedQuery
 
         $ret = [];
         foreach ($arguments as $index => $value) {
-            $ret[] = $converter->toSQL($this->arguments->getTypeAt($index) ?? ConverterInterface::TYPE_UNKNOWN, $value, $context);
+            // @todo 'null' is not a type.
+            $ret[] = $converter->toSQL($value, $this->arguments->getTypeAt($index), $context);
         }
 
         return $ret;

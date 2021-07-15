@@ -81,7 +81,7 @@ class InsertTest extends DatabaseAwareQueryTest
         // at the second granularity
         $this->assertSame(
             $referenceDate->format(\DateTime::ISO8601),
-            $value['date']->format(\DateTime::ISO8601)
+            $value->get('date')->format(\DateTime::ISO8601)
         );
     }
 
@@ -118,14 +118,14 @@ class InsertTest extends DatabaseAwareQueryTest
         ;
 
         $row1 = $result->fetch();
-        self::assertSame(42, $row1['foo']);
-        self::assertSame('a', $row1['bar']);
-        self::assertInstanceOf(\DateTimeInterface::class, $row1['baz']);
+        self::assertSame(42, $row1->get('foo'));
+        self::assertSame('a', $row1->get('bar'));
+        self::assertInstanceOf(\DateTimeInterface::class, $row1->get('baz'));
 
         $row2 = $result->fetch();
-        self::assertSame(22, $row2['foo']);
-        self::assertSame('b', $row2['bar']);
-        self::assertInstanceOf(\DateTimeInterface::class, $row2['baz']);
+        self::assertSame(22, $row2->get('foo'));
+        self::assertSame('b', $row2->get('bar'));
+        self::assertInstanceOf(\DateTimeInterface::class, $row2->get('baz'));
     }
 
     /**
@@ -163,11 +163,11 @@ class InsertTest extends DatabaseAwareQueryTest
         $this->assertSame(12, $result->count());
 
         $row1 = $result->fetch();
-        $this->assertSame(1, $row1['foo']);
+        $this->assertSame(1, $row1->get('foo'));
 
         $row2 = $result->fetch();
-        $this->assertSame(666, $row2['foo']);
-        $this->assertSame("); delete from users; select (", $row2['bar']);
+        $this->assertSame(666, $row2->get('foo'));
+        $this->assertSame("); delete from users; select (", $row2->get('bar'));
     }
 
     /**
@@ -231,22 +231,22 @@ class InsertTest extends DatabaseAwareQueryTest
 
         // 'id' field is a sequence, and should start with 1
         $row1 = $result->fetch();
-        $this->assertSame(6, $row1['id']);
-        $this->assertNotContains('baz', $row1);
-        $this->assertNotContains('bar', $row1);
-        $this->assertSame('boo', $row1['miaw']);
+        $this->assertSame(6, $row1->get('id'));
+        $this->assertFalse($row1->has('baz'));
+        $this->assertFalse($row1->has('bar'));
+        $this->assertSame('boo', $row1->get('miaw'));
 
         $row2 = $result->fetch();
-        $this->assertSame(7, $row2['id']);
-        $this->assertNotContains('baz', $row2);
-        $this->assertNotContains('bar', $row2);
-        $this->assertSame('baa', $row2['miaw']);
+        $this->assertSame(7, $row2->get('id'));
+        $this->assertFalse($row2->has('baz'));
+        $this->assertFalse($row2->has('bar'));
+        $this->assertSame('baa', $row2->get('miaw'));
 
         $row3 = $result->fetch();
-        $this->assertSame(8, $row3['id']);
-        $this->assertNotContains('baz', $row3);
-        $this->assertNotContains('bar', $row3);
-        $this->assertSame('bee', $row3['miaw']);
+        $this->assertSame(8, $row3->get('id'));
+        $this->assertFalse($row3->has('baz'));
+        $this->assertFalse($row3->has('bar'));
+        $this->assertSame('bee', $row3->get('miaw'));
     }
 
     /**

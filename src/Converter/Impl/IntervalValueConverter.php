@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Goat\Converter\Impl;
 
 use Goat\Converter\ConverterContext;
-use Goat\Converter\ConverterInterface;
+use Goat\Converter\StaticInputValueConverter;
+use Goat\Converter\StaticOutputValueConverter;
 use Goat\Converter\TypeConversionError;
-use Goat\Converter\ValueConverterInterface;
 
-class IntervalValueConverter implements ValueConverterInterface
+class IntervalValueConverter implements StaticInputValueConverter, StaticOutputValueConverter
 {
     /**
      * Format interval as an ISO8601 string.
@@ -70,13 +70,29 @@ class IntervalValueConverter implements ValueConverterInterface
     /**
      * {@inheritdoc}
      */
-    public function fromSQL(string $type, $value, ConverterContext $context)
+    public function supportedOutputTypes(): array
     {
-        if (empty($value)) {
-            return null;
-        }
+        return [
+            'interval' => [\DateInterval::class],
+        ];
+    }
 
+    /**
+     * {@inheritdoc}
+     */
+    public function fromSQL(string $phpType, ?string $sqlType, string $value, ConverterContext $context)
+    {
         return self::extractPostgreSQLAsInterval($value);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function supportedInputTypes(): array
+    {
+        return [
+            \DateInterval::class => ['interval'],
+        ];
     }
 
     /**
@@ -85,25 +101,9 @@ class IntervalValueConverter implements ValueConverterInterface
     public function toSQL(string $type, $value, ConverterContext $context): ?string
     {
         if (!$value instanceof \DateInterval) {
-            throw new TypeConversionError(\sprintf("cannot process type value of type '%s'", \gettype($value)));
+            throw new TypeConversionError(\sprintf("Value must be an instance of %s", \DateInterval::class));
         }
 
         return self::formatIntervalAsISO8601($value);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function isTypeSupported(string $type, ConverterContext $context): bool
-    {
-        return 'interval' === $type;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function guessType($value, ConverterContext $context): string
-    {
-        return ($value instanceof \DateInterval) ? 'interval' : ConverterInterface::TYPE_UNKNOWN;
     }
 }

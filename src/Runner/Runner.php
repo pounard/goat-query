@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Goat\Runner;
 
-use Goat\Converter\ConverterInterface;
-use Goat\Converter\ValueConverterRegistry;
+use Goat\Converter\ConfigurableConverter;
+use Goat\Converter\Converter;
 use Goat\Driver\Platform\Platform;
 use Goat\Query\QueryBuilder;
 use Goat\Runner\Hydrator\HydratorRegistry;
@@ -44,9 +44,9 @@ interface Runner
     public function isResultMetadataSlow(): bool;
 
     /**
-     * Set value converter registry.
+     * Set user-configured global converter.
      */
-    public function setValueConverterRegistry(ValueConverterRegistry $valueConverterRegistry): void;
+    public function setConfigurableConverter(ConfigurableConverter $converter): void;
 
     /**
      * Set result metadata cache.
@@ -61,7 +61,7 @@ interface Runner
     /**
      * Get converter
      */
-    public function getConverter(): ConverterInterface;
+    public function getConverter(): Converter;
 
     /**
      * Get the query builder

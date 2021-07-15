@@ -8,16 +8,16 @@ use Goat\Runner\SessionConfiguration;
 
 final class ConverterContext
 {
-    private ConverterInterface $converter;
+    private Converter $converter;
     private SessionConfiguration $sessionConfiguration;
 
-    public function __construct(ConverterInterface $converter, SessionConfiguration $sessionConfiguration)
+    public function __construct(Converter $converter, SessionConfiguration $sessionConfiguration)
     {
         $this->converter = $converter;
         $this->sessionConfiguration = $sessionConfiguration;
     }
 
-    public function getConverter(): ConverterInterface
+    public function getConverter(): Converter
     {
         return $this->converter;
     }

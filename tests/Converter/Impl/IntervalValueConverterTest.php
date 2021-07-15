@@ -35,9 +35,9 @@ final class IntervalValueConverterTest extends TestCase
         $converter = new IntervalValueConverter();
         $context = self::context();
 
-        $extracted = $converter->fromSQL('interval', $value, $context);
-        $this->assertInstanceOf(\DateInterval::class, $extracted);
-        $this->assertSame($expected, IntervalValueConverter::formatIntervalAsISO8601($extracted));
+        $extracted = $converter->fromSQL(\DateInterval::class, 'interval', $value, $context);
+        self::assertInstanceOf(\DateInterval::class, $extracted);
+        self::assertSame($expected, IntervalValueConverter::formatIntervalAsISO8601($extracted));
     }
 
     /**
@@ -60,7 +60,7 @@ final class IntervalValueConverterTest extends TestCase
         $context = self::context();
 
         // Converter only supports PHP \DateInterval structures as input
-        $this->assertSame($expected, $converter->toSQL('interval', $value, $context));
+        self::assertSame($expected, $converter->toSQL('interval', $value, $context));
     }
 
     /**
@@ -86,7 +86,7 @@ final class IntervalValueConverterTest extends TestCase
         $converter = new IntervalValueConverter();
         $context = self::context();
 
-        $this->expectException(TypeConversionError::class);
+        self::expectException(TypeConversionError::class);
         $converter->toSQL('interval', $invalidValue, $context);
     }
 }

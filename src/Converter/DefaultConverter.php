@@ -4,250 +4,265 @@ declare(strict_types=1);
 
 namespace Goat\Converter;
 
-use Ramsey\Uuid\Uuid;
+use Goat\Converter\Impl\BinaryValueConverter;
+use Goat\Converter\Impl\BooleanValueConverter;
+use Goat\Converter\Impl\DateValueConverter;
+use Goat\Converter\Impl\IntervalValueConverter;
+use Goat\Converter\Impl\JsonValueConverter;
+use Goat\Converter\Impl\NumberValueConverter;
+use Goat\Converter\Impl\RamseyUuidConverter;
+use Goat\Converter\Impl\TextValueConverter;
+use Goat\Runner\SessionConfiguration;
+use Ramsey\Uuid\UuidInterface;
 
 /**
- * Default converter implementation, suitable for most drivers.
+ * Support PHP to SQL and SQL to PHP value conversion registry.
  *
- * Extend this class if your driver need to override or add specific conversion
- * procedures.
+ * You may register any number of instances, each input or output value
+ * converter declares the types it supports. SQL types can be aliased
+ * to any number of aliases, allowing the user to give its own type aliases
+ * and support variations between RDBMS servers own dialects.
  *
- * Please note there are a few PostgreSQL specifics in here, but they will not
- * hurt other driver runtimes.
+ * Internally, it keeps a both flat maps of PHP to SQL and SQL to PHP
+ * supported type convertions.
+ *
+ * If the user asks for a non-possible convertion, three different behaviours
+ * are possible, and determined at call-site:
+ *
+ *  - Let the SQL string pass instead of the expected PHP typed value.
+ *  - Return null if value is null.
+ *  - Raise a TypeConversionError in case no converter supports the conversion.
+ *
+ * @todo Add support for user-given or driver-given SQL type aliases.
+ * @todo Add class hierarchy and implementation lookup.
  */
-class DefaultConverter implements ConverterInterface
+final class DefaultConverter implements ConfigurableConverter
 {
-    private ValueConverterRegistry $valueConverterRegistry;
-    private ?bool $uuidSupport = null;
+    /** @var array<string,string> */
+    private array $aliasMap = [];
+    /** @var array<string,array<string,StaticInputValueConverter>> */
+    private array $inputTypeMap = [];
+    /** @var array<string,array<string,StaticOutputValueConverter>> */
+    private array $outputTypeMap = [];
+    /** @var array<string,array<string,DyncamicInputValueConverter>> */
+    private array $dynamicInputList = [];
+    /** @var array<string,array<string,DynamicOutputValueConverter>> */
+    private array $dynamicOutputList = [];
 
-    public function __construct()
+    public function __construct(bool $setupDateSupport = true)
     {
-        $this->setValueConverterRegistry(new ValueConverterRegistry());
+        // Register default necessary converters.
+        $this->register(new BinaryValueConverter());
+        $this->register(new BooleanValueConverter());
+        $this->register(new JsonValueConverter());
+        $this->register(new NumberValueConverter());
+        $this->register(new TextValueConverter());
+
+        // Add some custom aliases to remain backward compatible.
+        $this->aliasMap = [
+            'blob' => 'bytea',
+            'bool' => 'boolean',
+            'character varying' => 'varchar',
+            'character' => 'char',
+            'datetime' => 'timestamp',
+            'double' => 'double precision',
+            'float4' => 'real',
+            'float8' => 'double precision',
+            'int' => 'integer',
+            'int2' => 'smallint',
+            'int4' => 'integer',
+            'int8' => 'bigint',
+            'serial2' => 'smallserial',
+            'serial4' => 'serial',
+            'serial8' => 'bigserial',
+            'string' => 'varchar',
+            'timestamp without time zone' => 'timestamp',
+            'timestampz' => 'timestamp with time zone',
+            'timez' => 'time with time zone',
+        ];
+
+        if ($setupDateSupport) {
+            $this->register(new DateValueConverter());
+            $this->register(new IntervalValueConverter());
+        }
+        if (\class_exists(UuidInterface::class)) {
+            $this->register(new RamseyUuidConverter());
+        }
     }
 
     /**
      * {@inheritdoc}
      */
-    public function setValueConverterRegistry(ValueConverterRegistry $valueConverterRegistry): void
+    public function register(/* InputValueConverter|OutputValueConverter */ $instance): void
     {
-        $this->valueConverterRegistry = $valueConverterRegistry;
+        $ok = false;
+        if ($instance instanceof StaticInputValueConverter) {
+            $ok = true;
+            foreach ($instance->supportedInputTypes() as $phpType => $sqlTypeList) {
+                foreach ($sqlTypeList as $sqlType) {
+                    // @todo warn if one instance shadows another
+                    $this->inputTypeMap[$phpType][$sqlType] = $instance;
+                }
+            }
+        }
+        if ($instance instanceof StaticOutputValueConverter) {
+            $ok = true;
+            foreach ($instance->supportedOutputTypes() as $sqlType => $phpTypeList) {
+                foreach ($phpTypeList as $phpType) {
+                    // @todo warn if one instance shadows another
+                    $this->outputTypeMap[$sqlType][$phpType] = $instance;
+                }
+            }
+        }
+        if ($instance instanceof DynamicInputValueConverter) {
+            $ok = true;
+            $this->dynamicInputList[] = $instance;
+        }
+        if ($instance instanceof DynamicOutputValueConverter) {
+            $ok = true;
+            $this->dynamicOutputList[] = $instance;
+        }
+        if (!$ok) {
+            throw new \InvalidArgumentException(\sprintf("\$instance must implement %s or %s", InputValueConverter::class, OutputValueConverter::class));
+        }
     }
 
     /**
      * {@inheritdoc}
      */
-    public function isTypeSupported(string $type, ConverterContext $context): bool
+    public function fromSQL($value, ?string $sqlType, ?string $phpType, ?ConverterContext $context = null) /* : mixed */
     {
-        return true;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function fromSQL(string $type, $value, ConverterContext $context)
-    {
-        // Null values are null.
-        if (null === $value) {
+        if (null === $value || 'null' === $sqlType) {
             return null;
         }
 
-        switch ($type) {
-            case ConverterInterface::TYPE_NULL:
-                return null;
-
-            // Serial (integers)
-            case 'bigserial':
-            case 'serial':
-            case 'serial2':
-            case 'serial4':
-            case 'serial8':
-            case 'smallserial':
-            // Integers
-            case 'bigint':
-            case 'int':
-            case 'int2':
-            case 'int4':
-            case 'int8':
-            case 'integer':
-            case 'smallint':
+        // Some drivers will convert automatically int and float values,
+        // if this happens and the user didn't ask for a PHP type, then
+        // return the value as-is. This also will boost performances in
+        // use cases where you have lots of integer values.
+        if (\is_int($value) || \is_float($value)) {
+            if (!$phpType) {
+                return $value;
+            } else if ('int' === $phpType) {
                 return (int) $value;
-
-            // Strings
-            case 'char':
-            case 'character':
-            case 'text':
-            case 'varchar':
-                return $value;
-
-            // Flaoting point numbers and decimals
-            case 'decimal':
-            case 'double':
-            case 'float4':
-            case 'float8':
-            case 'numeric':
-            case 'real':
+            } else if ('float' === $phpType) {
                 return (float) $value;
-
-            // Booleans
-            case 'bool':
-            case 'boolean':
-                // When used with Doctrine, some types are already converted
-                if (\is_bool($value)) {
-                    return $value;
-                }
-                if (!$value || 'f' === $value || 'F' === $value || 'false' === \strtolower($value)) {
-                    return false;
-                }
-                return (bool) $value;
-
-            // JSON
-            case 'json':
-            case 'jsonb':
-                return \json_decode($value, true);
-
-            // UUID
-            case 'uuid':
-                if ($this->supportsUuid()) {
-                    return Uuid::fromString($value);
-                }
-                return (string) $value;
-
-            // Binary objects.
-            // Some low level drivers may give back streams or escaped strings
-            // when requesting blob/bytea values. Blob as stream is handled in
-            // generic \Goat\Driver\Runner\RunnerConverter implementation.
-            // (un)escaping is done by Escaper instance that the platform gave
-            // to the runner.
-            case 'blob':
-            case 'bytea':
-                return $value;
-
-            default:
-                try {
-                    return $this->valueConverterRegistry->fromSQL($type, $value, $context);
-                } catch (TypeConversionError $e) {
-                    return (string) $value;
-                }
+            } else {
+                $value = (string) $value;
+            }
+        } else if (!\is_string($value)) {
+            throw new TypeConversionError("SQL raw value can only be int, float or string");
         }
+
+        // Ideally this should never happen, but life is life.
+        if ($sqlType) {
+            $realType = $this->aliasMap[$sqlType] ?? $sqlType;
+        } else {
+            $realType = 'varchar';
+        }
+
+        $context = $context ?? new ConverterContext($this, SessionConfiguration::empty());
+
+        if (\array_key_exists($realType, $this->outputTypeMap)) {
+            if ($phpType) {
+                $converter = $this->outputTypeMap[$realType][$phpType] ?? null;
+                if ($converter) {
+                    \assert($converter instanceof OutputValueConverter);
+                    try {
+                        return $converter->fromSQL($phpType, $realType, $value, $context);
+                    } catch (TypeConversionError $e) {
+                        // @todo log errors?
+                    }
+                }
+            } else {
+                foreach ($this->outputTypeMap[$realType] as $phpType => $converter) {
+                    \assert($converter instanceof OutputValueConverter);
+                    try {
+                        return $converter->fromSQL($phpType, $realType, $value, $context);
+                    } catch (TypeConversionError $e) {
+                        // @todo log errors?
+                    }
+                }
+            }
+        }
+
+        foreach ($this->dynamicOutputList as $converter) {
+            \assert($converter instanceof DynamicOutputValueConverter);
+            if ($converter->supportsOutput($phpType, $sqlType, $value)) {
+                try {
+                    return $converter->fromSQL($phpType ?? 'null', $sqlType, $value, $context);
+                } catch (TypeConversionError $e) {
+                    // @todo log errors?
+                }
+            }
+        }
+
+        throw new TypeConversionError();
     }
 
     /**
      * {@inheritdoc}
      */
-    public function toSQL(string $type, $value, ConverterContext $context) : ?string
+    public function toSQL(/* mixed */ $value, ?string $sqlType, ?ConverterContext $context = null): ?string
     {
-        // Null values are null.
-        if (null === $value) {
+        if (null === $value || 'null' === $sqlType) {
             return null;
         }
-
-        if (ConverterInterface::TYPE_UNKNOWN === $type) {
-            $type = $this->guessType($value, $context);
+        if (\is_resource($value)) {
+            throw new TypeConversionError("Resources types are not supported yet.");
         }
 
-        switch ($type) {
-            case ConverterInterface::TYPE_NULL:
-                return null;
+        $context = $context ?? new ConverterContext($this, SessionConfiguration::empty());
 
-            // Serial (integers)
-            case 'bigserial':
-            case 'serial':
-            case 'serial2':
-            case 'serial4':
-            case 'serial8':
-            case 'smallserial':
-            // Integers
-            case 'bigint':
-            case 'int':
-            case 'int2':
-            case 'int4':
-            case 'int8':
-            case 'integer':
-            case 'smallint':
-                return (string)(int) $value;
+        $expandedPhpType = $this->expandPhpTypeOf($value);
+        $realType = $sqlType ? ($this->aliasMap[$sqlType] ?? $sqlType) : null;
 
-            // Strings
-            case 'char':
-            case 'character':
-            case 'clog':
-            case 'text':
-            case 'varchar':
-                return (string) $value;
-
-            // Flaoting point numbers and decimals
-            case 'decimal':
-            case 'double':
-            case 'float4':
-            case 'float8':
-            case 'numeric':
-            case 'real':
-                return (string)(float) $value;
-
-            // Booleans
-            case 'bool':
-            case 'boolean':
-                return $value ? 't' : 'f';
-
-            // JSON
-            case 'json':
-            case 'jsonb':
-                return \json_encode($value);
-
-            // UUID
-            case 'uuid':
-                return (string) $value;
-
-            // Binary objects.
-            // Some low level drivers may give back streams or escaped strings
-            // when requesting blob/bytea values. Blob as stream is handled in
-            // generic \Goat\Driver\Runner\RunnerConverter implementation.
-            // (un)escaping is done by Escaper instance that the platform gave
-            // to the runner.
-            case 'blob':
-            case 'bytea':
-                return (string) $value;
-
-            default:
-                try {
-                    return $this->valueConverterRegistry->toSQL($type, $value, $context);
-                } catch (TypeConversionError $e) {
-                    return (string) $value;
+        foreach ($expandedPhpType as $phpType) {
+            if (\array_key_exists($phpType, $this->inputTypeMap)) {
+                if ($sqlType) {
+                    $converter = $this->inputTypeMap[$phpType][$realType] ?? null;
+                    if ($converter) {
+                        \assert($converter instanceof InputValueConverter);
+                        try {
+                            return $converter->toSQL($realType, $value, $context);
+                        } catch (TypeConversionError $e) {
+                            // @todo log errors?
+                        }
+                    }
+                } else {
+                    foreach ($this->inputTypeMap[$phpType] as $sqlType => $converter) {
+                        \assert($converter instanceof InputValueConverter);
+                        try {
+                            return $converter->toSQL($sqlType, $value, $context);
+                        } catch (TypeConversionError $e) {
+                            // @todo log errors?
+                        }
+                    }
                 }
-        }
-    }
-
-
-    /**
-     * {@inheritdoc}
-     */
-    public function guessType($value, ConverterContext $context) : string
-    {
-        if (null === $value) {
-            return ConverterInterface::TYPE_NULL;
-        }
-        if (\is_int($value) || \is_string($value)) {
-            return 'varchar';
-        }
-        if (\is_bool($value)) {
-            return 'bool';
-        }
-        if (\is_float($value) || \is_numeric($value)) {
-            return 'numeric';
-        }
-        if ($value instanceof \DateTimeInterface) {
-            return 'timestamptz';
+            }
         }
 
-        $type = $this->valueConverterRegistry->guessType($value, $context);
+        foreach ($this->dynamicInputList as $converter) {
+            \assert($converter instanceof DynamicInputValueConverter);
+            if ($converter->supportsInput($sqlType, $value)) {
+                try {
+                    return $converter->toSQL($sqlType, $value, $context);
+                } catch (TypeConversionError $e) {
+                    // @todo log errors?
+                }
+            }
+        }
 
-        return ConverterInterface::TYPE_UNKNOWN === $type ? 'varchar' : $type;
+        throw new TypeConversionError();
     }
 
     /**
-     * Does it supports UUID
+     * Find all applicable PHP types for the given value.
      */
-    private function supportsUuid(): bool
+    private function expandPhpTypeOf($value): array
     {
-        return $this->uuidSupport ?? ($this->uuidSupport = \class_exists(Uuid::class));
+        // @todo Handle interfaces and inheritance (write a cache incrementally).
+        // @todo pph8 polyfill required here.
+        return [\get_debug_type($value)];
     }
 }

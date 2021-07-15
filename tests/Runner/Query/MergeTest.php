@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Goat\Runner\Tests\Query;
 
 use Goat\Query\SelectQuery;
+use Goat\Runner\Row;
 use Goat\Runner\Runner;
 use Goat\Runner\Testing\DatabaseAwareQueryTest;
 use Goat\Runner\Testing\TestDriverFactory;
@@ -110,7 +111,7 @@ class MergetTest extends DatabaseAwareQueryTest
                 ['id' => 2, 'foo' => 2, 'fizz' => 'b'],
                 ['id' => 3, 'foo' => 3, 'fizz' => 'c'],
             ],
-            \iterator_to_array($result)
+            \array_map(fn (Row $row) => $row->toHydratedArray(), \iterator_to_array($result))
         );
     }
 
@@ -147,7 +148,7 @@ class MergetTest extends DatabaseAwareQueryTest
                 ['id' => 3, 'foo' => 3, 'fizz' => 'e'],
                 ['id' => 5, 'foo' => 5, 'fizz' => 'f'],
             ],
-            \iterator_to_array($result)
+            \array_map(fn (Row $row) => $row->toHydratedArray(), \iterator_to_array($result))
         );
     }
 
@@ -178,7 +179,7 @@ class MergetTest extends DatabaseAwareQueryTest
                 ['id' => 2, 'foo' => 2, 'fizz' => 'b'],
                 ['id' => 3, 'foo' => 3, 'fizz' => 'c'],
             ],
-            \iterator_to_array($result)
+            \array_map(fn (Row $row) => $row->toHydratedArray(), \iterator_to_array($result))
         );
     }
 
@@ -211,7 +212,7 @@ class MergetTest extends DatabaseAwareQueryTest
                 ['id' => 3, 'foo' => 3, 'fizz' => 'e'],
                 ['id' => 5, 'foo' => 5, 'fizz' => 'f'],
             ],
-            \iterator_to_array($result)
+            \array_map(fn (Row $row) => $row->toHydratedArray(), \iterator_to_array($result))
         );
     }
 
@@ -244,7 +245,7 @@ class MergetTest extends DatabaseAwareQueryTest
                 ['id' => 3, 'foo' => 3, 'fizz' => 'e'],
                 ['id' => 5, 'foo' => 5, 'fizz' => 'f'],
             ],
-            \iterator_to_array($result)
+            \array_map(fn (Row $row) => $row->toHydratedArray(), \iterator_to_array($result))
         );
     }
 }

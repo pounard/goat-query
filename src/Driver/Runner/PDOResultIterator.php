@@ -100,34 +100,6 @@ class PDOResultIterator extends AbstractResultIterator
     }
 
     /**
-     * {@inheritdoc}
-     */
-    public function fetchColumn($name = 0)
-    {
-        if (null === $this->statement) {
-            throw new InvalidDataAccessError("Result was closed");
-        }
-
-        if (\is_int($name)) {
-            $name = $this->getColumnName($name);
-        }
-
-        $ret = [];
-
-        foreach ($this->statement as $row) {
-            $value = $row[$name];
-
-            if ($this->columnKey) {
-                $ret[$row[$this->columnKey]] = $this->convertValue($name, $value);
-            } else {
-                $ret[] = $this->convertValue($name, $value);
-            }
-        }
-
-        return $ret;
-    }
-
-    /**
      * PDO metadata is rather inconsistent with types.
      */
     private function parseType(string $nativeType): string

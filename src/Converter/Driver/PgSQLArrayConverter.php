@@ -4,99 +4,88 @@ declare(strict_types=1);
 
 namespace Goat\Converter\Driver;
 
-use Goat\Converter\ConverterInterface;
-use Goat\Converter\ValueConverterInterface;
 use Goat\Converter\ConverterContext;
+use Goat\Converter\DynamicInputValueConverter;
+use Goat\Converter\DynamicOutputValueConverter;
+use Goat\Converter\TypeConversionError;
 
 /**
  * PostgreSQL array converter.
  */
-final class PgSQLArrayConverter implements ValueConverterInterface
+final class PgSQLArrayConverter implements DynamicInputValueConverter, DynamicOutputValueConverter
 {
     /**
      * {@inheritdoc}
      */
-    public function fromSQL(string $type, $value, ConverterContext $context)
+    public function supportsOutput(?string $phpType, ?string $sqlType, string $value): bool
     {
-        // First detect type, using anything we can.
-        // PDO will always match _TYPE, sometime we also may have TYPE[].
-        if ($subType = $this->findSubtype($type)) {
-            return $this->recursiveFromSQL($subType, PgSQLParser::parseArray($value), $context);
-        }
-
-        return $context->getConverter()->fromSQL($type, $value, $context);
+        return 'array' === $phpType || ($sqlType && (\str_ends_with($sqlType,  '[]') || \str_starts_with($sqlType,  '_')));
     }
 
     /**
      * {@inheritdoc}
      */
-    public function toSQL(string $type, $value, ConverterContext $context): ?string
+    public function fromSQL(string $phpType, ?string $sqlType, string $value, ConverterContext $context)
     {
-        $converter = $context->getConverter();
-
-        if (ConverterInterface::TYPE_UNKNOWN === $type) {
-            $type = $this->guessType($value, $context);
+        if ('' === $value || '{}' === $value) {
+            return [];
         }
 
-        $subType = $this->findSubtype($type);
+        return $this->recursiveFromSQL($this->findSubtype($sqlType) ?? 'varchar', PgSQLParser::parseArray($value), $context);
+    }
 
-        if (null === $value || !$subType || !\is_array($value)) {
-            return $converter->toSQL($subType ?? $type, $value, $context);
+    /**
+     * {@inheritdoc}
+     */
+    public function supportsInput(string $sqlType, /* mixed */ $value): bool
+    {
+        return \is_array($value) && (\str_ends_with($sqlType,  '[]') || \str_starts_with($sqlType,  '_') || \str_starts_with($value, '{'));
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function toSQL(string $sqlType, /* mixed */ $value, ConverterContext $context): ?string
+    {
+        if (!\is_array($value)) {
+            throw new TypeConversionError("Value must be an array.");
         }
         if (empty($value)) {
             return '{}';
         }
 
+        $converter = $context->getConverter();
+        $subType = $this->findSubtype($sqlType);
+
         return PgSQLParser::writeArray(
             $value,
-            fn ($value) => $converter->toSQL($subType, $value, $context)
+            fn ($value) => $converter->toSQL($value, $subType),
         );
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function isTypeSupported(string $type, ConverterContext $context): bool
-    {
-        return '_' === $type[0] || '[]' === \substr($type, -2);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function guessType($value, ConverterContext $context): string
-    {
-        if (\is_array($value)) {
-            if (empty($value)) {
-                return ConverterInterface::TYPE_NULL;
-            }
-
-            return $context->getConverter()->guessType(\reset($value), $context).'[]';
-        }
-
-        return ConverterInterface::TYPE_UNKNOWN;
-    }
-
-    private function recursiveFromSQL(string $type, array $values, ConverterContext $context): array
+    private function recursiveFromSQL(?string $sqlType, array $values, ConverterContext $context): array
     {
         $converter = $context->getConverter();
 
         return \array_map(
             fn ($value) => (\is_array($value) ?
-                $this->recursiveFromSQL($type, $value, $context) :
-                $converter->fromSQL($type, $value, $context)
+                $this->recursiveFromSQL($sqlType, $value, $context) :
+                // @todo Is there any way to be deterministic with PHP value type?
+                $converter->fromSQL($value, $sqlType, null)
             ),
             $values
         );
     }
 
-    private function findSubtype(string $type): ?string
+    private function findSubtype(?string $type): ?string
     {
-        if ('_' === $type[0]) {
-            return \substr($type, 1);
-        }
-        if ('[]' === \substr($type, -2)) {
-            return \substr($type, 0, -2);
+        if ($type) {
+            if (\str_ends_with($type, '[]')) {
+                return \substr($type, 0, -2);
+            }
+            if (\str_starts_with($type, '_')) {
+                return \substr($type, 1);
+            }
         }
         return null;
     }

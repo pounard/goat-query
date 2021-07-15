@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Goat\Driver\Runner;
 
-use Goat\Converter\ConverterInterface;
+use Goat\Converter\ConfigurableConverter;
+use Goat\Converter\Converter;
 use Goat\Converter\Driver\PgSQLConverter;
+use Goat\Driver\Platform\Escaper\Escaper;
 use Goat\Driver\Query\FormattedQuery;
 use Goat\Query\QueryError;
 use Goat\Runner\AbstractResultIterator;
@@ -33,9 +35,9 @@ class ExtPgSQLRunner extends AbstractRunner
     /**
      * {@inheritdoc}
      */
-    protected function doCreateConverter(): ConverterInterface
+    protected function doCreateConverter(ConfigurableConverter $decorated, Escaper $escaper): Converter
     {
-        return new PgSQLConverter();
+        return new PgSQLConverter($decorated, $escaper);
     }
 
     /**

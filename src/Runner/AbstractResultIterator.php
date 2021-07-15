@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Goat\Runner;
 
-use Goat\Converter\ConverterInterface;
+use Goat\Converter\ConverterContext;
 use Goat\Query\QueryError;
 use Goat\Runner\Hydrator\ResultHydrator;
 use Goat\Runner\Metadata\DefaultResultMetadata;
 use Goat\Runner\Metadata\ResultMetadata;
-use Goat\Converter\ConverterContext;
+use Goat\Converter\DefaultConverter;
 
 abstract class AbstractResultIterator implements ResultIterator, \Iterator
 {
@@ -19,7 +19,7 @@ abstract class AbstractResultIterator implements ResultIterator, \Iterator
     private ?int $columnCount = null;
     private ?int $rowCount = null;
     private bool $debug = false;
-    protected ?string $columnKey = null;
+    private ?string $columnKey = null;
 
     // Meta-information and profiling information.
     private ?ResultMetadata $metadata = null;
@@ -27,7 +27,8 @@ abstract class AbstractResultIterator implements ResultIterator, \Iterator
     private array $userTypeMap = [];
 
     // Object hydration and value convertion.
-    protected ?ConverterContext $context = null;
+    private ?ConverterContext $context = null;
+    private bool $hydratorExpandsGroups = false;
     private ?ResultHydrator $hydrator = null;
 
     // Iterator properties.
@@ -40,6 +41,7 @@ abstract class AbstractResultIterator implements ResultIterator, \Iterator
     // Current iterator item and iterator data.
     /** @var null|array|ResultIteratorItem[] */
     private ?array $expandedResult = null;
+    private ?Row $currentRow = null;
     /** @var null|mixed */
     private $currentValue = null;
     /** @var null|int|string */
@@ -81,6 +83,26 @@ abstract class AbstractResultIterator implements ResultIterator, \Iterator
     abstract protected function wasResultFreed(): bool;
 
     /**
+     * Get converter context.
+     */
+    protected function getConverterContext(): ConverterContext
+    {
+        if (null === $this->context) {
+            // @todo Trigger warning here?
+            $this->context = new ConverterContext(new DefaultConverter(), SessionConfiguration::empty());
+        }
+        return $this->context;
+    }
+
+    /**
+     * Get hydrator.
+     */
+    protected function getHydrator(): ResultHydrator
+    {
+        return $this->hydrator ?? ($this->hydrator = new ResultHydrator());
+    }
+
+    /**
      * Destruct result upon free.
      */
     public function __destruct()
@@ -118,9 +140,7 @@ abstract class AbstractResultIterator implements ResultIterator, \Iterator
      */
     final protected function getMetadata(): ResultMetadata
     {
-        return $this->metadata ?? (
-            $this->metadata = $this->createMetadata()
-        );
+        return $this->metadata ?? ($this->metadata = $this->createMetadata());
     }
 
     /**
@@ -157,6 +177,9 @@ abstract class AbstractResultIterator implements ResultIterator, \Iterator
      */
     public function setConverterContext(ConverterContext $context): ResultIterator
     {
+        if ($this->iterationStarted) {
+            throw new LockedResultError();
+        }
         $this->context = $context;
 
         return $this;
@@ -165,72 +188,15 @@ abstract class AbstractResultIterator implements ResultIterator, \Iterator
     /**
      * {@inheritdoc}
      */
-    final public function setHydrator($hydrator): ResultIterator
+    final public function setHydrator(callable $hydrator): ResultIterator
     {
         if ($this->iterationStarted) {
             throw new LockedResultError();
         }
-        if (!$hydrator instanceof ResultHydrator) {
-            $hydrator = new ResultHydrator($hydrator);
-        }
-        $this->hydrator = $hydrator;
+
+        $this->hydrator = new ResultHydrator($hydrator);
 
         return $this;
-    }
-
-    /**
-     * Convert a single value
-     *
-     * @param string $name
-     * @param mixed $value
-     *
-     * @return mixed
-     */
-    final protected function convertValue(string $name, $value)
-    {
-        if (!$this->iterationStarted) {
-            $this->iterationStarted = true;
-        }
-        if ($this->context) {
-            return $this->context->getConverter()->fromSQL($this->getColumnType($name), $value, $this->context);
-        }
-        return $value;
-    }
-
-    /**
-     * Hydrate row using the iterator object hydrator
-     *
-     * @param mixed[] $row
-     *   PHP native types converted values
-     *
-     * @return array|object
-     *   Raw object, return depends on the hydrator
-     */
-    final protected function hydrate(array $row)
-    {
-        $ret = [];
-        if ($this->context) {
-            $converter = $this->context->getConverter();
-
-            foreach ($row as $name => $value) {
-                $name = (string)$name; // Column name can be an integer (eg. SELECT 1 ...).
-                if (null !== $value) {
-                    $ret[$name] = $converter->fromSQL($this->getColumnType($name), $value, $this->context);
-                } else {
-                    $ret[$name] = null;
-                }
-            }
-        } else {
-            foreach ($row as $name => $value) {
-                $ret[(string)$name] = $value;
-            }
-        }
-
-        if (!$this->hydrator) {
-            return $ret;
-        }
-
-        return $this->hydrator->hydrate($ret);
     }
 
     /**
@@ -266,6 +232,7 @@ abstract class AbstractResultIterator implements ResultIterator, \Iterator
             if ($expanded) {
                 $this->currentKey = $expanded->key;
                 $this->currentValue = $expanded->value;
+                $this->current = $expanded->row;
 
                 return;
             }
@@ -276,6 +243,7 @@ abstract class AbstractResultIterator implements ResultIterator, \Iterator
             if ($this->iterationCompleted) {
                 $this->currentKey = null;
                 $this->currentValue = null;
+                $this->currentRow = null;
 
                 return;
             }
@@ -286,34 +254,39 @@ abstract class AbstractResultIterator implements ResultIterator, \Iterator
             // to give a coherent row count.
             $this->currentKey = null;
             $this->currentValue = null;
+            $this->currentRow = null;
 
             return;
         }
 
-        $row = $this->doFetchNextRowFromDriver();
+        $data = $this->doFetchNextRowFromDriver();
 
-        if (null === $row) {
+        if (null === $data) {
             $this->iterationCompleted = true;
             $this->currentKey = null;
             $this->currentValue = null;
+            $this->currentRow = null;
 
             return;
         }
 
         if ($this->columnKey) {
-            $key = $row[$this->columnKey];
+            $key = $data[$this->columnKey];
         } else {
             $key = $this->currentIndex;
         }
 
+        $row = new DefaultRow($data, $this->getConverterContext(), $this->getMetadata());
+
         $this->currentKey = $key;
-        $this->currentValue = $this->hydrate($row);
+        $this->currentValue = $this->getHydrator()->hydrate($row);
+        $this->currentRow = $row;
 
         if ($this->rewindable) {
             // While iterating, we store key with the value, and not as being
             // an array key, because it's possible for us to iterate more than
             // once using the key, if there are same values in SQL result.
-            $this->expandedResult[$this->currentIndex] = new ResultIteratorItem($this->currentKey, $this->currentValue);
+            $this->expandedResult[$this->currentIndex] = new ResultIteratorItem($this->currentKey, $this->currentValue, $this->currentRow);
         }
 
         if ($this->currentIndex === $this->countRows() - 1) {
@@ -357,27 +330,44 @@ abstract class AbstractResultIterator implements ResultIterator, \Iterator
      */
     final public function fetchField($name = null)
     {
-        if (null !== $this->hydrator) {
-            throw new InvalidDataAccessError("You cannot call fetchField() if an hydrator is set.");
-        }
-
         $this->next();
 
-        $row = $this->current();
-
-        if (null === $row) {
+        if (null === $this->currentRow) {
             return null;
         }
 
         if ($name) {
-            if (!\array_key_exists($name, $row)) {
-                throw new QueryError(\sprintf("column '%s' does not exist in result", $name));
-            }
-
-            return $row[$name];
+            return $this->currentRow->get($name);
         }
 
-        return \reset($row);
+        return $this->currentRow->get(0);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function fetchColumn($name = 0)
+    {
+        // @todo Handle rewindable iterators here.
+        if ($this->wasResultFreed()) {
+            throw new InvalidDataAccessError("Result was closed.");
+        }
+
+        if (\is_int($name)) {
+            $name = $this->getColumnName($name);
+        }
+
+        $ret = [];
+
+        foreach ($this as $unused) {
+            if ($this->columnKey) {
+                $ret[$this->currentRow->get($this->columnKey)] = $this->currentRow->get($name);
+            } else {
+                $ret[] = $this->currentRow->get($name);
+            }
+        }
+
+        return $ret;
     }
 
     /**
@@ -401,7 +391,7 @@ abstract class AbstractResultIterator implements ResultIterator, \Iterator
     {
         // Let it pass until iteration silently when not in debug mode.
         if ($this->debug && !$this->columnExists($name)) {
-            throw new QueryError(\sprintf("column '%s' does not exist in result", $name));
+            throw new InvalidDataAccessError(\sprintf("Column '%s' does not exist in result.", $name));
         }
 
         $this->columnKey = $name;
@@ -420,8 +410,12 @@ abstract class AbstractResultIterator implements ResultIterator, \Iterator
 
         $type = $this->getMetadata()->getColumnType($name);
 
-        if (null === $type && $this->debug) {
-            throw new QueryError(\sprintf("column '%s' does not exist in result", $name));
+        if (null === $type) {
+            if ($this->debug) {
+                throw new QueryError(\sprintf("Column '%s' does not exist in result.", $name));
+            } else {
+                \trigger_error(\sprintf("Column '%s' does not have a type, falling back to 'varchar'", $name), E_USER_WARNING);
+            }
         }
 
         return $type ?? 'varchar'; // Stupid but will never fail at conversion time.
@@ -523,11 +517,12 @@ final class ResultIteratorItem
 {
     public $key;
     public $value;
+    public $row;
 
-    public function __construct($key, $value)
+    public function __construct($key, $value, $row)
     {
         $this->key = $key;
         $this->value = $value;
+        $this->row = $row;
     }
 }
-

@@ -34,9 +34,13 @@ interface ResultIterator extends ResultMetadata, \Traversable, \Countable
      * Set hydrator.
      *
      * @param callable $hydrator
-     *   First callable argument is the row values array.
+     *   Two variants of the callable signature exists:
+     *    - fn (Row $row, ConverterContext $context) which is recommended.
+     *    - fn (array $row) which is deprecated and support will be removed.
      *
      * @return $this
+     *
+     * @see ResultIterator::hydrator()
      */
     public function setHydrator(callable $hydrator): self;
 
@@ -94,20 +98,22 @@ interface ResultIterator extends ResultMetadata, \Traversable, \Countable
      *   If none given, just take the first one
      *
      * @return mixed[]
+     *
+     * @deprecated
+     *   fetchColumn() implementation is very unperformant, it is not advised
+     *   to use it. Whenever you need fetchColumn() instead of simply use the
+     *   key column along with a custom hydrator returning a single value, you
+     *   probably did something wrong.
+     *   This will be removed in next major.
      */
     public function fetchColumn($name = null);
 
     /**
      * Get next element and move forward.
      *
-     * Fetch usage is discouraged if you have more than one element in the
-     * result because it forces the current implementation to create an
-     * extra internal iterator.
-     *
-     * Whenever you have more than one result, simply use foreach() over
-     * the result, which will be much, much more efficient.
-     *
-     * @return mixed
+     * @return mixed|Row
+     *   Either a Row instance, or anything the hydrator will return if an
+     *   hydrator is set.
      */
     public function fetch();
 }

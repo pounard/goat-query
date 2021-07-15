@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Goat\Driver\Runner;
 
 use Goat\Runner\AbstractResultIterator;
-use Goat\Runner\InvalidDataAccessError;
 
 class ExtPgSQLResultIterator extends AbstractResultIterator
 {
@@ -122,77 +121,5 @@ class ExtPgSQLResultIterator extends AbstractResultIterator
     protected function wasResultFreed(): bool
     {
         return null === $this->connection;
-    }
-
-    /**
-     * fetchColumn() implementation that returns a keyed array
-     */
-    protected function fetchColumnWithKey(string $name, int $index, string $columnKeyName)
-    {
-        if (null === $this->connection) {
-            throw new InvalidDataAccessError("Result was closed");
-        }
-
-        $keyIndex = $this->getColumnNumber($columnKeyName);
-
-        // @todo this is not scalable, but fetchColumn() signature isn't as well
-        //   because we shouldn't return an array, but an iterable (stream).
-        $valueColumn = \pg_fetch_all_columns($this->connection, $index);
-        if (false === $valueColumn) {
-            // @todo use ExtPgSQLErrorTrait to provide more information
-            //   and nest the SQL error as previous of this one.
-            throw new InvalidDataAccessError(\sprintf("column '%d' is out of scope of the current result", $index));
-        }
-
-        $indexColumn = \pg_fetch_all_columns($this->connection, $keyIndex);
-        if (false === $indexColumn) {
-            // @todo use ExtPgSQLErrorTrait to provide more information
-            //   and nest the SQL error as previous of this one.
-            throw new InvalidDataAccessError(\sprintf("column '%d' is out of scope of the current result", $keyIndex));
-        }
-
-        $ret = [];
-
-        foreach ($valueColumn as $index => $value) {
-            $ret[$indexColumn[$index]] = $this->convertValue($name, $value);
-        }
-
-        return $ret;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function fetchColumn($name = 0)
-    {
-        if (null === $this->connection) {
-            throw new InvalidDataAccessError("Result was closed");
-        }
-
-        if (\is_string($name)) {
-            $index = $this->getColumnNumber($name);
-        } else {
-            $index = (int)$name;
-            $name = $this->getColumnName($index);
-        }
-
-        if ($this->columnKey) {
-            return $this->fetchColumnWithKey($name, $index, $this->columnKey);
-        }
-
-        $ret = [];
-
-        $columns = \pg_fetch_all_columns($this->connection, $index);
-        if (false === $columns) {
-            // @todo use ExtPgSQLErrorTrait to provide more information
-            //   and nest the SQL error as previous of this one.
-            throw new InvalidDataAccessError(\sprintf("column '%d' is out of scope of the current result", $index));
-        }
-
-        foreach ($columns as $value) {
-            $ret[] = $this->convertValue($name, $value);
-        }
-
-        return $ret;
     }
 }
