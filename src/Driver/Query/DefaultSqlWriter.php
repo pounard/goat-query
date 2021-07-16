@@ -156,6 +156,7 @@ class DefaultSqlWriter implements SqlWriter
         $asString = $expression->getString();
         $values = $expression->getArguments();
 
+        // @todo \str_contains() polifill for lower php versions?
         if (!$values && false === \str_contains($asString, '?')) {
             // Performance shortcut for expressions containing no arguments.
             return $asString;

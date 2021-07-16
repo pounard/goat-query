@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Goat\Driver\Runner;
 
-use Goat\Converter\ConverterInterface;
+use Goat\Converter\ConfigurableConverter;
+use Goat\Converter\Converter;
 use Goat\Converter\Driver\MySQLConverter;
 use Goat\Driver\Error;
+use Goat\Driver\Platform\Escaper\Escaper;
 
 class PDOMySQLRunner extends AbstractPDORunner
 {
@@ -21,9 +23,9 @@ class PDOMySQLRunner extends AbstractPDORunner
     /**
      * {@inheritdoc}
      */
-    protected function doCreateConverter(): ConverterInterface
+    protected function doCreateConverter(ConfigurableConverter $decorated, Escaper $escaper): Converter
     {
-        return new MySQLConverter();
+        return new MySQLConverter($decorated, $escaper);
     }
 
     /**

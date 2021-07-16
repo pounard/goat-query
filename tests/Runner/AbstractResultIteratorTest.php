@@ -6,6 +6,7 @@ namespace Goat\Runner\Tests;
 
 use Goat\Converter\Tests\WithConverterTestTrait;
 use Goat\Query\QueryError;
+use Goat\Runner\Row;
 use MakinaCorpus\Profiling\Implementation\DefaultProfiler;
 use PHPUnit\Framework\TestCase;
 
@@ -58,21 +59,21 @@ final class AbstractResultIteratorTest extends TestCase
     {
         $result = $this->createArrayResultIterator()->setRewindable(true);
 
-        self::assertSame(['a' => '1', 'b' => 'foo', 'c' => '1983-03-22'], $result->fetch());
-        self::assertSame(['a' => '2', 'b' => 'bar', 'c' => '2012-01-12'], $result->fetch());
+        self::assertSame(['a' => '1', 'b' => 'foo', 'c' => '1983-03-22'], $result->fetch()->toArray());
+        self::assertSame(['a' => '2', 'b' => 'bar', 'c' => '2012-01-12'], $result->fetch()->toArray());
 
         $result->rewind();
 
-        self::assertSame(['a' => '1', 'b' => 'foo', 'c' => '1983-03-22'], $result->fetch());
-        self::assertSame(['a' => '2', 'b' => 'bar', 'c' => '2012-01-12'], $result->fetch());
+        self::assertSame(['a' => '1', 'b' => 'foo', 'c' => '1983-03-22'], $result->fetch()->toArray());
+        self::assertSame(['a' => '2', 'b' => 'bar', 'c' => '2012-01-12'], $result->fetch()->toArray());
     }
 
     public function testNonRewindableIteratorFetch(): void
     {
         $result = $this->createArrayResultIterator();
 
-        self::assertSame(['a' => '1', 'b' => 'foo', 'c' => '1983-03-22'], $result->fetch());
-        self::assertSame(['a' => '2', 'b' => 'bar', 'c' => '2012-01-12'], $result->fetch());
+        self::assertSame(['a' => '1', 'b' => 'foo', 'c' => '1983-03-22'], $result->fetch()->toArray());
+        self::assertSame(['a' => '2', 'b' => 'bar', 'c' => '2012-01-12'], $result->fetch()->toArray());
     }
 
     public function testSetDebug(): void
@@ -101,9 +102,8 @@ final class AbstractResultIteratorTest extends TestCase
         $result = $this->createArrayResultIterator();
         $result->setConverterContext(self::context());
 
-        $row = $result->fetch();
+        $row = $result->fetch()->toHydratedArray();
 
-        self::assertIsArray($row);
         self::assertSame(1, $row['a']);
         self::assertSame('foo', $row['b']);
         self::assertInstanceOf(\DateTimeInterface::class, $row['c']);
@@ -157,7 +157,7 @@ final class AbstractResultIteratorTest extends TestCase
     public function testSetNullHydratorIsOk()
     {
         $result = $this->createArrayResultIterator();
-        $result->setHydrator(null);
+        $result->setHydrator(fn (Row $row) => $row->toArray());
 
         $row = $result->fetch();
 
@@ -176,6 +176,6 @@ final class AbstractResultIteratorTest extends TestCase
 
         self::expectException(QueryError::class);
 
-        $result->setHydrator(null);
+        $result->setHydrator(fn () => null);
     }
 }

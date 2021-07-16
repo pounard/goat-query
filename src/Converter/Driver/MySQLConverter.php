@@ -3,31 +3,26 @@
 namespace Goat\Converter\Driver;
 
 use Goat\Converter\ConverterContext;
-use Goat\Converter\ConverterInterface;
-use Goat\Converter\DefaultConverter;
+use Goat\Driver\Runner\RunnerConverter;
 
 /**
  * MySQL 5.x converter, should work for 8.x as well.
  */
-class MySQLConverter extends DefaultConverter
+class MySQLConverter extends RunnerConverter
 {
     /**
      * {@inheritdoc}
      */
-    public function toSQL(string $type, $value, ConverterContext $context): ?string
+    public function toSQL(/* mixed */ $value, ?string $sqlType, ?ConverterContext $context = null): ?string
     {
-        if (ConverterInterface::TYPE_UNKNOWN === $type) {
-            $type = $this->guessType($value, $context);
-        }
-
-        switch ($type) {
+        switch ($sqlType) {
             // MySQL does not have a boolean native type.
             case 'bool':
             case 'boolean':
                 return $value ? '1' : '0';
 
             default:
-                return parent::toSQL($type, $value, $context);
+                return parent::toSQL($value, $sqlType, $context);
         }
     }
 }

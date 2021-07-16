@@ -4,17 +4,40 @@ declare(strict_types=1);
 
 namespace Goat\Runner\Tests\Hydrator;
 
+use Goat\Converter\ConverterContext;
+use Goat\Converter\DefaultConverter;
+use Goat\Runner\DefaultRow;
+use Goat\Runner\Row;
+use Goat\Runner\SessionConfiguration;
 use Goat\Runner\Hydrator\ResultHydrator;
+use Goat\Runner\Metadata\DefaultResultMetadata;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * @deprecated
+ *   This test the result hydrator group feature, which will be dropped in
+ *   next major release.
+ */
 final class ResultHydratorTest extends TestCase
 {
+    private function row(array $values): Row
+    {
+        return new DefaultRow(
+            $values,
+            new ConverterContext(
+                new DefaultConverter(),
+                SessionConfiguration::empty()
+            ),
+            new DefaultResultMetadata([], [])
+        );
+    }
+
     /**
      * Test object nesting with a stupid separator.
      */
     public function testNestingAsArrayWithLongSeparator(): void
     {
-        $hydrator = new ResultHydrator(null, '__foo__');
+        $hydrator = new ResultHydrator(null, true, '__foo__');
 
         $values = [
             'ownProperty1' => 1,
@@ -40,13 +63,13 @@ final class ResultHydratorTest extends TestCase
                     'miaw' => 11,
                 ],
             ],
-            $hydrator->hydrate($values)
+            $hydrator->hydrate($this->row($values))
         );
     }
 
     public function testNullArraysAreDroppedPerDefault(): void
     {
-        $hydrator = new ResultHydrator(null, '.');
+        $hydrator = new ResultHydrator(null, true, '.');
 
         $values = [
             'foo' => 12,
@@ -77,13 +100,13 @@ final class ResultHydratorTest extends TestCase
                 ],
                 'a' => null,
             ],
-            $hydrator->hydrate($values)
+            $hydrator->hydrate($this->row($values))
         );
     }
 
     public function testNullArraysAreNotDropped(): void
     {
-        $hydrator = new ResultHydrator(null, '.', false);
+        $hydrator = new ResultHydrator(null, true, '.', false);
 
         $values = [
             'foo' => 12,
@@ -128,7 +151,7 @@ final class ResultHydratorTest extends TestCase
                     ],
                 ],
             ],
-            $hydrator->hydrate($values)
+            $hydrator->hydrate($this->row($values))
         );
     }
 
@@ -137,7 +160,7 @@ final class ResultHydratorTest extends TestCase
      */
     public function testNestingAsArray(): void
     {
-        $hydrator = new ResultHydrator();
+        $hydrator = new ResultHydrator(null, true);
 
         $values = [
             'ownProperty1' => 1,
@@ -147,8 +170,6 @@ final class ResultHydratorTest extends TestCase
             'nestedObject1.someNestedInstance.miaw' => 17,
             'nestedObject2.miaw' => 11,
         ];
-
-        $hydrator = new ResultHydrator();
 
         self::assertSame(
             [
@@ -165,7 +186,7 @@ final class ResultHydratorTest extends TestCase
                     'miaw' => 11,
                 ],
             ],
-            $hydrator->hydrate($values)
+            $hydrator->hydrate($this->row($values))
         );
     }
 
@@ -186,7 +207,7 @@ final class ResultHydratorTest extends TestCase
             ],
         ];
 
-        $hydrator = new ResultHydrator();
+        $hydrator = new ResultHydrator(null, true);
 
         self::assertSame(
             [
@@ -201,7 +222,7 @@ final class ResultHydratorTest extends TestCase
                     ]
                 ],
             ],
-            $hydrator->hydrate($values[0])
+            $hydrator->hydrate($this->row($values[0]))
         );
 
         self::assertSame(
@@ -217,48 +238,34 @@ final class ResultHydratorTest extends TestCase
                     ]
                 ],
             ],
-            $hydrator->hydrate($values[1])
+            $hydrator->hydrate($this->row($values[1]))
         );
     }
 
     public function testExistingNullPropertyIsIgnored()
     {
-        $hydrator = new ResultHydrator();
+        $hydrator = new ResultHydrator(null, true);
 
         $values = [
             'nestedObject1' => null,
             'nestedObject1.foo' => 5,
         ];
 
-        $object = $hydrator->hydrate($values);
-
-        self::assertSame(['nestedObject1' => ['foo' => 5]], $object);
-    }
-
-    public function testExistingEmptyArrayPropertyIsIgnored()
-    {
-        $hydrator = new ResultHydrator();
-
-        $values = [
-            'nestedObject1' => [],
-            'nestedObject1.foo' => 5,
-        ];
-
-        $object = $hydrator->hydrate($values);
+        $object = $hydrator->hydrate($this->row($values));
 
         self::assertSame(['nestedObject1' => ['foo' => 5]], $object);
     }
 
     public function testExistingEmptyStringPropertyIsIgnored()
     {
-        $hydrator = new ResultHydrator();
+        $hydrator = new ResultHydrator(null, true);
 
         $values = [
             'nestedObject1' => '',
             'nestedObject1.foo' => 5,
         ];
 
-        $object = $hydrator->hydrate($values);
+        $object = $hydrator->hydrate($this->row($values));
 
         self::assertSame(['nestedObject1' => ['foo' => 5]], $object);
     }

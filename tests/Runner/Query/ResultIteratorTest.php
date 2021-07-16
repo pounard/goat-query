@@ -7,6 +7,7 @@ namespace Goat\Runner\Tests\Query;
 use Goat\Runner\Runner;
 use Goat\Runner\Testing\DatabaseAwareQueryTest;
 use Goat\Runner\Testing\TestDriverFactory;
+use Goat\Runner\Row;
 
 class ResultIteratorTest extends DatabaseAwareQueryTest
 {
@@ -54,7 +55,7 @@ class ResultIteratorTest extends DatabaseAwareQueryTest
         $count = 0;
         foreach ($result as $row) {
             ++$count;
-            self::assertIsArray($row);
+            self::assertInstanceOf(Row::class, $row);
         }
         self::assertSame(5, $count);
 
@@ -77,7 +78,7 @@ class ResultIteratorTest extends DatabaseAwareQueryTest
         ;
 
         for ($i = 0; $i < 5; ++$i) {
-            self::assertIsArray($result->fetch());
+            self::assertInstanceOf(Row::class, $result->fetch());
         }
 
         $result->rewind();
@@ -104,14 +105,14 @@ class ResultIteratorTest extends DatabaseAwareQueryTest
         $count = 0;
         foreach ($result as $row) {
             ++$count;
-            self::assertIsArray($row);
+            self::assertInstanceOf(Row::class, $row);
         }
         self::assertSame(5, $count);
 
         $count = 0;
         foreach ($result as $row) {
             ++$count;
-            self::assertIsArray($row);
+            self::assertInstanceOf(Row::class, $row);
         }
         self::assertSame(5, $count);
     }
@@ -131,13 +132,13 @@ class ResultIteratorTest extends DatabaseAwareQueryTest
         ;
 
         for ($i = 0; $i < 5; ++$i) {
-            self::assertIsArray($result->fetch());
+            self::assertInstanceOf(Row::class, $result->fetch());
         }
 
         $result->rewind();
 
         for ($i = 0; $i < 5; ++$i) {
-            self::assertIsArray($result->fetch());
+            self::assertInstanceOf(Row::class, $result->fetch());
         }
     }
 
@@ -158,7 +159,7 @@ class ResultIteratorTest extends DatabaseAwareQueryTest
         $count = 0;
         foreach ($result as $row) {
             ++$count;
-            self::assertIsArray($row);
+            self::assertInstanceOf(Row::class, $row);
             if (3 === $count) {
                 break;
             }
@@ -169,7 +170,7 @@ class ResultIteratorTest extends DatabaseAwareQueryTest
         $count = 0;
         foreach ($result as $row) {
             ++$count;
-            self::assertIsArray($row);
+            self::assertInstanceOf(Row::class, $row);
         }
         self::assertSame(5, $count);
     }
@@ -189,13 +190,13 @@ class ResultIteratorTest extends DatabaseAwareQueryTest
         ;
 
         for ($i = 0; $i < 3; ++$i) {
-            self::assertIsArray($result->fetch());
+            self::assertInstanceOf(Row::class, $result->fetch());
         }
 
         $result->rewind();
 
         for ($i = 0; $i < 5; ++$i) {
-            self::assertIsArray($result->fetch());
+            self::assertInstanceOf(Row::class, $result->fetch());
         }
     }
 }

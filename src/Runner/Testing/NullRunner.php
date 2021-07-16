@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Goat\Runner\Testing;
 
-use Goat\Converter\ConverterInterface;
-use Goat\Converter\DefaultConverter;
+use Goat\Converter\ConfigurableConverter;
+use Goat\Converter\Converter;
+use Goat\Driver\Platform\Escaper\Escaper;
 use Goat\Driver\Query\FormattedQuery;
 use Goat\Driver\Runner\AbstractRunner;
+use Goat\Driver\Runner\RunnerConverter;
 use Goat\Runner\AbstractResultIterator;
 use Goat\Runner\SessionConfiguration;
 
@@ -29,9 +31,9 @@ class NullRunner extends AbstractRunner
         return 'null';
     }
 
-    protected function doCreateConverter(): ConverterInterface
+    protected function doCreateConverter(ConfigurableConverter $decorated, Escaper $escaper): Converter
     {
-        return new DefaultConverter();
+        return new RunnerConverter($decorated, $escaper);
     }
 
     /**

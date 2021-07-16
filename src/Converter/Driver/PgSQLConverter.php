@@ -2,22 +2,20 @@
 
 namespace Goat\Converter\Driver;
 
-use Goat\Converter\DefaultConverter;
-use Goat\Converter\ValueConverterRegistry;
+use Goat\Converter\Converter;
+use Goat\Driver\Runner\RunnerConverter;
 
 /**
  * PostgreSQL all versions converter.
  */
-class PgSQLConverter extends DefaultConverter
+class PgSQLConverter extends RunnerConverter 
 {
     /**
      * {@inheritdoc}
      */
-    public function setValueConverterRegistry(ValueConverterRegistry $valueConverterRegistry): void
+    protected function initialize(Converter $decorated): void
     {
-        $valueConverterRegistry->register(new PgSQLArrayConverter());
-        $valueConverterRegistry->register(new PgSQLRowConverter());
-
-        parent::setValueConverterRegistry($valueConverterRegistry);
+        $decorated->register(new PgSQLArrayConverter());
+        $decorated->register(new PgSQLRowConverter());
     }
 }

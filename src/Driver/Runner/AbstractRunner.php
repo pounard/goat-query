@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Goat\Driver\Runner;
 
+use Goat\Converter\ConfigurableConverter;
+use Goat\Converter\Converter;
 use Goat\Converter\ConverterContext;
-use Goat\Converter\ConverterInterface;
-use Goat\Converter\ValueConverterRegistry;
+use Goat\Converter\DefaultConverter;
 use Goat\Driver\Driver;
 use Goat\Driver\Error\TransactionError;
 use Goat\Driver\Platform\Platform;
+use Goat\Driver\Platform\Escaper\Escaper;
 use Goat\Driver\Query\FormattedQuery;
 use Goat\Driver\Query\SqlWriter;
 use Goat\Query\Query;
@@ -47,8 +49,8 @@ abstract class AbstractRunner implements Runner, ProfilerContextAware
     private ?QueryBuilder $queryBuilder = null;
     private ?ResultMetadataCache $metadataCache = null;
     private /* mixed */ $connection = null;
-    private ?ConverterInterface $converter = null;
-    private ?ValueConverterRegistry $valueConverterRegistry = null;
+    private ?Converter $converter = null;
+    private ?ConfigurableConverter $configurableConverter = null;
 
     public function __construct(Driver $driver, SessionConfiguration $sessionConfiguration)
     {
@@ -68,25 +70,6 @@ abstract class AbstractRunner implements Runner, ProfilerContextAware
     protected function getConnection()
     {
         return $this->connection ?? $this->connection = $this->driver->connect();
-    }
-
-    /**
-     * Create converter, will be called only once.
-     *
-     * Using this method allows lazy initialiation.
-     */
-    final protected function createConverter(): ConverterInterface
-    {
-        $converter = new RunnerConverter(
-            $this->doCreateConverter(),
-            $this->getPlatform()->getEscaper()
-        );
-
-        if ($this->valueConverterRegistry) {
-            $converter->setValueConverterRegistry($this->valueConverterRegistry);
-        }
-
-        return $converter;
     }
 
     /**
@@ -150,9 +133,9 @@ abstract class AbstractRunner implements Runner, ProfilerContextAware
     /**
      * {@inheritdoc}
      */
-    public function setValueConverterRegistry(ValueConverterRegistry $valueConverterRegistry): void
+    public function setConfigurableConverter(ConfigurableConverter $converter): void
     {
-        $this->valueConverterRegistry = $valueConverterRegistry;
+        $this->configurableConverter = $converter;
     }
 
     /**
@@ -166,9 +149,16 @@ abstract class AbstractRunner implements Runner, ProfilerContextAware
     /**
      * {@inheritdoc}
      */
-    final public function getConverter(): ConverterInterface
+    final public function getConverter(): Converter
     {
-        return $this->converter ?? $this->converter = $this->createConverter();
+        return $this->converter ?? (
+            $this->converter = $this->doCreateConverter(
+                $this->configurableConverter ?? (
+                    $this->configurableConverter = new DefaultConverter()
+                ),
+                $this->getPlatform()->getEscaper()
+            )
+        );
     }
 
     /**
@@ -377,7 +367,7 @@ abstract class AbstractRunner implements Runner, ProfilerContextAware
     /**
      * Create converter for this runner.
      */
-    protected abstract function doCreateConverter(): ConverterInterface;
+    protected abstract function doCreateConverter(ConfigurableConverter $decorated, Escaper $escaper): Converter;
 
     /**
      * execute() implementation.

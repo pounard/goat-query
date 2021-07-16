@@ -4,175 +4,224 @@ declare(strict_types=1);
 
 namespace Goat\Converter\Tests;
 
-use Goat\Converter\ConverterInterface;
+use Goat\Converter\TypeConversionError;
 use PHPUnit\Framework\TestCase;
 
-class DefaultConverterTest extends TestCase
+final class DefaultConverterTest extends TestCase
 {
-    const TYPES_INT = [
-        'bigserial', 'serial', 'serial2', 'serial4', 'serial8', 'smallserial',
-        'bigint', 'int', 'int2', 'int4', 'int8', 'integer', 'smallint',
-    ];
-
-    const TYPES_STRING = [
-        'char', 'character', 'clog', 'text', 'varchar'
-    ];
-
-    const TYPES_NUMERIC = [
-        'decimal', 'double', 'float4', 'float8', 'numeric', 'real'
-    ];
-
     use WithConverterTestTrait;
 
-    public function testNullConversion(): void
+    /**
+     * Tests null shortcut.
+     */
+    public function testToSqlWhenNullValueReturnsNull(): void
     {
         $converter = self::defaultConverter();
-        $context = self::context($converter);
 
-        self::assertNull($converter->fromSQL(ConverterInterface::TYPE_NULL, "null", $context));
-        self::assertNull($converter->fromSQL(ConverterInterface::TYPE_NULL, "some string", $context));
-        self::assertNull($converter->fromSQL(ConverterInterface::TYPE_NULL, 12, $context));
-        self::assertNull($converter->toSQL(ConverterInterface::TYPE_NULL, null, $context));
-        self::assertSame(ConverterInterface::TYPE_NULL, $converter->guessType(null, $context));
+        self::assertSame(null, $converter->toSQL(null, 'varchar'));
     }
 
     /**
-     * Data provider
+     * Tests null shortcut.
      */
-    public function getIntTypes(): array
+    public function testToSqlWhenNullTypeReturnsNull(): void
     {
-        return \array_map(function ($value) { return [$value]; }, self::TYPES_INT);
+        $converter = self::defaultConverter();
+
+        self::assertSame(null, $converter->toSQL('foo', 'null'));
     }
 
     /**
-     * @dataProvider getIntTypes
+     * Resources are not allowed.
      */
-    public function testIntConversion($type): void
+    public function testToSqlWhenResourceThenFail(): void
     {
-        $converter = self::defaultConverter();
-        $context = self::context($converter);
+        try {
+            $handle = \fopen(__FILE__, 'r');
+            $converter = self::defaultConverter();
 
-        self::assertSame("12", $converter->toSQL($type, 12, $context));
-        self::assertSame(12, $converter->fromSQL($type, "12", $context));
+            self::expectException(TypeConversionError::class);
+            self::expectExceptionMessageMatches('/Resources types are not supported yet/');
+            $converter->toSQL($handle, null);
+        } finally {
+            \fclose($handle);
+        }
     }
 
     /**
-     * Data provider
+     * When an object implements a supported interface of a converter, it
+     * will match.
      */
-    public function getStringTypes(): array
+    public function testToSqlWhenObjectImplementsInterface(): void
     {
-        return \array_map(function ($value) { return [$value]; }, self::TYPES_STRING);
+        self::markTestIncomplete("Not implementeed yet.");
     }
 
     /**
-     * @dataProvider getStringTypes
+     * When an object is a sublass of a supported PHP type of a converter,
+     * it will match.
      */
-    public function testStringConversion($type): void
+    public function testToSqlWhenObjectIsChildClass(): void
     {
-        $converter = self::defaultConverter();
-        $context = self::context($converter);
-
-        self::assertSame("Yeah !", $converter->toSQL($type, "Yeah !", $context));
-        self::assertSame("Booh...", $converter->fromSQL($type, "Booh...", $context));
-    }
-
-    public function testUuidConversion(): void
-    {
-        self::markTestSkipped("Implement me");
-    }
-
-    public function testJsonConversion(): void
-    {
-        self::markTestSkipped("Implement me");
-    }
-
-    public function testBoolConversion(): void
-    {
-        self::markTestSkipped("Implement me");
-    }
-
-    public function testDatetimeConversion(): void
-    {
-        self::markTestSkipped("Implement me");
-    }
-
-    public function testDateConversion(): void
-    {
-        self::markTestSkipped("Implement me");
+        self::markTestIncomplete("Not implemented yet.");
     }
 
     /**
-     * Data provider
+     * Tests unknown SQL type error case.
      */
-    public function getDecimalAndFloatTypes(): array
+    public function testToSqlWhenUnexistingSqlTypeFails(): void
     {
-        return \array_map(function ($value) { return [$value]; }, self::TYPES_NUMERIC);
+        $converter = self::defaultConverter();
+
+        self::expectException(TypeConversionError::class);
+        $converter->toSQL('foo', 'this is a non existing type');
     }
 
     /**
-     * @dataProvider getDecimalAndFloatTypes
+     * Tests unsupported PHP type error case.
      */
-    public function testDecimalAndFloatConversion($type): void
+    public function testToSqlWhenUnexistingPhpTypeFails(): void
     {
         $converter = self::defaultConverter();
-        $context = self::context($converter);
 
-        self::assertSame("12.3456789", $converter->toSQL($type, 12.3456789, $context));
-        $value = $converter->fromSQL($type, "12.3456789", $context);
-        self::assertTrue(\is_float($value));
-        self::assertEquals(12.3456789, $value);
-
-        // Integer will go through
-        // Integer will be given as float once converted back from SQL
-        self::assertSame("42", $converter->toSQL($type, 42, $context));
-        $value = $converter->fromSQL($type, "42", $context);
-        self::assertTrue(\is_float($value));
-        self::assertEquals(42, $value);
+        self::expectException(TypeConversionError::class);
+        $converter->toSQL(new \SplObjectStorage(), null);
     }
 
-    public function testUnknownTypeConversionToString(): void
+    /**
+     * Tests alias unwinding works.
+     */
+    public function testToSqlWhenAlias(): void
     {
         $converter = self::defaultConverter();
-        $context = self::context($converter);
 
-        self::assertSame("I am a string", $converter->toSQL('varchar', new StupidObjectWithToString(), $context));
+        self::assertSame('12', $converter->toSQL(12, 'int4'));
     }
 
-    public function testBlobConversion(): void
-    {
-        self::markTestSkipped("Implement me");
-    }
-
-    public function testBlobWithNulChar(): void
-    {
-        self::markTestSkipped("Implement me");
-    }
-
-    public function testRegisterOverride(): void
-    {
-        self::markTestSkipped("Implement me");
-    }
-
-    public function testRegisterOverrideNonAllowedFails(): void
-    {
-        self::markTestSkipped("Implement me");
-    }
-
-    public function testTypeRegisterWithAliases(): void
-    {
-        self::markTestSkipped("Implement me");
-    }
-
-    public function testTypeGuessing(): void
+    /**
+     * Tests null shortcut.
+     */
+    public function testFromSqlWhenNullValueReturnsNull(): void
     {
         $converter = self::defaultConverter();
-        $context = self::context($converter);
 
-        self::assertSame('bool', $converter->guessType(true, $context));
-        self::assertSame('interval', $converter->guessType(\DateInterval::createFromDateString('1 hour'), $context));
-        self::assertSame('numeric', $converter->guessType(12.34, $context));
-        self::assertSame('timestamptz', $converter->guessType(new \DateTime(), $context));
-        self::assertSame('varchar', $converter->guessType('pouet', $context));
-        self::assertSame('varchar', $converter->guessType(new StupidObjectWithToString(), $context));
+        self::assertNull($converter->fromSQL(null, 'varchar', null));
+    }
+
+    /**
+     * Tests null shortcut.
+     */
+    public function testFromSqlWhenNullSqlTypeReturnsNull(): void
+    {
+        $converter = self::defaultConverter();
+
+        self::assertNull($converter->fromSQL('bar', 'null', 'string'));
+    }
+
+    /**
+     * Tests when int or float is given instead of string shortcut.
+     */
+    public function testFromSqlWhenIntReturnInt(): void
+    {
+        $converter = self::defaultConverter();
+
+        self::assertSame(7, $converter->fromSQL(7, null, null));
+    }
+
+    /**
+     * Tests when int or float is given instead of string shortcut.
+     */
+    public function testFromSqlWhenFloatReturnFloat(): void
+    {
+        $converter = self::defaultConverter();
+
+        self::assertSame(7.2, $converter->fromSQL(7.2, null, null));
+    }
+
+    /**
+     * Tests when int or float is given instead of string shortcut.
+     */
+    public function testFromSqlWhenFloatAndIntTypeReturnInt(): void
+    {
+        $converter = self::defaultConverter();
+
+        self::assertSame(7, $converter->fromSQL(7.0, null, 'int'));
+    }
+
+    /**
+     * Tests when int or float is given instead of string shortcut.
+     */
+    public function testFromSqlWhenIntAndFloatTypeReturnFloat(): void
+    {
+        $converter = self::defaultConverter();
+
+        self::assertSame(7.0, $converter->fromSQL(7, null, 'float'));
+    }
+
+    /**
+     * Tests that if a converter is registered for a specific interface, an
+     * object implementing it will be restitued.
+     */
+    public function testFromSqlWhenPhpTypeIsInterface(): void
+    {
+        self::markTestIncomplete("Not implemented yet.");
+    }
+
+    /**
+     * Tests that if a PHP type which is a parent class of a converter supported
+     * PHP type, then the converter will match.
+     */
+    public function testFromSqlWhenPhpTypeIsParentClass(): void
+    {
+        self::markTestIncomplete("Not implemented yet.");
+    }
+
+    /**
+     * When no PHP type is given, a multiple converters do match, then the first
+     * one not raising an error will return its result.
+     */
+    public function testFromSqlWhenNoPhpTypeThenAllMatchingWithSqlAreTested(): void
+    {
+        self::markTestIncomplete();
+    }
+
+    /**
+     * Tests unknown SQL type error case.
+     */
+    public function testFromSqlWhenUnexistingSqlTypeFails(): void
+    {
+        $converter = self::defaultConverter();
+
+        self::expectException(TypeConversionError::class);
+        $converter->fromSQL('foo', 'this is a non existing type', null);
+    }
+
+    /**
+     * Tests unsupported PHP type error case.
+     */
+    public function testFromSqlWhenUnexistingPhpTypeFails(): void
+    {
+        $converter = self::defaultConverter();
+
+        self::expectException(TypeConversionError::class);
+        $converter->fromSQL('foo', 'varchar', 'this is a non existing type');
+    }
+
+    /**
+     * Tests alias unwinding works.
+     */
+    public function testFromSqlWhenAlias(): void
+    {
+        $converter = self::defaultConverter();
+
+        self::assertSame(12, $converter->fromSQL('12', 'int4', 'int'));
+    }
+
+    /**
+     * When the same transition is registered more than once, the last one wins.
+     */
+    public function testRegisterOrderIsRespected(): void
+    {
+        self::markTestIncomplete("This is not implemented yet.");
     }
 }

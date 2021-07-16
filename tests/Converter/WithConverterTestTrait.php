@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace Goat\Converter\Tests;
 
+use Goat\Converter\Converter;
 use Goat\Converter\ConverterContext;
-use Goat\Runner\SessionConfiguration;
-use Goat\Converter\ConverterInterface;
 use Goat\Converter\DefaultConverter;
+use Goat\Runner\SessionConfiguration;
 
 trait WithConverterTestTrait
 {
     protected static function context(
-        ?ConverterInterface $converter = null,
+        ?Converter $converter = null,
         ?SessionConfiguration $sessionConfiguration = null
     ): ConverterContext {
         return new ConverterContext(
@@ -21,7 +21,7 @@ trait WithConverterTestTrait
         );
     }
 
-    protected static function contextWithTimeZone(string $clientTimeZone, ?ConverterInterface $converter = null): ConverterContext
+    protected static function contextWithTimeZone(string $clientTimeZone, ?Converter $converter = null): ConverterContext
     {
         return self::context(
             $converter ?? self::defaultConverter(),
@@ -29,7 +29,7 @@ trait WithConverterTestTrait
         );
     }
 
-    protected static function defaultConverter(): ?ConverterInterface
+    protected static function defaultConverter(): ?Converter
     {
         return new DefaultConverter();
     }

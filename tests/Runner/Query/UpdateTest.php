@@ -87,7 +87,7 @@ class UpdateTest extends DatabaseAwareQueryTest
         ;
 
         $this->assertSame(1, $result->countRows());
-        $this->assertSame('a', $result->fetch()['bar']);
+        $this->assertSame('a', $result->fetch()->get('bar'));
 
         $query = $runner
             ->getQueryBuilder()

@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Goat\Converter\Impl;
 
 use Goat\Converter\ConverterContext;
-use Goat\Converter\ConverterInterface;
+use Goat\Converter\StaticInputValueConverter;
+use Goat\Converter\StaticOutputValueConverter;
 use Goat\Converter\TypeConversionError;
-use Goat\Converter\ValueConverterInterface;
 
 /**
  * This will fit with most RDBMS since that:
@@ -28,8 +28,10 @@ use Goat\Converter\ValueConverterInterface;
  * actually the case with PostgreSQL. In that regard, we only convert time
  * zones when the input \DateTimeInterface has not the same time zone as the
  * user configured time zone in order to give the server the correct date.
+ *
+ * @see https://www.postgresql.org/docs/13/datatype-datetime.html
  */
-class DateValueConverter implements ValueConverterInterface
+class DateValueConverter implements StaticInputValueConverter, StaticOutputValueConverter
 {
     const FORMAT_DATE = 'Y-m-d';
     const FORMAT_DATETIME = 'Y-m-d H:i:s';
@@ -44,34 +46,59 @@ class DateValueConverter implements ValueConverterInterface
     /**
      * {@inheritdoc}
      */
-    public function isTypeSupported(string $type, ConverterContext $context): bool
+    public function supportedOutputTypes(): array
     {
-        switch ($type) {
-            case 'date':
-            case 'datetime':
-            case 'time':
-            case 'timestamp with time zone':
-            case 'timestamp without time zone':
-            case 'timestamp':
-            case 'timestamptz':
-            case 'timez':
-                return true;
-
-            default:
-                return false;
-        }
+        return [
+            'timestamp' => [
+                \DateTime::class,
+                \DateTimeImmutable::class,
+                \DateTimeInterface::class,
+            ],
+            'timestamp with time zone' => [
+                \DateTime::class,
+                \DateTimeImmutable::class,
+                \DateTimeInterface::class,
+            ],
+            'date' => [
+                \DateTime::class,
+                \DateTimeImmutable::class,
+                \DateTimeInterface::class,
+            ],
+            'time' => [
+                \DateTime::class,
+                \DateTimeImmutable::class,
+                \DateTimeInterface::class,
+            ],
+            'time with time zone' => [
+                \DateTime::class,
+                \DateTimeImmutable::class,
+                \DateTimeInterface::class,
+            ],
+        ];
     }
 
     /**
      * {@inheritdoc}
-     *
+     */
+    public function fromSQL(string $phpType, ?string $sqlType, string $value, ConverterContext $context)
+    {
+        $ret = $this->doFromSQL($phpType, $sqlType ?? 'timestamp', $value, $context);
+
+        if (\DateTime::class === $phpType) {
+            return \DateTime::createFromImmutable($ret);
+        }
+
+        return $ret;
+    }
+
+    /**
      * Right now, the code is rock solid, but it might be slow.
      *
      * This needs benchmarking, and might be some other solutions could be
      * explored. I believe that \DateTimeImmutable::createFromFormat() to be
      * fast enough; I might be wrong.
      */
-    public function fromSQL(string $type, $value,  ConverterContext $context)
+    private function doFromSQL(string $phpType, string $sqlType, string $value, ConverterContext $context): \DateTimeImmutable
     {
         // I have no idea why this is still here. Probably an old bug.
         if (!$value = \trim($value)) {
@@ -80,12 +107,18 @@ class DateValueConverter implements ValueConverterInterface
 
         $doConvert = false;
 
-        switch ($type) {
-            case 'datetime':
-            case 'timestamp with time zone':
-            case 'timestamp without time zone':
+        switch ($sqlType) {
+
+            case 'date':
+                if ($ret = \DateTimeImmutable::createFromFormat(self::FORMAT_DATE, $value)) {
+                    // Date only do not care about time zone.
+                } else {
+                    throw new TypeConversionError(\sprintf("Given date '%s' could not be parsed.", $value));
+                }
+                return $ret;
+
             case 'timestamp':
-            case 'timestamptz':
+            case 'timestamp with time zone':
                 $userTimeZone = new \DateTimeZone($context->getClientTimeZone());
 
                 // Attempt all possible outcomes.
@@ -116,7 +149,7 @@ class DateValueConverter implements ValueConverterInterface
                 return $ret;
 
             case 'time':
-            case 'timez':
+            case 'time with time zone':
                 $userTimeZone = new \DateTimeZone($context->getClientTimeZone());
 
                 // Attempt all possible outcomes.
@@ -145,15 +178,37 @@ class DateValueConverter implements ValueConverterInterface
                     return $ret->setTimezone($userTimeZone);
                 }
                 return $ret;
-
-            case 'date':
-                if ($ret = \DateTimeImmutable::createFromFormat(self::FORMAT_DATE, $value)) {
-                    // Date only do not care about time zone.
-                } else {
-                    throw new TypeConversionError(\sprintf("Given date '%s' could not be parsed.", $value));
-                }
-                return $ret;
         }
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function supportedInputTypes(): array
+    {
+        return [
+            \DateTime::class =>  [
+                'timestamp',
+                'timestamp with time zone',
+                'date',
+                'time',
+                'time with time zone',
+            ],
+            \DateTimeImmutable::class =>  [
+                'timestamp',
+                'timestamp with time zone',
+                'date',
+                'time',
+                'time with time zone',
+            ],
+            \DateTimeInterface::class =>  [
+                'timestamp',
+                'timestamp with time zone',
+                'date',
+                'time',
+                'time with time zone',
+            ],
+        ];
     }
 
     /**
@@ -166,11 +221,12 @@ class DateValueConverter implements ValueConverterInterface
         }
 
         switch ($type) {
-            case 'datetime':
-            case 'timestamp with time zone':
-            case 'timestamp without time zone':
+
+            case 'date':
+                return $value->format(self::FORMAT_DATE);
+
             case 'timestamp':
-            case 'timestamptz':
+            case 'timestamp with time zone':
                 $userTimeZone = new \DateTimeZone($context->getClientTimeZone());
                 // If user given date time is not using the client timezone
                 // enfore conversion on the PHP side, since the SQL backend
@@ -185,11 +241,8 @@ class DateValueConverter implements ValueConverterInterface
                 }
                 return $value->format(self::FORMAT_DATETIME_USEC);
 
-            case 'date':
-                return $value->format(self::FORMAT_DATE);
-
             case 'time':
-            case 'timez':
+            case 'time with time zone':
                 $userTimeZone = new \DateTimeZone($context->getClientTimeZone());
                 // If user given date time is not using the client timezone
                 // enfore conversion on the PHP side, since the SQL backend
@@ -207,14 +260,5 @@ class DateValueConverter implements ValueConverterInterface
             default:
                 throw new TypeConversionError(\sprintf("Given value '%s' is not instanceof \DateTimeInterface.", $value));
         }
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function guessType($value, ConverterContext $context): string
-    {
-        // @todo from configuration.
-        return $value instanceof \DateTimeInterface ? 'timestamptz' : ConverterInterface::TYPE_UNKNOWN;
     }
 }

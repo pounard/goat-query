@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Goat\Converter\Tests;
+namespace Goat\Converter\Tests\Driver;
 
 use Goat\Converter\Driver\PgSQLParser;
 use PHPUnit\Framework\TestCase;

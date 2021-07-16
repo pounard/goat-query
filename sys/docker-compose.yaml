@@ -14,11 +14,13 @@ services:
         image: postgres:9.5
         env_file: [docker.env]
         restart: always
+        ports: ["54321:5432"]
 
     postgres13:
         image: postgres:13.1
         env_file: [docker.env]
         restart: always
+        ports: ["54322:5432"]
 
     php74:
         build:

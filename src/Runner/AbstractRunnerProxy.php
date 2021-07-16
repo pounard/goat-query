@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Goat\Runner;
 
-use Goat\Converter\ConverterInterface;
-use Goat\Converter\ValueConverterRegistry;
+use Goat\Converter\ConfigurableConverter;
+use Goat\Converter\Converter;
 use Goat\Driver\Platform\Platform;
 use Goat\Driver\Runner\AbstractRunner;
 use Goat\Query\QueryBuilder;
@@ -56,9 +56,9 @@ abstract class AbstractRunnerProxy implements Runner
     /**
      * {@inheritdoc}
      */
-    public function setValueConverterRegistry(ValueConverterRegistry $valueConverterRegistry): void
+    public function setConfigurableConverter(ConfigurableConverter $converter): void
     {
-        $this->decorated->setValueConverterRegistry($valueConverterRegistry);
+        $this->decorated->setConfigurableConverter($converter);
     }
 
     /**
@@ -128,7 +128,7 @@ abstract class AbstractRunnerProxy implements Runner
     /**
      * {@inheritdoc}
      */
-    public function getConverter(): ConverterInterface
+    public function getConverter(): Converter
     {
         return $this->decorated->getConverter();
     }
