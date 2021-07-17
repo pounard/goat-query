@@ -10,7 +10,7 @@ use Goat\Converter\Impl\DateValueConverter;
 use Goat\Converter\Impl\IntervalValueConverter;
 use Goat\Converter\Impl\JsonValueConverter;
 use Goat\Converter\Impl\NumberValueConverter;
-use Goat\Converter\Impl\RamseyUuidConverter;
+use Goat\Converter\Impl\RamseyUuidValueConverter;
 use Goat\Converter\Impl\TextValueConverter;
 use Goat\Runner\SessionConfiguration;
 use Ramsey\Uuid\UuidInterface;
@@ -85,8 +85,8 @@ final class DefaultConverter implements ConfigurableConverter
             $this->register(new DateValueConverter());
             $this->register(new IntervalValueConverter());
         }
-        if (\class_exists(UuidInterface::class)) {
-            $this->register(new RamseyUuidConverter());
+        if (\interface_exists(UuidInterface::class)) {
+            $this->register(new RamseyUuidValueConverter());
         }
     }
 
@@ -261,6 +261,9 @@ final class DefaultConverter implements ConfigurableConverter
      */
     private function expandPhpTypeOf($value): array
     {
+        if (\is_object($value)) {
+            return \array_merge([\get_class($value)], \class_implements($value));
+        }
         // @todo Handle interfaces and inheritance (write a cache incrementally).
         // @todo pph8 polyfill required here.
         return [\get_debug_type($value)];

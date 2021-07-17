@@ -17,7 +17,7 @@ use Ramsey\Uuid\UuidInterface;
  *
  * @see https://www.postgresql.org/docs/13/datatype-uuid.html
  */
-class RamseyUuidConverter implements StaticInputValueConverter, StaticOutputValueConverter
+class RamseyUuidValueConverter implements StaticInputValueConverter, StaticOutputValueConverter
 {
     /**
      * {@inheritdoc}
@@ -43,7 +43,7 @@ class RamseyUuidConverter implements StaticInputValueConverter, StaticOutputValu
     public function supportedOutputTypes(): array
     {
         return [
-            'uuid' => UuidInterface::class,
+            'uuid' => [UuidInterface::class],
         ];
     }
 

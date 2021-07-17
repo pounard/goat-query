@@ -6,6 +6,7 @@ namespace Goat\Converter\Tests;
 
 use Goat\Converter\TypeConversionError;
 use PHPUnit\Framework\TestCase;
+use Ramsey\Uuid\Uuid;
 
 final class DefaultConverterTest extends TestCase
 {
@@ -54,7 +55,12 @@ final class DefaultConverterTest extends TestCase
      */
     public function testToSqlWhenObjectImplementsInterface(): void
     {
-        self::markTestIncomplete("Not implementeed yet.");
+        $converter = $this->defaultConverter();
+
+        $value = Uuid::uuid4();
+        $sqlValue = $converter->toSQL($value, 'uuid');
+
+        self::assertSame($value->toString(), $sqlValue);
     }
 
     /**
