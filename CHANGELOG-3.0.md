@@ -288,7 +288,9 @@ Wrong formatting ommiting necessary parenthesis has been fixed, you can now
 safely use a nested `Select` instance in `Select::columnExpression()` in order
 write nested subqueries.
 
-## Row converter
+## Composite type / Row
+
+### Converter
 
 You can now format and retrieve rows as values (as known as composite types)
 when using the PostgreSQL driver:
@@ -345,6 +347,72 @@ And give the following result for the first line (based upon the previous exampl
 There is one known limitation: you can only use array for sending and retrieving
 rows, it is planned to add in a future major release an object to row converter
 for both transparent hydration and serialization.
+
+### Composite type / constant row as arguments
+
+Constant rows were expressions the user could give to the query builder,
+additionnaly they now are values as well, and an associated converter is
+implemented, this means that you can:
+
+ - send arbitrary constant rows as values / arguments in queries,
+ - fetch constant rows as output from the SQL server.
+
+For now the implementation will always convert output constant rows or composite
+types as PHP array, but in the future it will possible for the user to register
+custom hydrators for named composite types.
+
+## All user given arguments can now be expressions
+
+All user given query arguments can now always be any expression. This means that
+all expressions given as arguments, in all cases, will be formated and generated
+SQL will be injected in the user given expression at the expected position.
+
+This opens infinite possibilities for writing complex SQL statements.
+
+## Constant table expression column names can be specified
+
+Constant table expression allows to give aliases for each column in rows it
+defines and allows you to write this kind of SQL statement:
+
+```php
+$expression = new ConstantTableExpression();
+$expression->columns(['foo', 'bar', 'baz']);
+$expression->row([1, 2, 3]);
+
+$select = new SelectQuery($expression, 'foobar');
+```
+
+Which will be formatted as:
+
+```sql
+select *
+from (
+    values
+    (?, ?, ?)
+) as "foobar" ("foo", "bar", "baz")
+```
+
+Column aliases for constant table expression are supported in those use
+cases:
+
+ - When used in a CTE (`WITH` clause),
+ - When used in the `FROM` clause (in any of `FROM`, `JOIN` or `UNION`).
+
+
+## CastExpression for explicit value cast
+
+Prior to 3.x, you could use `\Goat\Query\Expression\ValueExpression` to give
+explicit typing information to any input value you passed along a query to the
+server. This expression gives hint to the convert on how to convert a value but
+it didn't propagated type information within the SQL query itself.
+
+In case you need to write an explicit SQL standard `CAST(foo AS type)`
+expression, you can use the `\Goat\Query\Expression\CastExpression` whose
+constructor signature is the same as the `ValueExpression`, with an additional
+third parameter which is the converter-only type hint.
+
+In the meantime, both `ValueExpression` and `CastExpression` now allow any
+arbitrary expression to be given as value.
 
 ## Faster query formatter
 
