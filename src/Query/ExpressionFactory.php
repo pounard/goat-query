@@ -58,7 +58,7 @@ final class ExpressionFactory
     /**
      * Normalize column or column alias identifier
      */
-    public static function column($expression, $context = null): Expression
+    public static function column($expression, $context = null): Statement
     {
         self::ensureNotNull($expression);
         $expression = self::callable($expression, $context);
@@ -96,7 +96,7 @@ final class ExpressionFactory
      *
      * If null is returned, this means that callback took control.
      */
-    public static function raw($expression, array $arguments = [], $context = null): ?Expression
+    public static function raw($expression, array $arguments = [], $context = null): ?Statement
     {
         self::ensureNotNull($expression);
         $expression = self::callable($expression, $context);
@@ -108,9 +108,9 @@ final class ExpressionFactory
             return null;
         }
 
-        if ($expression instanceof Expression) {
+        if ($expression instanceof Statement) {
             if ($arguments) {
-                throw new QueryError(\sprintf("you cannot pass an %s instance and arguments along", Expression::class));
+                throw new QueryError(\sprintf("you cannot pass an %s instance and arguments along", Statement::class));
             }
             return $expression;
         }
@@ -119,6 +119,6 @@ final class ExpressionFactory
             return new RawExpression($expression, $arguments);
         }
 
-        throw new QueryError(\sprintf("raw expression must be a scalar or an instance of %s", Expression::class));
+        throw new QueryError(\sprintf("raw expression must be a scalar or an instance of %s", Statement::class));
     }
 }

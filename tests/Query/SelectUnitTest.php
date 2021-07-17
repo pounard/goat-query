@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Goat\Query\Tests;
 
 use Goat\Query\QueryError;
+use Goat\Query\RawQuery;
 use Goat\Query\SelectQuery;
 use Goat\Query\Where;
 use Goat\Query\Expression\CastExpression;
@@ -1011,6 +1012,30 @@ final class SelectUnitTest extends TestCase
         );
 
         self::markTestIncomplete("Warning is not implemented yet.");
+    }
+
+    public function testRawQueryGetsParsed(): void
+    {
+        $select = new SelectQuery('some_table');
+        $select->columnExpression(new RawQuery('select ?::int', [1]));
+
+        self::assertSameSql(
+            'select (select ?) from "some_table"',
+            self::format($select)
+        );
+    }
+
+    public function testRawQueryWithExpressionArgumentAreExpanded(): void
+    {
+        $row = new ConstantRowExpression([1, 'foo']);
+
+        $select = new SelectQuery('some_table');
+        $select->whereExpression(new RawQuery('(foo, bar) = ?', $row));
+
+        self::assertSameSql(
+            'select * from "some_table" where (foo, bar) = (?, ?)',
+            self::format($select)
+        );
     }
 
     public function testRawExpressionGetsParsed(): void

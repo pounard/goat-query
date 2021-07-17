@@ -29,6 +29,7 @@ use Goat\Query\Expression\ValueExpression;
 use Goat\Query\Partial\Column;
 use Goat\Query\Partial\Join;
 use Goat\Query\Partial\With;
+use Goat\Query\RawQuery;
 
 /**
  * Standard SQL query formatter: this implementation conforms as much as it
@@ -151,8 +152,9 @@ class DefaultSqlWriter implements SqlWriter
      *   First value is the query string, second is the reworked array
      *   of parameters, if conversions were needed
      */
-    protected function parseExpression(RawExpression $expression, WriterContext $context): string
+    protected function parseExpression(/* RawExpression | RawQuery */ $expression, WriterContext $context): string
     {
+        \assert($expression instanceof RawQuery || $expression instanceof RawExpression);
         $asString = $expression->getString();
         $values = $expression->getArguments();
 
@@ -949,11 +951,19 @@ class DefaultSqlWriter implements SqlWriter
     }
 
     /**
-     * Format value expression.
+     * Format raw expression.
      */
     protected function formatRawExpression(RawExpression $expression, WriterContext $context): string
     {
         return $this->parseExpression($expression, $context);
+    }
+
+    /**
+     * Format raw query.
+     */
+    protected function formatRawQuery(RawQuery $query, WriterContext $context)
+    {
+        return $this->parseExpression($query, $context);
     }
 
     /**
@@ -1120,6 +1130,9 @@ class DefaultSqlWriter implements SqlWriter
         }
         if ($query instanceof AliasedExpression) {
             return $this->formatAliasedExpression($query, $context);
+        }
+        if ($query instanceof RawQuery) {
+            return $this->formatRawQuery($query, $context);
         }
 
         throw new QueryError(\sprintf("Unexpected expression object type: ", \get_class($query)));
