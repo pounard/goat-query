@@ -26,6 +26,7 @@
     },
     "autoload-dev": {
         "psr-4": {
+            "Goat\\Benchmark\\": "tests/Benchmark",
             "Goat\\Converter\\Tests\\": "tests/Converter",
             "Goat\\Driver\\Tests\\": "tests/Driver",
             "Goat\\Query\\Tests\\": "tests/Query",
@@ -43,6 +44,7 @@
     "require-dev" : {
         "makinacorpus/generated-hydrator-bundle": "^1.0.0-alpha2",
         "ocramius/generated-hydrator": "^3.1",
+        "phpbench/phpbench": "^1.0",
         "phpunit/phpunit" : "9.*",
         "ramsey/uuid": "^3.8 || ^4"
     },
