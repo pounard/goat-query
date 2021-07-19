@@ -516,7 +516,7 @@ abstract class AbstractRunner implements Runner, ProfilerContextAware
         } finally {
             $profiler->stop();
             if ($this->isDebugEnabled()) {
-                $profiler->setAttribute('<prepare statement> ' . $identifier);
+                $profiler->setAttribute('sql', '<prepare statement> ' . $identifier);
                 $profiler->setAttribute('args', [$rawSQL]);
             }
         }
@@ -552,7 +552,7 @@ abstract class AbstractRunner implements Runner, ProfilerContextAware
         } finally {
             $profiler->stop();
             if ($this->isDebugEnabled()) {
-                $profiler->setAttribute('<execute prepared statement> ' . $identifier);
+                $profiler->setAttribute('sql', '<execute prepared statement> ' . $identifier);
                 $profiler->setAttribute('args', [$args]);
             }
         }
