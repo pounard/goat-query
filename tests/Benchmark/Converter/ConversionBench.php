@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Goat\Benchmark\Converter;
 
+use Goat\Converter\Converter;
 use Goat\Converter\ConverterContext;
-use Goat\Converter\ConverterInterface;
 use Goat\Converter\DefaultConverter;
+use Goat\Converter\Driver\PgSQLArrayConverter;
 use Goat\Runner\SessionConfiguration;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
@@ -16,7 +17,7 @@ use Ramsey\Uuid\UuidInterface;
  */
 final class ConversionBench
 {
-    private ConverterInterface $converter;
+    private Converter $converter;
     private ConverterContext $context;
 
     private UuidInterface $dataRamseyUuid;
@@ -28,6 +29,7 @@ final class ConversionBench
     public function setUp(): void
     {
         $this->converter = new DefaultConverter();
+        $this->converter->register(new PgSQLArrayConverter());
         $this->context = new ConverterContext($this->converter, SessionConfiguration::empty());
 
         $this->dataRamseyUuid = Uuid::fromString('a9336bfe-1a3b-4d14-a2da-38b819da0e96');
@@ -43,7 +45,7 @@ final class ConversionBench
      */
     public function benchIntFromSql(): void
     {
-        $this->converter->fromSQL('int8', '152485788', $this->context);
+        $this->converter->fromSQL('152485788', 'int8', null, $this->context);
     }
 
     /**
@@ -52,7 +54,7 @@ final class ConversionBench
      */
     public function benchIntToSql(): void
     {
-        $this->converter->toSQL('int8', 152485788, $this->context);
+        $this->converter->toSQL(152485788, 'int8', $this->context);
     }
 
     /**
@@ -61,7 +63,7 @@ final class ConversionBench
      */
     public function benchRamseyUuidFromSql(): void
     {
-        $this->converter->fromSQL('int8', $this->dataArrayAsString, $this->context);
+        $this->converter->fromSQL($this->dataRamseyUuidAsString, 'uuid', null, $this->context);
     }
 
     /**
@@ -70,7 +72,7 @@ final class ConversionBench
      */
     public function benchRamseyUuidToSql(): void
     {
-        $this->converter->toSQL('int8', $this->dataRamseyUuid, $this->context);
+        $this->converter->toSQL($this->dataRamseyUuid, 'uuid', $this->context);
     }
 
     /**
@@ -79,7 +81,7 @@ final class ConversionBench
      */
     public function benchArrayFromSql(): void
     {
-        $this->converter->fromSQL('varchar[]', $this->dataArrayAsString, $this->context);
+        $this->converter->fromSQL($this->dataArrayAsString, 'varchar[]', null, $this->context);
     }
 
     /**
@@ -88,6 +90,6 @@ final class ConversionBench
      */
     public function benchArrayToSql(): void
     {
-        $this->converter->toSQL('varchar[]', $this->dataArray, $this->context);
+        $this->converter->toSQL($this->dataArray, 'varchar[]', $this->context);
     }
 }
